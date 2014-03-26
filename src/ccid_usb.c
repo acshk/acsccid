@@ -353,6 +353,7 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 					struct usb_interface *usb_interface = NULL;
 					int interface;
 					int num = 0;
+					int readerID = (vendorID << 16) + productID;
 
 #ifdef USE_COMPOSITE_AS_MULTISLOT
 					static int static_interface = 1;
@@ -360,8 +361,6 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 					{
 						/* simulate a composite device as when libhal is
 						 * used */
-						int readerID = (vendorID << 16) + productID;
-
 						if ((GEMALTOPROXDU == readerID)
 							|| (GEMALTOPROXSU == readerID))
 						{
@@ -468,9 +467,13 @@ again:
 
 					if (usb_interface->altsetting->extralen != 54)
 					{
-						(void)usb_close(dev_handle);
-						DEBUG_CRITICAL4("Extra field for %s/%s has a wrong length: %d", bus->dirname, dev->filename, usb_interface->altsetting->extralen);
-						return STATUS_UNSUCCESSFUL;
+						// ACR88U and ACR128U does not have altsetting
+						if ((readerID != ACS_ACR88U) && (readerID != ACS_ACR128U))
+						{
+							(void)usb_close(dev_handle);
+							DEBUG_CRITICAL4("Extra field for %s/%s has a wrong length: %d", bus->dirname, dev->filename, usb_interface->altsetting->extralen);
+							return STATUS_UNSUCCESSFUL;
+						}
 					}
 
 					interface = usb_interface->altsetting->bInterfaceNumber;
@@ -535,23 +538,65 @@ again:
 					usbDevice[reader_index].ccid.readerID =
 						(dev->descriptor.idVendor << 16) +
 						dev->descriptor.idProduct;
-					usbDevice[reader_index].ccid.dwFeatures = dw2i(usb_interface->altsetting->extra, 40);
-					usbDevice[reader_index].ccid.wLcdLayout =
-						(usb_interface->altsetting->extra[51] << 8) +
-						usb_interface->altsetting->extra[50];
-					usbDevice[reader_index].ccid.bPINSupport = usb_interface->altsetting->extra[52];
-					usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = dw2i(usb_interface->altsetting->extra, 44);
-					usbDevice[reader_index].ccid.dwMaxIFSD = dw2i(usb_interface->altsetting->extra, 28);
-					usbDevice[reader_index].ccid.dwDefaultClock = dw2i(usb_interface->altsetting->extra, 10);
-					usbDevice[reader_index].ccid.dwMaxDataRate = dw2i(usb_interface->altsetting->extra, 23);
-					usbDevice[reader_index].ccid.bMaxSlotIndex = usb_interface->altsetting->extra[4];
-					usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
-					usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
-					usbDevice[reader_index].ccid.arrayOfSupportedDataRates = get_data_rates(reader_index, dev, num);
-					usbDevice[reader_index].ccid.bInterfaceProtocol = usb_interface->altsetting->bInterfaceProtocol;
-					usbDevice[reader_index].ccid.bNumEndpoints = usb_interface->altsetting->bNumEndpoints;
-					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
-					usbDevice[reader_index].ccid.bVoltageSupport = usb_interface->altsetting->extra[5];
+
+					// ACR88U and ACR128U does not have altsetting
+					if (readerID == ACS_ACR88U)
+					{
+						usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
+						usbDevice[reader_index].ccid.wLcdLayout = 0x0815;
+						usbDevice[reader_index].ccid.bPINSupport = 0x01;
+						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 0x0000010F;
+						usbDevice[reader_index].ccid.dwMaxIFSD = 0x000000FE;
+						usbDevice[reader_index].ccid.dwDefaultClock = 0x00000E10;
+						usbDevice[reader_index].ccid.dwMaxDataRate = 0x0001C200;
+						usbDevice[reader_index].ccid.bMaxSlotIndex = 0x04;
+						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+						usbDevice[reader_index].ccid.bInterfaceProtocol = 0;
+						usbDevice[reader_index].ccid.bNumEndpoints = 3;
+						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+						usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+					}
+					else if (readerID == ACS_ACR128U)
+					{
+						usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
+						usbDevice[reader_index].ccid.wLcdLayout = 0;
+						usbDevice[reader_index].ccid.bPINSupport = 0x01;
+						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 0x0000010F;
+						usbDevice[reader_index].ccid.dwMaxIFSD = 0x000000FE;
+						usbDevice[reader_index].ccid.dwDefaultClock = 0x00000E10;
+						usbDevice[reader_index].ccid.dwMaxDataRate = 0x0001C200;
+						usbDevice[reader_index].ccid.bMaxSlotIndex = 0x02;
+						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+						usbDevice[reader_index].ccid.bInterfaceProtocol = 0;
+						usbDevice[reader_index].ccid.bNumEndpoints = 3;
+						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+						usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+					}
+					else
+					{
+						usbDevice[reader_index].ccid.dwFeatures = dw2i(usb_interface->altsetting->extra, 40);
+						usbDevice[reader_index].ccid.wLcdLayout =
+							(usb_interface->altsetting->extra[51] << 8) +
+							usb_interface->altsetting->extra[50];
+						usbDevice[reader_index].ccid.bPINSupport = usb_interface->altsetting->extra[52];
+						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = dw2i(usb_interface->altsetting->extra, 44);
+						usbDevice[reader_index].ccid.dwMaxIFSD = dw2i(usb_interface->altsetting->extra, 28);
+						usbDevice[reader_index].ccid.dwDefaultClock = dw2i(usb_interface->altsetting->extra, 10);
+						usbDevice[reader_index].ccid.dwMaxDataRate = dw2i(usb_interface->altsetting->extra, 23);
+						usbDevice[reader_index].ccid.bMaxSlotIndex = usb_interface->altsetting->extra[4];
+						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = get_data_rates(reader_index, dev, num);
+						usbDevice[reader_index].ccid.bInterfaceProtocol = usb_interface->altsetting->bInterfaceProtocol;
+						usbDevice[reader_index].ccid.bNumEndpoints = usb_interface->altsetting->bNumEndpoints;
+						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+						usbDevice[reader_index].ccid.bVoltageSupport = usb_interface->altsetting->extra[5];
+					}
+
 					goto end;
 				}
 			}
@@ -785,6 +830,9 @@ static int get_end_points(struct usb_device *dev, _usbDevice *usbdevice,
 		if (dev->config->interface[i].altsetting->bInterfaceClass == 0xb
 #ifdef ALLOW_PROPRIETARY_CLASS
 			|| dev->config->interface[i].altsetting->bInterfaceClass == 0xff
+
+			// bInterfaceClass is 0x00 in ACR83U, ACR88U and ACR128U
+			|| dev->config->interface[i].altsetting->bInterfaceClass == 0x00
 #endif
 			)
 		{
