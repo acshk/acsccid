@@ -1,6 +1,10 @@
 # ===========================================================================
-#              http://autoconf-archive.cryp.to/acx_pthread.html
+#           http://www.nongnu.org/autoconf-archive/acx_pthread.html
 # ===========================================================================
+#
+# OBSOLETE MACRO
+#
+#   Renamed to AX_PTHREAD
 #
 # SYNOPSIS
 #
@@ -45,11 +49,7 @@
 #   Alejandro Forero Cuervo to the autoconf macro repository. We are also
 #   grateful for the helpful feedback of numerous users.
 #
-# LAST MODIFICATION
-#
-#   2008-04-12
-#
-# COPYLEFT
+# LICENSE
 #
 #   Copyright (c) 2008 Steven G. Johnson <stevenj@alum.mit.edu>
 #
@@ -75,9 +75,9 @@
 #   all other use of the material that constitutes the Autoconf Macro.
 #
 #   This special exception to the GPL applies to versions of the Autoconf
-#   Macro released by the Autoconf Macro Archive. When you make and
-#   distribute a modified version of the Autoconf Macro, you may extend this
-#   special exception to the GPL to apply to your modified version as well.
+#   Macro released by the Autoconf Archive. When you make and distribute a
+#   modified version of the Autoconf Macro, you may extend this special
+#   exception to the GPL to apply to your modified version as well.
 
 AC_DEFUN([ACX_PTHREAD], [
 AC_REQUIRE([AC_CANONICAL_HOST])
