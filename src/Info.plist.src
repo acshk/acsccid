@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>MAGIC_BUNDLE</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.debian.alioth.pcsclite.smartcardccid</string>
+	<string>hk.com.acs.ccid</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	MAGIC_CLASS
@@ -96,10 +96,10 @@
 	<string>MAGIC_TARGET</string>
 
 	<key>ifdManufacturerString</key>
-	<string>Ludovic Rousseau (ludovic.rousseau@free.fr)</string>
+	<string>Advanced Card Systems Ltd.</string>
 
 	<key>ifdProductString</key>
-	<string>Generic CCID driver</string>
+	<string>ACS CCID driver</string>
 
 	<key>ifdVendorID</key>
 	<array>
