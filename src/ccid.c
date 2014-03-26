@@ -67,6 +67,12 @@ int ccid_open_hack_pre(unsigned int reader_index)
 			/* the InterruptRead does not timeout (on Mac OS X) */
 			doInterruptRead = 0;
 			break;
+
+		default:
+			// Disable InterruptRead for all ACS CCID readers
+			// ACR88U and ACR128U does not timeout on Mac OS X
+			doInterruptRead = 0;
+			break;
 	}
 
 	/* CCID */
