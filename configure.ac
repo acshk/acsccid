@@ -1,14 +1,12 @@
 # Process this file with autoconf to produce a configure script.
 # You may need to use autoconf 2.56 or newer
 
-# $Id: configure.in 4347 2009-07-28 20:52:50Z rousseau $
-
 # Require autoconf 2.61
 AC_PREREQ(2.61)
 
-AC_INIT(ccid, 1.3.11)
+AC_INIT(acsccid, 1.0.0)
 AC_CONFIG_SRCDIR(src/ifdhandler.c)
-AC_CONFIG_AUX_DIR([.])
+AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE(1.8 dist-bzip2 no-dist-gzip)
 
 # Default install dir
@@ -40,9 +38,9 @@ PKG_CHECK_EXISTS([libpcsclite],
 	[
 	if test -f /usr/local/lib/pkgconfig/libpcsclite.pc -a "x$PKG_CONFIG" != x ; then
 		AC_MSG_ERROR([use PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure])
-	  else
+	else
 		AC_MSG_WARN([install pcsc-lite $PCSC_NEEDED_VERSION or later])
-	  fi
+	fi
 	])],
 	[AC_MSG_WARN([libpcsclite not found by pkg-config])]
 )
@@ -105,68 +103,59 @@ case "$host" in
 	DYN_LIB_EXT="so"
 esac
 
-# --disable-libusb
-AC_ARG_ENABLE(libusb,
-	AC_HELP_STRING([--disable-libusb],[do not use libusb]),
-	[ use_libusb="${enableval}" ], [ use_libusb=yes ] )
-
 use_usb_interrupt=no
 
-# check if libusb is used
-if test "x$use_libusb" != xno ; then
-	PKG_CHECK_EXISTS([libusb], [
-	PKG_CHECK_MODULES(LIBUSB, libusb, [],
-		[
-			AC_CHECK_PROG([LIBUSBCONFIG], [libusb-config], [yes])
+PKG_CHECK_EXISTS([libusb], [
+PKG_CHECK_MODULES(LIBUSB, libusb, [],
+	[
+		AC_CHECK_PROG([LIBUSBCONFIG], [libusb-config], [yes])
 
-			if test "$LIBUSBCONFIG" = "yes" ; then
-				LIBUSB_CFLAGS="$LIBUSB_CFLAGS `libusb-config --cflags`"
-				LIBUSB_LIBS="$LIBUSB_LIBS `libusb-config --libs`"
-			else
-				AC_MSG_WARN([libusb-config not found.])
-			fi
-		])
+		if test "$LIBUSBCONFIG" = "yes" ; then
+			LIBUSB_CFLAGS="$LIBUSB_CFLAGS `libusb-config --cflags`"
+			LIBUSB_LIBS="$LIBUSB_LIBS `libusb-config --libs`"
+		else
+			AC_MSG_WARN([libusb-config not found.])
+		fi
 	])
+])
 
-	saved_CPPFLAGS="$CPPFLAGS"
-	saved_LIBS="$LIBS"
+saved_CPPFLAGS="$CPPFLAGS"
+saved_LIBS="$LIBS"
 
-	CPPFLAGS="$CPPFLAGS $LIBUSB_CFLAGS"
-	LIBS="$LDFLAGS $LIBUSB_LIBS"
+CPPFLAGS="$CPPFLAGS $LIBUSB_CFLAGS"
+LIBS="$LDFLAGS $LIBUSB_LIBS"
 
-	AC_CHECK_HEADERS(usb.h, [],
-		[ AC_MSG_ERROR([usb.h not found, install libusb or use ./configure LIBUSB_CFLAGS=...]) ])
+AC_CHECK_HEADERS(usb.h, [],
+	[ AC_MSG_ERROR([usb.h not found, install libusb or use ./configure LIBUSB_CFLAGS=...]) ])
 
-	AC_MSG_CHECKING([for usb_init])
-	AC_TRY_LINK_FUNC(usb_init, [ AC_MSG_RESULT([yes]) ],
-		[ AC_MSG_ERROR([libusb not found, use ./configure LIBUSB_LIBS=...]) ])
+AC_MSG_CHECKING([for usb_init])
+AC_TRY_LINK_FUNC(usb_init, [ AC_MSG_RESULT([yes]) ],
+	[ AC_MSG_ERROR([libusb not found, use ./configure LIBUSB_LIBS=...]) ])
 
-	AC_MSG_CHECKING([for usb_interrupt_read])
-	AC_TRY_LINK_FUNC(usb_interrupt_read, [ AC_MSG_RESULT([yes]) ],
-		[ AC_MSG_ERROR([your libusb is too old. install version 0.1.12 or above]) ])
+AC_MSG_CHECKING([for usb_interrupt_read])
+AC_TRY_LINK_FUNC(usb_interrupt_read, [ AC_MSG_RESULT([yes]) ],
+	[ AC_MSG_ERROR([your libusb is too old. install version 0.1.12 or above]) ])
 
-	AC_CHECK_FUNC(usb_detach_kernel_driver_np,
-		[ AC_DEFINE(HAVE_USB_DETACH_KERNEL_DRIVER_NP, 1, [Define if usb_detach_kernel_driver_np() is available]) ])
+AC_CHECK_FUNC(usb_detach_kernel_driver_np,
+	[ AC_DEFINE(HAVE_USB_DETACH_KERNEL_DRIVER_NP, 1, [Define if usb_detach_kernel_driver_np() is available]) ])
 
-	CPPFLAGS="$saved_CPPFLAGS"
-	LIBS="$saved_LIBS"
+CPPFLAGS="$saved_CPPFLAGS"
+LIBS="$saved_LIBS"
 
-	use_libusb=yes
+use_libusb=yes
 
-	AC_MSG_CHECKING([if libusb is emulated by libusb-compat])
-	a=`$PKG_CONFIG --variable=emulated libusb`
-	if test "x$a" = "x1";
-	then
-		AC_MSG_RESULT([yes])
-		use_usb_interrupt=yes
-	else
-		AC_MSG_RESULT([no])
-	fi
-
+AC_MSG_CHECKING([if libusb is emulated by libusb-compat])
+a=`$PKG_CONFIG --variable=emulated libusb`
+if test "x$a" = "x1";
+then
+	AC_MSG_RESULT([yes])
+	use_usb_interrupt=yes
+else
+	AC_MSG_RESULT([no])
 fi
+
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
-AM_CONDITIONAL(WITH_LIBUSB, test "${use_libusb}" != "no")
 
 # --enable-usb-interrupt
 AC_ARG_ENABLE(usb-interrupt,
@@ -215,14 +204,8 @@ if test "${multithread}" != no ; then
 	multithread=yes
 fi
 
-# --enable-bundle=NAME
-AC_ARG_ENABLE(bundle,
-	AC_HELP_STRING([--enable-bundle=NAME],[bundle directory name
-	(default ifd-ccid.bundle)]),
-	[bundle="${enableval}"], [bundle=false])
-if test "${bundle}" = false ; then
-	bundle="ifd-ccid.bundle"
-fi
+# bundle name is acsccid.bundle
+bundle="ifd-acsccid.bundle"
 AC_DEFINE_UNQUOTED(BUNDLE, "$bundle", [bundle directory name])
 
 # --enable-usbdropdir=DIR
@@ -236,21 +219,6 @@ fi
 AC_DEFINE_UNQUOTED(PCSCLITE_HP_DROPDIR, "$usbdropdir", [directory containing USB drivers])
 if test "${usbdropdir}" = "" ; then
 	AC_MSG_ERROR([use --enable-usbdropdir=DIR])
-fi
-
-# --enable-twinserial
-AC_ARG_ENABLE(twinserial,
-	AC_HELP_STRING([--enable-twinserial],[also compile and install the serial Twin driver]),
-	[twinserial="${enableval}"], [twinserial=no])
-AM_CONDITIONAL(WITH_TWIN_SERIAL, test "${twinserial}" != "no")
-
-# --enable-ccidtwindir=DIR
-AC_ARG_ENABLE(ccidtwindir,
-	AC_HELP_STRING([--enable-ccidtwindir=DIR],[directory to install the
-	serial Twin driver (default to pcscd config or $(prefix)/pcsc/drivers/serial)]),
-	[ccidtwindir="${enableval}"], [ccidtwindir=false])
-if test "${ccidtwindir}" = false ; then
-	ccidtwindir=`$PKG_CONFIG libpcsclite --variable=usbdropdir`/serial
 fi
 
 # --disable-pcsclite
@@ -281,30 +249,21 @@ AC_ARG_ENABLE(udev,
 	[udev="${enableval}"], [udev=no])
 AM_CONDITIONAL(UDEV, test "${udev}" != "no")
 
-# --disable-class
-AC_ARG_ENABLE(class,
-	AC_HELP_STRING([--disable-class],[remove the CCIDCLASSDRIVER from Info.plist]),
-	[class="${enableval}"], [class=yes])
-if test "${class}" != yes ; then
-	NOCLASS="--no-class"
-fi
+# class driver is disabled
+class=no
+NOCLASS="--no-class"
 AC_SUBST(NOCLASS)
-
 
 # Setup dist stuff
 AC_SUBST(ac_aux_dir)
 AC_SUBST(bundle)
 AC_SUBST(usbdropdir)
-AC_SUBST(ccidtwindir)
 
 cat << EOF
 
-libccid has been configured with following options:
+libacsccid has been configured with following options:
 
 Version:             ${PACKAGE_VERSION}
-User binaries:       $(eval eval eval echo "${bindir}")
-Configuration files: $(eval eval eval echo "${sysconfdir}")
-
 
 Host:                ${host}
 Compiler:            ${CC}
@@ -331,8 +290,6 @@ composite as multislot:  ${use_composite_as_multislot}
 multi threading:         ${multithread}
 bundle directory name:   ${bundle}
 USB drop directory:      ${usbdropdir}
-serial Twin support:     ${twinserial}
-serial twin install dir: ${ccidtwindir}
 compiled for pcsc-lite:  ${pcsclite}
 udev support:            ${udev}
 class driver:            ${class}
@@ -342,12 +299,6 @@ EOF
 # Write Makefiles.
 AC_CONFIG_FILES(Makefile
 	m4/Makefile
-	src/Makefile
-	readers/Makefile
-	contrib/Makefile
-	contrib/Kobil_mIDentity_switch/Makefile
-	contrib/RSA_SecurID/Makefile
-	examples/Makefile)
+	src/Makefile)
 
 AC_OUTPUT
-
