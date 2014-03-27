@@ -121,6 +121,12 @@ typedef struct
 	 * 4 = 1.8V
 	 */
 	int bVoltageSupport;
+
+	// Bitmask of SAM slot
+	unsigned int dwSamSlot;
+
+	// Pointer to array of slot ICC states
+	int *slotIccStates;
 } _ccid_descriptor;
 
 /* Features from dwFeatures */

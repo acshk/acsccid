@@ -41,6 +41,9 @@
 #include "parser.h"
 #include "ccid_ifdhandler.h"
 
+#ifdef HAVE_PTHREAD
+#include <pthread.h>
+#endif
 
 /* write timeout
  * we don't have to wait a long time since the card was doing nothing */
@@ -79,6 +82,22 @@ typedef struct
 	 */
 	_ccid_descriptor ccid;
 
+#ifdef HAVE_PTHREAD
+	// Thread handle for card detection
+	pthread_t hThread;
+
+	// Flag to terminate thread
+	int *pTerminated;
+	int terminated;
+
+	// Device lock
+	pthread_mutex_t *pDeviceLock;
+	pthread_mutex_t deviceLock;
+
+	// States lock
+	pthread_mutex_t *pStatesLock;
+	pthread_mutex_t statesLock;
+#endif
 } _usbDevice;
 
 /* The _usbDevice structure must be defined before including ccid_usb.h */
@@ -87,6 +106,11 @@ typedef struct
 static int get_end_points(struct usb_device *dev, _usbDevice *usbdevice, int num);
 static unsigned int *get_data_rates(unsigned int reader_index,
 	struct usb_device *dev, int num);
+
+#ifdef HAVE_PTHREAD
+static status_t UpdateSlotIccStates(unsigned int reader_index);
+static void *CardDetectionThread(void *pParam);
+#endif
 
 /* ne need to initialize to 0 since it is static */
 static _usbDevice usbDevice[CCID_DRIVER_MAX_READERS];
@@ -130,6 +154,7 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 	char *dirname = NULL, *filename = NULL;
 	int interface_number = -1;
 	static int previous_reader_index = -1;
+	int ret;
 
 	DEBUG_COMM3("Reader index: %X, Device: %s", reader_index, device);
 
@@ -522,6 +547,7 @@ again:
 						usbDevice[reader_index].ccid.bNumEndpoints = 3;
 						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 						usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+						usbDevice[reader_index].ccid.dwSamSlot = 0x0000001C;
 					}
 					else if (readerID == ACS_ACR128U)
 					{
@@ -540,6 +566,7 @@ again:
 						usbDevice[reader_index].ccid.bNumEndpoints = 3;
 						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 						usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+						usbDevice[reader_index].ccid.dwSamSlot = 0x00000004;
 					}
 					else
 					{
@@ -560,7 +587,63 @@ again:
 						usbDevice[reader_index].ccid.bNumEndpoints = usb_interface->altsetting->bNumEndpoints;
 						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 						usbDevice[reader_index].ccid.bVoltageSupport = usb_interface->altsetting->extra[5];
+						usbDevice[reader_index].ccid.dwSamSlot = 0;
 					}
+
+#ifdef HAVE_PTHREAD
+					usbDevice[reader_index].terminated = FALSE;
+					usbDevice[reader_index].pTerminated = &usbDevice[reader_index].terminated;
+					usbDevice[reader_index].pDeviceLock = &usbDevice[reader_index].deviceLock;
+					usbDevice[reader_index].pStatesLock = &usbDevice[reader_index].statesLock;
+
+					// Allocate slot ICC states
+					usbDevice[reader_index].ccid.slotIccStates = (int *) calloc(usbDevice[reader_index].ccid.bMaxSlotIndex + 1, sizeof(int));
+					if (usbDevice[reader_index].ccid.slotIccStates == NULL)
+					{
+						usb_close(dev_handle);
+						DEBUG_CRITICAL("Not enough memory");
+						return STATUS_UNSUCCESSFUL;
+					}
+
+					// Update slot ICC states
+					ret = UpdateSlotIccStates(reader_index);
+					if (ret != STATUS_SUCCESS)
+					{
+						usb_close(dev_handle);
+						DEBUG_CRITICAL2("UpdateSlotIccStates failed with error %d", ret);
+						return STATUS_UNSUCCESSFUL;
+					}
+
+					// Create device lock
+					ret = pthread_mutex_init(usbDevice[reader_index].pDeviceLock, NULL);
+					if (ret != 0)
+					{
+						usb_close(dev_handle);
+						DEBUG_CRITICAL2("pthread_mutex_init failed with error %d", ret);
+						return STATUS_UNSUCCESSFUL;
+					}
+
+					// Create states lock
+					ret = pthread_mutex_init(usbDevice[reader_index].pStatesLock, NULL);
+					if (ret != 0)
+					{
+						pthread_mutex_destroy(usbDevice[reader_index].pDeviceLock);
+						usb_close(dev_handle);
+						DEBUG_CRITICAL2("pthread_mutex_init failed with error %d", ret);
+						return STATUS_UNSUCCESSFUL;
+					}
+
+					// Create thread for card detection
+					ret = pthread_create(&usbDevice[reader_index].hThread, NULL, CardDetectionThread, &usbDevice[reader_index]);
+					if (ret != 0)
+					{
+						pthread_mutex_destroy(usbDevice[reader_index].pStatesLock);
+						pthread_mutex_destroy(usbDevice[reader_index].pDeviceLock);
+						usb_close(dev_handle);
+						DEBUG_CRITICAL2("pthread_create failed with error %d", ret);
+						return STATUS_UNSUCCESSFUL;
+					}
+#endif
 
 					goto end;
 				}
@@ -595,9 +678,17 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 
 	DEBUG_XXD(debug_header, buffer, length);
 
+#if defined(HAVE_PTHREAD) && !defined(__APPLE__)
+	pthread_mutex_lock(usbDevice[reader_index].pDeviceLock);
+#endif
+
 	rv = usb_bulk_write(usbDevice[reader_index].handle,
 		usbDevice[reader_index].bulk_out, (char *)buffer, length,
 		USB_WRITE_TIMEOUT);
+
+#if defined(HAVE_PTHREAD) && !defined(__APPLE__)
+	pthread_mutex_unlock(usbDevice[reader_index].pDeviceLock);
+#endif
 
 	if (rv < 0)
 	{
@@ -632,9 +723,17 @@ read_again:
 	(void)snprintf(debug_header, sizeof(debug_header), "<- %06X ",
 		(int)reader_index);
 
+#if defined(HAVE_PTHREAD) && !defined(__APPLE__)
+	pthread_mutex_lock(usbDevice[reader_index].pDeviceLock);
+#endif
+
 	rv = usb_bulk_read(usbDevice[reader_index].handle,
 		usbDevice[reader_index].bulk_in, (char *)buffer, *length,
 		usbDevice[reader_index].ccid.readTimeout * 1000);
+
+#if defined(HAVE_PTHREAD) && !defined(__APPLE__)
+	pthread_mutex_unlock(usbDevice[reader_index].pDeviceLock);
+#endif
 
 	if (rv < 0)
 	{
@@ -693,6 +792,28 @@ status_t CloseUSB(unsigned int reader_index)
 		usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
 	}
 
+#if defined(HAVE_PTHREAD) && !defined(__APPLE__)
+	if ((!usbDevice[reader_index].terminated) &&
+		(usbDevice[reader_index].ccid.bCurrentSlotIndex == 0))
+	{
+		DEBUG_INFO3("Terminating thread: %s/%s",
+			usbDevice[reader_index].dirname,
+			usbDevice[reader_index].filename);
+
+		// Terminate thread
+		*usbDevice[reader_index].pTerminated = TRUE;
+		pthread_join(usbDevice[reader_index].hThread, NULL);
+
+		// Destroy mutex
+		pthread_mutex_destroy(usbDevice[reader_index].pStatesLock);
+		pthread_mutex_destroy(usbDevice[reader_index].pDeviceLock);
+
+		// Free slot ICC states
+		free(usbDevice[reader_index].ccid.slotIccStates);
+		usbDevice[reader_index].ccid.slotIccStates = NULL;
+	}
+#endif
+
 	/* one slot closed */
 	(*usbDevice[reader_index].nb_opened_slots)--;
 
@@ -708,6 +829,24 @@ status_t CloseUSB(unsigned int reader_index)
 		(void)usb_release_interface(usbDevice[reader_index].handle,
 			usbDevice[reader_index].interface);
 		(void)usb_close(usbDevice[reader_index].handle);
+
+#if defined(HAVE_PTHREAD) && defined(__APPLE__)
+		DEBUG_INFO3("Terminating thread: %s/%s",
+			usbDevice[reader_index].dirname,
+			usbDevice[reader_index].filename);
+
+		// Terminate thread
+		*usbDevice[reader_index].pTerminated = TRUE;
+		pthread_join(usbDevice[reader_index].hThread, NULL);
+
+		// Destroy mutex
+		pthread_mutex_destroy(usbDevice[reader_index].pStatesLock);
+		pthread_mutex_destroy(usbDevice[reader_index].pDeviceLock);
+
+		// Free slot ICC states
+		free(usbDevice[reader_index].ccid.slotIccStates);
+		usbDevice[reader_index].ccid.slotIccStates = NULL;
+#endif
 
 		free(usbDevice[reader_index].dirname);
 		free(usbDevice[reader_index].filename);
@@ -961,3 +1100,188 @@ int InterruptRead(int reader_index, int timeout /* in ms */)
 	return ret;
 } /* InterruptRead */
 
+
+#ifdef HAVE_PTHREAD
+RESPONSECODE GetSlotIccState(unsigned int reader_index)
+{
+	RESPONSECODE ret;
+
+	pthread_mutex_lock(usbDevice[reader_index].pStatesLock);
+	ret = usbDevice[reader_index].ccid.slotIccStates[usbDevice[reader_index].ccid.bCurrentSlotIndex];
+	pthread_mutex_unlock(usbDevice[reader_index].pStatesLock);
+
+	return ret;
+}
+
+// Update slot ICC states
+static status_t UpdateSlotIccStates(unsigned int reader_index)
+{
+	unsigned char command[10];
+	unsigned char response[10];
+	unsigned int responseLen;
+	status_t ret = STATUS_UNSUCCESSFUL;
+	int i;
+	int j;
+
+	// For each slot
+	for (i = 0; i <= usbDevice[reader_index].ccid.bMaxSlotIndex; i++)
+	{
+		command[0] = 0x65;	// PC_to_RDR_GetSlotStatus
+		command[1] = 0;		// dwLength
+		command[2] = 0;
+		command[3] = 0;
+		command[4] = 0;
+		command[5] = i;		// bSlot
+		command[6] = (*usbDevice[reader_index].ccid.pbSeq)++;	// bSeq
+		command[7] = 0;		// abRFU
+		command[8] = 0;
+		command[9] = 0;
+
+		ret = STATUS_UNSUCCESSFUL;
+
+		// Try 10 times to get slot status
+		for (j = 0; j < 10; j++)
+		{
+			WriteUSB(reader_index, sizeof(command), command);
+
+			responseLen = sizeof(response);
+			ret = ReadUSB(reader_index, &responseLen, response);
+			if (ret == STATUS_SUCCESS)
+				break;
+		}
+
+		if (ret != STATUS_SUCCESS)
+			break;
+
+		// Check response length
+		if (responseLen < 10)
+		{
+			ret = STATUS_COMM_ERROR;
+			break;
+		}
+
+		// bStatus: bmCommandStatus
+		if (response[7] & CCID_COMMAND_FAILED)
+		{
+			// bError
+			if (response[8] != 0xFE)
+			{
+				ret = STATUS_COMM_ERROR;
+				break;
+			}
+		}
+
+		// bStatus: bmICCStatus
+		switch (response[7] & CCID_ICC_STATUS_MASK)
+		{
+		case CCID_ICC_PRESENT_ACTIVE:
+		case CCID_ICC_PRESENT_INACTIVE:
+			usbDevice[reader_index].ccid.slotIccStates[i] = IFD_ICC_PRESENT;
+			break;
+
+		default:
+			usbDevice[reader_index].ccid.slotIccStates[i] = IFD_ICC_NOT_PRESENT;
+			break;
+		}
+
+		DEBUG_INFO3("Slot %d: %s", i, usbDevice[reader_index].ccid.slotIccStates[i] == IFD_ICC_PRESENT ? "Present" : "Absent");
+	}
+
+	return ret;
+}
+
+// Card detection thread
+static void *CardDetectionThread(void *pParam)
+{
+	_usbDevice *pUsbDevice = (_usbDevice *) pParam;
+	unsigned char buffer[8];
+	int bufferIndex;
+	int bitIndex;
+	int ret;
+	int i;
+
+	DEBUG_INFO3("Enter: %s/%s", pUsbDevice->dirname, pUsbDevice->filename);
+	while (!pUsbDevice->terminated)
+	{
+#ifndef __APPLE__
+		pthread_mutex_lock(pUsbDevice->pDeviceLock);
+#endif
+
+		// usb_interrupt_read does not timeout on Mac OS X
+		// It will return after closing USB device
+		ret = usb_interrupt_read(pUsbDevice->handle, pUsbDevice->interrupt, (char *) buffer, sizeof(buffer), 100);
+
+#ifndef __APPLE__
+		pthread_mutex_unlock(pUsbDevice->pDeviceLock);
+#endif
+
+		if (ret < 0)
+		{
+			// if usb_interrupt_read() times out we get EILSEQ or EAGAIN
+			if (errno == ENODEV)
+			{
+				pthread_mutex_lock(pUsbDevice->pStatesLock);
+				for (i = 0; i <= pUsbDevice->ccid.bMaxSlotIndex; i++)
+					pUsbDevice->ccid.slotIccStates[i] = IFD_NO_SUCH_DEVICE;
+				pthread_mutex_unlock(pUsbDevice->pStatesLock);
+				break;
+			}
+			else
+			{
+				if ((errno != EILSEQ) && (errno != EAGAIN))
+				{
+					pthread_mutex_lock(pUsbDevice->pStatesLock);
+					for (i = 0; i <= pUsbDevice->ccid.bMaxSlotIndex; i++)
+						pUsbDevice->ccid.slotIccStates[i] = IFD_COMMUNICATION_ERROR;
+					pthread_mutex_unlock(pUsbDevice->pStatesLock);
+					
+					DEBUG_COMM4("usb_interrupt_read(%s/%s): %s",
+						pUsbDevice->dirname,
+						pUsbDevice->filename, strerror(errno));
+					break;
+				}
+			}
+		}
+		else
+		{
+			DEBUG_XXD("NotifySlotChange: ", buffer, ret);
+			if (ret > 0)
+			{
+				// If RDR_to_PC_NotifySlotChange is received
+				if (buffer[0] == 0x50)
+				{
+					pthread_mutex_lock(pUsbDevice->pStatesLock);
+
+					// For each slot
+					for (i = 0; i <= pUsbDevice->ccid.bMaxSlotIndex; i++)
+					{
+						// If not SAM slot
+						if (!((1 << i) & pUsbDevice->ccid.dwSamSlot))
+						{
+							bufferIndex = i / 4;
+							bitIndex = 2 * (i % 4);
+
+							if (bufferIndex + 1 < ret)
+							{
+								if (buffer[bufferIndex + 1] & (1 << bitIndex))
+									pUsbDevice->ccid.slotIccStates[i] = IFD_ICC_PRESENT;
+								else
+									pUsbDevice->ccid.slotIccStates[i] = IFD_ICC_NOT_PRESENT;
+							}
+						}
+					}
+
+					pthread_mutex_unlock(pUsbDevice->pStatesLock);
+
+					DEBUG_INFO3("Slot ICC states: %s/%s", pUsbDevice->dirname, pUsbDevice->filename);
+					for (i = 0; i <= pUsbDevice->ccid.bMaxSlotIndex; i++)
+						DEBUG_INFO3("Slot %d: %s", i, pUsbDevice->ccid.slotIccStates[i] == IFD_ICC_PRESENT ? "Present" : "Absent");
+				}
+			}
+		}
+	}
+
+	DEBUG_INFO3("Exit: %s/%s", pUsbDevice->dirname, pUsbDevice->filename);
+	return ((void *) 0);
+}
+#endif
