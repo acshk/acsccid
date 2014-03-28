@@ -1,4 +1,4 @@
-ACS CCID PC/SC Driver 1.0.1 for Linux/Mac OS X
+ACS CCID PC/SC Driver 1.0.2 for Linux/Mac OS X
 Advanced Card Systems Ltd.
 
 
@@ -18,14 +18,15 @@ Contents
 1. Release Notes
 ----------------
 
-Version: 1.0.1
-Release Date: 9/11/2009
+Version: 1.0.2
+Release Date: 2/2/2010
 
 Supported Readers
 ACR38U-CCID
 ACR88U
 ACR100-CCID
 ACR122U
+ACR122U-SAM
 ACR128U
 
 Operating Systems
@@ -41,12 +42,12 @@ Mac OS X 10.5/10.6
 
 2. Enter the following commands to unpack the driver source code.
 
-# tar -jxvf acsccid-1.0.1.tar.bz2
-# cd acsccid-1.0.1
+# tar -jxvf acsccid-1.0.2.tar.bz2
+# cd acsccid-1.0.2
 
 3. Enter the following commands to install the driver. If you want to use udev,
    please enter "./configure --enable-udev". For more information, please refer
-   to the file "acsccid-1.0.1/INSTALL".
+   to the file "acsccid-1.0.2/INSTALL".
 
 # ./configure
 # make
@@ -89,6 +90,11 @@ v1.0.1 (9/11/2009)
 1. Remove firmware version check.
 2. Modify the driver to use separate thread to poll the slot ICC states from
    interrupt endpoint.
+   
+v1.0.2 (2/2/2010)
+1. Do not use separate thread to poll the slot ICC status due to poor
+   performance of libusb v0.1.12.
+2. Enable polling mode automatically for ACR122U v2.06.
 
 
 
