@@ -78,7 +78,10 @@ int ccid_open_hack_pre(unsigned int reader_index)
 			for (i = 0; i < 10; i++)
 			{
 				if (CmdPowerOff(reader_index) == IFD_SUCCESS)
+				{
+					(void)sleep(1);
 					break;
+				}
 			}
 			break;
 	}
