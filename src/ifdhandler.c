@@ -49,7 +49,6 @@ static CcidDesc CcidSlots[CCID_DRIVER_MAX_READERS];
 /* global mutex */
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t ifdh_context_mutex = PTHREAD_MUTEX_INITIALIZER;
-RESPONSECODE GetSlotIccState(unsigned int reader_index);
 #endif
 
 int LogLevel = DEBUG_LEVEL_CRITICAL | DEBUG_LEVEL_INFO;
@@ -1386,34 +1385,18 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	 * IFD_COMMUNICATION_ERROR
 	 */
 
-	RESPONSECODE return_value = IFD_COMMUNICATION_ERROR;
-	int reader_index;
-
-#ifndef HAVE_PTHREAD
 	unsigned char pcbuffer[SIZE_GET_SLOT_STATUS];
+	RESPONSECODE return_value = IFD_COMMUNICATION_ERROR;
 	int oldLogLevel;
+	int reader_index;
 	_ccid_descriptor *ccid_descriptor;
 	unsigned int oldReadTimeout;
-#endif
 
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
 
 	DEBUG_PERIODIC3("%s (lun: %X)", CcidSlots[reader_index].readerName, Lun);
 
-#ifdef HAVE_PTHREAD
-	// Return status from slot ICC state
-	return_value = GetSlotIccState(reader_index);
-	if (return_value == IFD_ICC_NOT_PRESENT)
-	{
-		// Reset ATR buffer
-		CcidSlots[reader_index].nATRLength = 0;
-		*CcidSlots[reader_index].pcATRBuffer = '\0';
-
-		// Reset PowerFlags
-		CcidSlots[reader_index].bPowerFlags = POWERFLAGS_RAZ;
-	}
-#else
 	ccid_descriptor = get_ccid_descriptor(reader_index);
 
 	if (GEMCORESIMPRO == ccid_descriptor->readerID)
@@ -1478,7 +1461,6 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 			return_value = IFD_ICC_NOT_PRESENT;
 			break;
 	}
-#endif
 
 #if 0
 	/* SCR331-DI contactless reader */
