@@ -7,6 +7,8 @@ ACTION!="add", GOTO="pcscd_acsccid_rules_end"
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90cc", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR122U
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2200", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR125U
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2203", RUN+="/usr/sbin/pcscd --hotplug"
 
 # non CCID generic (InterfaceClass: 0x00)
 # ACS ACR88U
