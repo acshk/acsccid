@@ -19,14 +19,16 @@ Contents
 ----------------
 
 Version: 1.0.2
-Release Date: 2/2/2010
+Release Date: 17/6/2010
 
 Supported Readers
 ACR38U-CCID
 ACR88U
 ACR100-CCID
 ACR122U
+ACR122T
 ACR122U-SAM
+ACR125U
 ACR128U
 
 Operating Systems
@@ -95,6 +97,9 @@ v1.0.2 (2/2/2010)
 1. Do not use separate thread to poll the slot ICC status due to poor
    performance of libusb v0.1.12.
 2. Enable polling mode automatically for ACR122U v2.06.
+
+v1.0.2 (17/6/2010)
+1. Add ACR125U support.
 
 
 
