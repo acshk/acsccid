@@ -19,7 +19,7 @@ Contents
 ----------------
 
 Version: 1.0.2
-Release Date: 17/6/2010
+Release Date: 22/11/2010
 
 Supported Readers
 ACR38U-CCID
@@ -30,6 +30,7 @@ ACR122T
 ACR122U-SAM
 ACR125U
 ACR128U
+ACR1281 CL Reader
 
 Operating Systems
 Linux
@@ -56,9 +57,8 @@ Mac OS X 10.5/10.6
 # make install
 
 4. To build the driver in Mac OS X, please install development tools from
-   Apple and install libusb package from OpenSC project
-   (http://www.opensc-project.org/sca/). Enter the following commands to install
-   the driver.
+   Apple and install libusb-1.0 and libusb-compat-0.1. Enter the following
+   commands to install the driver.
    
 # ./MacOSX/configure
 # make
@@ -100,6 +100,10 @@ v1.0.2 (2/2/2010)
 
 v1.0.2 (17/6/2010)
 1. Add ACR125U support.
+
+v1.0.2 (22/11/2010)
+1. Add ACR1281 CL Reader support.
+2. Import Mac OS X 10.6 configure script from ccid-1.3.12.
 
 
 
