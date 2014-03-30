@@ -394,6 +394,13 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 							/* the CCID interfaces are 1 and 2 */
 							interface_number = static_interface;
 						}
+						// Simulate ACR1281 Dual Reader (composite device) as multi-slot reader
+						else if ((ACS_ACR1281_DUAL_READER_QPBOC == readerID) ||
+							(ACS_ACR1281_DUAL_READER_BSI == readerID))
+						{
+							// the CCID interfaces are 0 and 1
+							interface_number = static_interface - 1;
+						}
 					}
 #endif
 					/* is it already opened? */

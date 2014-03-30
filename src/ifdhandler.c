@@ -411,7 +411,11 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 					 * multi-slot reader */
 					int readerID =  get_ccid_descriptor(reader_index) -> readerID;
 
-					if ((GEMALTOPROXDU == readerID) || (GEMALTOPROXSU == readerID))
+					// Simulate ACR1281 Dual Reader (composite device) as multi-slot reader
+					if ((GEMALTOPROXDU == readerID) ||
+						(GEMALTOPROXSU == readerID) ||
+						(ACS_ACR1281_DUAL_READER_QPBOC == readerID) ||
+						(ACS_ACR1281_DUAL_READER_BSI == readerID))
 						*Value = 2;
 				}
 #endif
