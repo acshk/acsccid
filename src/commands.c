@@ -709,11 +709,11 @@ RESPONSECODE CmdEscape(unsigned int reader_index,
 	status_t res;
 	unsigned int length_in, length_out;
 	RESPONSECODE return_value = IFD_SUCCESS;
-	int old_read_timeout;
+	//int old_read_timeout;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
-	old_read_timeout = ccid_descriptor -> readTimeout;
-	ccid_descriptor -> readTimeout = 30;	/* 30 seconds */
+	//old_read_timeout = ccid_descriptor -> readTimeout;
+	//ccid_descriptor -> readTimeout = 30;	/* 30 seconds */
 
 again:
 	/* allocate buffers */
@@ -792,7 +792,7 @@ again:
 	free(cmd_out);
 
 end:
-	ccid_descriptor -> readTimeout = old_read_timeout;
+	//ccid_descriptor -> readTimeout = old_read_timeout;
 	return return_value;
 } /* Escape */
 
