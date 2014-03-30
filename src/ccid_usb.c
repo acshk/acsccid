@@ -92,6 +92,8 @@ typedef struct
 	int terminated;
 #endif
 
+	// Max packet size of bulk out endpoint
+	int bulkOutMaxPacketSize;
 } _usbDevice;
 
 /* The _usbDevice structure must be defined before including ccid_usb.h */
@@ -666,26 +668,57 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 {
 	int rv;
 	char debug_header[] = "-> 121234 ";
+	int pos;
+	int len;
+	int delayed = FALSE;
 
 	(void)snprintf(debug_header, sizeof(debug_header), "-> %06X ",
 		(int)reader_index);
 
 	DEBUG_XXD(debug_header, buffer, length);
 
-	rv = usb_bulk_write(usbDevice[reader_index].handle,
-		usbDevice[reader_index].bulk_out, (char *)buffer, length,
-		USB_WRITE_TIMEOUT);
-
-	if (rv < 0)
+	// Fix APG8201 and ACR85 ICC cannot receive command properly
+	// Add delay for APG8201 and ACR85 ICC
+	if ((usbDevice[reader_index].ccid.readerID == ACS_APG8201) ||
+		(usbDevice[reader_index].ccid.readerID == ACS_ACR85_PINPAD_READER_ICC))
 	{
-		DEBUG_CRITICAL4("usb_bulk_write(%s/%s): %s",
-			usbDevice[reader_index].dirname, usbDevice[reader_index].filename,
-			strerror(errno));
+		delayed = TRUE;
+	}
 
-		if (ENODEV == errno)
-			return STATUS_NO_SUCH_DEVICE;
+	// Send command by dividing number of packets
+	pos = 0;
+	while (length > 0)
+	{
+		if (length > usbDevice[reader_index].bulkOutMaxPacketSize)
+			len = usbDevice[reader_index].bulkOutMaxPacketSize;
+		else
+			len = length;
 
-		return STATUS_UNSUCCESSFUL;
+		rv = usb_bulk_write(usbDevice[reader_index].handle,
+			usbDevice[reader_index].bulk_out, (char *)buffer + pos, len,
+			USB_WRITE_TIMEOUT);
+
+		if (rv < 0)
+		{
+			DEBUG_CRITICAL4("usb_bulk_write(%s/%s): %s",
+				usbDevice[reader_index].dirname, usbDevice[reader_index].filename,
+				strerror(errno));
+
+			if (ENODEV == errno)
+				return STATUS_NO_SUCH_DEVICE;
+
+			return STATUS_UNSUCCESSFUL;
+		}
+
+		if (delayed)
+		{
+			// Delay 10 ms
+			if (length > usbDevice[reader_index].bulkOutMaxPacketSize)
+				usleep(10 * 1000);
+		}
+
+		pos += len;
+		length -= len;
 	}
 
 	return STATUS_SUCCESS;
@@ -854,7 +887,10 @@ static int get_end_points(struct usb_device *dev, _usbDevice *usbdevice,
 			usbdevice->bulk_in = bEndpointAddress;
 
 		if ((bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_OUT)
+		{
 			usbdevice->bulk_out = bEndpointAddress;
+			usbdevice->bulkOutMaxPacketSize = usb_interface->altsetting->endpoint[i].wMaxPacketSize;
+		}
 	}
 
 	return 0;
