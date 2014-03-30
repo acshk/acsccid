@@ -1387,6 +1387,102 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		*pdwBytesReturned = iBytesReturned;
 	}
 
+	// ACR83U, ACR85 and APG8201 specific I/O controls
+	if ((ACS_ACR83U == ccid_descriptor -> readerID) ||
+		(ACS_ACR85_PINPAD_READER_ICC == ccid_descriptor -> readerID) ||
+		(ACS_APG8201 == ccid_descriptor -> readerID))
+	{
+		// Get firmware version
+		if (IOCTL_SMARTCARD_GET_FIRMWARE_VERSION == dwControlCode)
+		{
+			unsigned char command[] = { 0x04, 0x00, 0x00, 0x00, 0x00 };
+			unsigned int commandLen = sizeof(command);
+			unsigned char response[3 + 6];
+			unsigned int responseLen = sizeof(response);
+			
+			return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
+			if (return_value == IFD_SUCCESS)
+			{
+				if ((responseLen > 3) && (response[0] == 0x84))
+				{
+					*pdwBytesReturned = responseLen - 3;
+					if (RxLength < *pdwBytesReturned)
+						return_value = IFD_COMMUNICATION_ERROR;
+					else
+						memcpy(RxBuffer, response + 3, *pdwBytesReturned);
+				}
+				else
+					return_value = IFD_COMMUNICATION_ERROR;
+			}
+		}
+
+		// Display LCD message
+		if (IOCTL_SMARTCARD_DISPLAY_LCD_MESSAGE == dwControlCode)
+		{
+			unsigned char command[5 + 32] = { 0x05, 0x00, 0x20, 0x00, 0x00 };
+			unsigned int commandLen = sizeof(command);
+			unsigned char response[3 + 2];
+			unsigned int responseLen = sizeof(response);
+			
+			if ((TxLength > 0) && (TxLength <= 32))
+			{
+				// Fill memory with spaces
+				memset(command + 5, 0x20, 32);
+
+				// Copy message to command
+				memcpy(command + 5, TxBuffer, TxLength);
+
+				return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
+				if (return_value == IFD_SUCCESS)
+				{
+					if ((responseLen > 3) && (response[0] == 0x85))
+					{
+						*pdwBytesReturned = responseLen - 3;
+						if (RxLength < *pdwBytesReturned)
+							return_value = IFD_COMMUNICATION_ERROR;
+						else
+							memcpy(RxBuffer, response + 3, *pdwBytesReturned);
+					}
+					else
+						return_value = IFD_COMMUNICATION_ERROR;
+				}
+			}
+		}
+
+		// Read key
+		if (IOCTL_SMARTCARD_READ_KEY == dwControlCode)
+		{
+			unsigned char command[5 + 6] = { 0x06, 0x00, 0x06, 0x00, 0x00 };
+			unsigned int commandLen = sizeof(command);
+			unsigned char response[3 + 35];
+			unsigned int responseLen = sizeof(response);
+			
+			if (TxLength == 6)
+			{
+				// Copy message to command
+				memcpy(command + 5, TxBuffer, TxLength);
+
+				old_read_timeout = ccid_descriptor -> readTimeout;
+				ccid_descriptor -> readTimeout = 0;	// Infinite
+				return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
+				ccid_descriptor -> readTimeout = old_read_timeout;
+				if (return_value == IFD_SUCCESS)
+				{
+					if ((responseLen > 3) && (response[0] == 0x86))
+					{
+						*pdwBytesReturned = responseLen - 3;
+						if (RxLength < *pdwBytesReturned)
+							return_value = IFD_COMMUNICATION_ERROR;
+						else
+							memcpy(RxBuffer, response + 3, *pdwBytesReturned);
+					}
+					else
+						return_value = IFD_COMMUNICATION_ERROR;
+				}
+			}
+		}
+	}
+
 	if (IFD_SUCCESS != return_value)
 		*pdwBytesReturned = 0;
 
