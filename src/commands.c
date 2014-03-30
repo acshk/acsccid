@@ -1037,48 +1037,65 @@ RESPONSECODE CmdXfrBlock(unsigned int reader_index, unsigned int tx_length,
 {
 	RESPONSECODE return_value = IFD_SUCCESS;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
+	int old_read_timeout;
+
+	// Use infinite timeout in T=0, short APDU and extended APDU
+	old_read_timeout = ccid_descriptor -> readTimeout;
 
 	/* APDU or TPDU? */
 	switch (ccid_descriptor->dwFeatures & CCID_CLASS_EXCHANGE_MASK)
 	{
 		case CCID_CLASS_TPDU:
 			if (protocol == T_0)
+			{
+				ccid_descriptor -> readTimeout = 0;	// Infinite
 				return_value = CmdXfrBlockTPDU_T0(reader_index,
 					tx_length, tx_buffer, rx_length, rx_buffer);
+			}
 			else
+			{
 				if (protocol == T_1)
 					return_value = CmdXfrBlockTPDU_T1(reader_index, tx_length,
 						tx_buffer, rx_length, rx_buffer);
 				else
 					return_value = IFD_PROTOCOL_NOT_SUPPORTED;
+			}
 			break;
 
 		case CCID_CLASS_SHORT_APDU:
+			ccid_descriptor -> readTimeout = 0;	// Infinite
 			return_value = CmdXfrBlockTPDU_T0(reader_index,
 				tx_length, tx_buffer, rx_length, rx_buffer);
 			break;
 
 		case CCID_CLASS_EXTENDED_APDU:
+			ccid_descriptor -> readTimeout = 0;	// Infinite
 			return_value = CmdXfrBlockAPDU_extended(reader_index,
 				tx_length, tx_buffer, rx_length, rx_buffer);
 			break;
 
 		case CCID_CLASS_CHARACTER:
 			if (protocol == T_0)
+			{
+				ccid_descriptor -> readTimeout = 0;	// Infinite
 				return_value = CmdXfrBlockCHAR_T0(reader_index, tx_length,
 					tx_buffer, rx_length, rx_buffer);
+			}
 			else
+			{
 				if (protocol == T_1)
 					return_value = CmdXfrBlockTPDU_T1(reader_index, tx_length,
 						tx_buffer, rx_length, rx_buffer);
  				else
 					return_value = IFD_PROTOCOL_NOT_SUPPORTED;
+			}
 			break;
 
 		default:
 			return_value = IFD_COMMUNICATION_ERROR;
 	}
 
+	ccid_descriptor -> readTimeout = old_read_timeout;
 	return return_value;
 } /* CmdXfrBlock */
 
