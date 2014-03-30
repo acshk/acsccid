@@ -1201,10 +1201,14 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	 */
 	RESPONSECODE return_value = IFD_COMMUNICATION_ERROR;
 	int reader_index;
+	int old_read_timeout;
+	_ccid_descriptor *ccid_descriptor;
 
 	reader_index = LunToReaderIndex(Lun);
 	if ((-1 == reader_index) || (NULL == pdwBytesReturned))
 		return return_value;
+
+	ccid_descriptor = get_ccid_descriptor(reader_index);
 
 	DEBUG_INFO4("ControlCode: 0x%X, %s (lun: %X)", dwControlCode,
 		CcidSlots[reader_index].readerName, Lun);
@@ -1225,8 +1229,11 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			unsigned int iBytesReturned;
 
 			iBytesReturned = RxLength;
+			old_read_timeout = ccid_descriptor -> readTimeout;
+			ccid_descriptor -> readTimeout = 0;	// Infinite
 			return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
 				&iBytesReturned);
+			ccid_descriptor -> readTimeout = old_read_timeout;
 			*pdwBytesReturned = iBytesReturned;
 		}
 	}
@@ -1244,8 +1251,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			return IFD_COMMUNICATION_ERROR;
 
 		/* We can only support direct verify and/or modify currently */
-		if (get_ccid_descriptor(reader_index) -> bPINSupport
-			& CCID_CLASS_PIN_VERIFY)
+		if (ccid_descriptor -> bPINSupport & CCID_CLASS_PIN_VERIFY)
 		{
 			pcsc_tlv -> tag = FEATURE_VERIFY_PIN_DIRECT;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
@@ -1255,8 +1261,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 		}
 
-		if (get_ccid_descriptor(reader_index) -> bPINSupport
-			& CCID_CLASS_PIN_MODIFY)
+		if (ccid_descriptor -> bPINSupport & CCID_CLASS_PIN_MODIFY)
 		{
 			pcsc_tlv -> tag = FEATURE_MODIFY_PIN_DIRECT;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
@@ -1276,7 +1281,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 #endif
 
-		if (KOBIL_TRIBANK == get_ccid_descriptor(reader_index) -> readerID)
+		if (KOBIL_TRIBANK == ccid_descriptor -> readerID)
 		{
 			pcsc_tlv -> tag = FEATURE_MCT_READERDIRECT;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
