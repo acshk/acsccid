@@ -1305,6 +1305,16 @@ time_request:
 		ccid_error(cmd[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);    /* bError */
 		switch (cmd[ERROR_OFFSET])
 		{
+			case 0xFF:	// Abort
+				// ACR83U, ACR85 and APG8201
+				// Invalid parameter in PIN verification/modification data structure
+				if (*rx_length < 2)
+					return IFD_COMMUNICATION_ERROR;
+				rx_buffer[0]= 0x6B;
+				rx_buffer[1]= 0x80;
+				*rx_length = 2;
+				return IFD_SUCCESS;
+
 			case 0xEF:	/* cancel */
 				if (*rx_length < 2)
 					return IFD_COMMUNICATION_ERROR;
