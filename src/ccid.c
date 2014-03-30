@@ -361,6 +361,36 @@ int ccid_open_hack_post(unsigned int reader_index)
 			}
 			break;
 #endif
+
+		case ACS_ACR83U:
+			{
+				unsigned char command[] = { 0x04, 0x00, 0x00, 0x00, 0x00 };
+				unsigned int commandLen = sizeof(command);
+				unsigned char response[3 + 6];
+				unsigned int responseLen = sizeof(response);
+				unsigned int firmwareVersion;
+
+				ccid_descriptor->wLcdLayout = 0x0210;
+				if (CmdEscape(reader_index, command, commandLen, response, &responseLen) == IFD_SUCCESS)
+				{
+					if ((responseLen >= 7) && (response[0] == 0x84))
+					{
+						firmwareVersion = (response[5] << 8) | response[6];
+						DEBUG_INFO2("ACR83U firmware version: 0x%04X", firmwareVersion);
+						if (firmwareVersion >= 0x4500)
+						{
+							ccid_descriptor->dwFeatures &= ~CCID_CLASS_EXCHANGE_MASK;
+							ccid_descriptor->dwFeatures |= CCID_CLASS_SHORT_APDU;
+						}
+						else
+						{
+							// Disable PIN support (firmware version < 0x4500)
+							ccid_descriptor->bPINSupport = 0;
+						}
+					}
+				}
+			}
+			break;
 	}
 
 	return 0;
