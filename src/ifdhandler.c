@@ -1299,20 +1299,20 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	/* Get PIN handling capabilities */
 	if (IOCTL_FEATURE_IFD_PIN_PROPERTIES == dwControlCode)
 	{
-		PIN_PROPERTIES_STRUCTURE *caps = (PIN_PROPERTIES_STRUCTURE *)RxBuffer;
+		// pcsc-lite 1.4.x header files: missing PIN_PROPERTIES_STRUCTURE
+		// pcsc-lite 1.5.x header files: incorrect PIN_PROPERTIES_STRUCTURE
+		unsigned int wLcdLayout = ccid_descriptor -> wLcdLayout;
 
-		if (RxLength < sizeof(PIN_PROPERTIES_STRUCTURE))
-			return IFD_COMMUNICATION_ERROR;
+		if (RxLength >= 4)
+		{
+			RxBuffer[0] = wLcdLayout & 0xFF;
+			RxBuffer[1] = (wLcdLayout >> 8) & 0xFF;
+			RxBuffer[2] = 0x07;
+			RxBuffer[3] = 0;
 
-		/* Only give the LCD size for now */
-		caps -> wLcdLayout = get_ccid_descriptor(reader_index) -> wLcdLayout;
-		caps -> wLcdMaxCharacters = 0x0000;
-		caps -> wLcdMaxLines = 0x0000; 
-		caps -> bEntryValidationCondition = 0x07; /* Default */
-		caps -> bTimeOut2 = 0x00; /* We do not distinguish bTimeOut from TimeOut2 */
-
-		*pdwBytesReturned = sizeof(*caps);
-		return_value = IFD_SUCCESS;
+			*pdwBytesReturned = 4;
+			return_value = IFD_SUCCESS;
+		}
 	}
 #endif
 
