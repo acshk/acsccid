@@ -966,12 +966,16 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 				break;
 			}
 
-		/* IFSD not negociated by the reader? */
-		if (! (ccid_desc->dwFeatures & CCID_CLASS_AUTO_IFSD))
+		// Valid only in TPDU exchange level
+		if (ccid_desc->dwFeatures & CCID_CLASS_TPDU)
 		{
-			DEBUG_COMM2("Negociate IFSD at %d", ccid_desc -> dwMaxIFSD);
-			if (t1_negotiate_ifsd(t1, 0, ccid_desc -> dwMaxIFSD) < 0)
-				return IFD_COMMUNICATION_ERROR;
+			/* IFSD not negociated by the reader? */
+			if (! (ccid_desc->dwFeatures & CCID_CLASS_AUTO_IFSD))
+			{
+				DEBUG_COMM2("Negociate IFSD at %d", ccid_desc -> dwMaxIFSD);
+				if (t1_negotiate_ifsd(t1, 0, ccid_desc -> dwMaxIFSD) < 0)
+					return IFD_COMMUNICATION_ERROR;
+			}
 		}
 		(void)t1_set_param(t1, IFD_PROTOCOL_T1_IFSD, ccid_desc -> dwMaxIFSD);
 
