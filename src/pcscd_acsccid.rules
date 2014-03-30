@@ -9,18 +9,30 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90cc", RUN+="/usr
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8306", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR85 PINPad Reader PICC
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2210", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR101 ICC Reader
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="1204", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR100 ICC Reader
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="1205", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR102 ICC Reader
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="1206", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR122U
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2200", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR1222 Dual Reader
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2207", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR1222 1SAM Dual Reader
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="1280", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR1222L 3S CL Reader
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2206", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR125 nPA plus
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2203", RUN+="/usr/sbin/pcscd --hotplug"
-# ACS ACR1281 PICC Reader
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="0901", RUN+="/usr/sbin/pcscd --hotplug"
-# ACS ACR1281 Dual Reader
+# ACS ACR1281 CL Reader (qPBOC)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="220f", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR1281 Dual Reader (qPBOC)
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2208", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR1281 PICC Reader (BSI)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="0901", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR1281 Dual Reader (BSI)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="220a", RUN+="/usr/sbin/pcscd --hotplug"
 
 # non CCID generic (InterfaceClass: 0x00)
 # ACS ACR83U
