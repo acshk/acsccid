@@ -41,6 +41,10 @@
 #include "parser.h"
 #include "ccid_ifdhandler.h"
 
+#if defined(__APPLE__) && defined(HAVE_PTHREAD)
+#include <pthread.h>
+#endif
+
 
 /* write timeout
  * we don't have to wait a long time since the card was doing nothing */
@@ -79,6 +83,15 @@ typedef struct
 	 */
 	_ccid_descriptor ccid;
 
+#if defined(__APPLE__) && defined(HAVE_PTHREAD)
+	// Thread handle for card detection
+	pthread_t hThread;
+
+	// Flag to terminate thread
+	int *pTerminated;
+	int terminated;
+#endif
+
 } _usbDevice;
 
 /* The _usbDevice structure must be defined before including ccid_usb.h */
@@ -88,6 +101,10 @@ static int get_end_points(struct usb_device *dev, _usbDevice *usbdevice, int num
 int ccid_check_firmware(struct usb_device *dev);
 static unsigned int *get_data_rates(unsigned int reader_index,
 	struct usb_device *dev, int num);
+	
+#if defined(__APPLE__) && defined(HAVE_PTHREAD)
+static void *CardDetectionThread(void *pParam);
+#endif
 
 /* ne need to initialize to 0 since it is static */
 static _usbDevice usbDevice[CCID_DRIVER_MAX_READERS];
@@ -159,6 +176,7 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 	char *dirname = NULL, *filename = NULL;
 	int interface_number = -1;
 	static int previous_reader_index = -1;
+	int ret;
 
 	DEBUG_COMM3("Reader index: %X, Device: %s", reader_index, device);
 
@@ -606,6 +624,21 @@ again:
 						usbDevice[reader_index].ccid.bVoltageSupport = usb_interface->altsetting->extra[5];
 					}
 
+#if defined(__APPLE__) && defined(HAVE_PTHREAD)
+					// Initialize terminated flag to false
+					usbDevice[reader_index].terminated = FALSE;
+					usbDevice[reader_index].pTerminated = &usbDevice[reader_index].terminated;
+					
+					// Create thread for card detection
+					ret = pthread_create(&usbDevice[reader_index].hThread, NULL, CardDetectionThread, (void *) reader_index);
+					if (ret != 0)
+					{
+						usb_close(dev_handle);
+						DEBUG_CRITICAL2("pthread_create failed with error %d", ret);
+						return STATUS_UNSUCCESSFUL;
+					}
+#endif
+
 					goto end;
 				}
 			}
@@ -752,6 +785,16 @@ status_t CloseUSB(unsigned int reader_index)
 		(void)usb_release_interface(usbDevice[reader_index].handle,
 			usbDevice[reader_index].interface);
 		(void)usb_close(usbDevice[reader_index].handle);
+
+#if defined(__APPLE__) && defined(HAVE_PTHREAD)
+		DEBUG_INFO3("Terminating thread: %s/%s",
+			usbDevice[reader_index].dirname,
+			usbDevice[reader_index].filename);
+
+		// Terminate thread
+		*usbDevice[reader_index].pTerminated = TRUE;
+		pthread_join(usbDevice[reader_index].hThread, NULL);
+#endif
 
 		free(usbDevice[reader_index].dirname);
 		free(usbDevice[reader_index].filename);
@@ -1047,3 +1090,19 @@ int InterruptRead(int reader_index, int timeout /* in ms */)
 	return ret;
 } /* InterruptRead */
 
+#if defined(__APPLE__) && defined(HAVE_PTHREAD)
+// Card detection thread
+static void *CardDetectionThread(void *pParam)
+{
+	int reader_index = (int) pParam;
+
+	DEBUG_INFO2("Enter: Reader %d", reader_index);
+	while (!usbDevice[reader_index].terminated)
+	{
+		InterruptRead(reader_index, 100);
+	}
+
+	DEBUG_INFO2("Exit: Reader %d", reader_index);
+	return ((void *) 0);
+}
+#endif
