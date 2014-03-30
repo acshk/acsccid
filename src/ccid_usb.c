@@ -545,12 +545,12 @@ again:
 					{
 						usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
 						usbDevice[reader_index].ccid.wLcdLayout = 0x0815;
-						usbDevice[reader_index].ccid.bPINSupport = 0x01;
-						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 0x0000010F;
-						usbDevice[reader_index].ccid.dwMaxIFSD = 0x000000FE;
-						usbDevice[reader_index].ccid.dwDefaultClock = 0x00000E10;
-						usbDevice[reader_index].ccid.dwMaxDataRate = 0x0001C200;
-						usbDevice[reader_index].ccid.bMaxSlotIndex = 0x04;
+						usbDevice[reader_index].ccid.bPINSupport = 0x03;
+						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
+						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
+						usbDevice[reader_index].ccid.dwDefaultClock = 3600;
+						usbDevice[reader_index].ccid.dwMaxDataRate = 115200;
+						usbDevice[reader_index].ccid.bMaxSlotIndex = 4;
 						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
 						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
 						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
