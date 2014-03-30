@@ -1373,6 +1373,20 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		}
 	}
 
+	// MS CCID I/O control code for escape command
+	if (IOCTL_CCID_ESCAPE == dwControlCode)
+	{
+		unsigned int iBytesReturned;
+
+		iBytesReturned = RxLength;
+		old_read_timeout = ccid_descriptor -> readTimeout;
+		ccid_descriptor -> readTimeout = 0;	// Infinite
+		return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
+			&iBytesReturned);
+		ccid_descriptor -> readTimeout = old_read_timeout;
+		*pdwBytesReturned = iBytesReturned;
+	}
+
 	if (IFD_SUCCESS != return_value)
 		*pdwBytesReturned = 0;
 
