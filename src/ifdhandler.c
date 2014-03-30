@@ -1524,6 +1524,15 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 		return_value = ccid_descriptor->dwSlotStatus;
 		goto end;
 	}
+#ifndef __APPLE__
+	// ACR1222 reader is required to read data from interrupt endpoint
+	else if ((ACS_ACR85_PINPAD_READER_PICC == ccid_descriptor->readerID) ||
+		(ACS_ACR1222_DUAL_READER == ccid_descriptor->readerID) ||
+		(ACS_ACR1222_1SAM_DUAL_READER == ccid_descriptor->readerID))
+	{
+		InterruptRead(reader_index, 10);
+	}
+#endif
 
 	/* save the current read timeout computed from card capabilities */
 	oldReadTimeout = ccid_descriptor->readTimeout;
