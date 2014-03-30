@@ -1364,8 +1364,11 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 
 			/* we just transmit the buffer as a CCID Escape command */
 			iBytesReturned = RxLength;
+			old_read_timeout = ccid_descriptor -> readTimeout;
+			ccid_descriptor -> readTimeout = 0;	// Infinite
 			return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
 				&iBytesReturned);
+			ccid_descriptor -> readTimeout = old_read_timeout;
 			*pdwBytesReturned = iBytesReturned;
 		}
 	}
