@@ -588,7 +588,15 @@ again:
 						usbDevice[reader_index].ccid.dwMaxIFSD = dw2i(usb_interface->altsetting->extra, 28);
 						usbDevice[reader_index].ccid.dwDefaultClock = dw2i(usb_interface->altsetting->extra, 10);
 						usbDevice[reader_index].ccid.dwMaxDataRate = dw2i(usb_interface->altsetting->extra, 23);
-						usbDevice[reader_index].ccid.bMaxSlotIndex = usb_interface->altsetting->extra[4];
+
+						// Fix ACR1222 incorrect max slot index
+						if (readerID == ACS_ACR1222_DUAL_READER)
+							usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
+						else if (readerID == ACS_ACR1222_1SAM_DUAL_READER)
+							usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
+						else
+							usbDevice[reader_index].ccid.bMaxSlotIndex = usb_interface->altsetting->extra[4];
+
 						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
 						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
 						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = get_data_rates(reader_index, dev, num);
