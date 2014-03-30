@@ -5,18 +5,32 @@ ACTION!="add", GOTO="pcscd_acsccid_rules_end"
 
 # ACS ACR38U-CCID
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90cc", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR85 PINPad Reader ICC
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8306", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR85 PINPad Reader PICC
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2210", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR122U
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2200", RUN+="/usr/sbin/pcscd --hotplug"
-# ACS ACR125U
+# ACS ACR1222 Dual Reader
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2207", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR1222 1SAM Dual Reader
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="1280", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR125 nPA plus
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2203", RUN+="/usr/sbin/pcscd --hotplug"
-# ACS ACR1281 CL Reader
+# ACS ACR1281 PICC Reader
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="0901", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR1281 Dual Reader
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2208", RUN+="/usr/sbin/pcscd --hotplug"
 
 # non CCID generic (InterfaceClass: 0x00)
+# ACS ACR83U
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90d2", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR88U
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2011", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR128U
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2100", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS APG8201
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8201", RUN+="/usr/sbin/pcscd --hotplug"
 
 # All done
 LABEL="pcscd_acsccid_rules_end"
