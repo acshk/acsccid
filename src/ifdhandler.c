@@ -1549,7 +1549,39 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	if (! (LogLevel & DEBUG_LEVEL_PERIODIC))
 		LogLevel &= ~DEBUG_LEVEL_COMM;
 
-	return_value = CmdGetSlotStatus(reader_index, pcbuffer);
+	// ACR122U v2.00 - v2.04
+	// Simulate bStatus by reading bmSlotIccState from interrupt endpoint
+	if ((ccid_descriptor->readerID == ACS_ACR122U) &&
+		(ccid_descriptor->bcdDevice >= 0x0200) &&
+		(ccid_descriptor->bcdDevice <= 0x0204))
+	{
+		// Get slot index
+		int slotIndex = ccid_descriptor->bCurrentSlotIndex;
+#ifndef __APPLE__
+		InterruptRead(reader_index, 100);
+#endif
+#ifdef __APPLE__
+		pthread_mutex_lock(ccid_descriptor->pbStatusLock);
+#endif
+		// If bStatus is in initial state (0xFF)
+		if (ccid_descriptor->bStatus[slotIndex] == 0xFF)
+		{
+			// Get bStatus from GetSlotStatus
+			return_value = CmdGetSlotStatus(reader_index, pcbuffer);
+			if (return_value == IFD_SUCCESS)
+				ccid_descriptor->bStatus[slotIndex] = pcbuffer[7];
+		}
+		else
+		{
+			pcbuffer[7] = ccid_descriptor->bStatus[slotIndex];
+			return_value = IFD_SUCCESS;
+		}
+#ifdef __APPLE__
+		pthread_mutex_unlock(ccid_descriptor->pbStatusLock);
+#endif
+	}
+	else
+		return_value = CmdGetSlotStatus(reader_index, pcbuffer);
 
 	/* set back the old timeout */
 	ccid_descriptor->readTimeout = oldReadTimeout;

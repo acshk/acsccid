@@ -21,6 +21,10 @@
  * $Id: ccid.h 4280 2009-06-26 14:58:23Z rousseau $
  */
 
+#ifdef __APPLE__
+#include <pthread.h>
+#endif
+
 typedef struct
 {
 	/*
@@ -121,6 +125,18 @@ typedef struct
 	 * 4 = 1.8V
 	 */
 	int bVoltageSupport;
+
+	// bcdDevice
+	unsigned int bcdDevice;
+
+	// Pointer to array of bStatus
+	unsigned char *bStatus;
+
+#ifdef __APPLE__
+	// Lock for array of bStatus
+	pthread_mutex_t *pbStatusLock;
+	pthread_mutex_t bStatusLock;
+#endif
 } _ccid_descriptor;
 
 /* Features from dwFeatures */
