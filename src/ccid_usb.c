@@ -377,6 +377,7 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 					int interface;
 					int num = 0;
 					int readerID = (vendorID << 16) + productID;
+					int numSlots;
 
 #ifdef USE_COMPOSITE_AS_MULTISLOT
 					static int static_interface = 1;
@@ -429,6 +430,8 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 							&& (strcmp(usbDevice[previous_reader_index].filename, dev->filename) == 0)
 							&& usbDevice[previous_reader_index].ccid.bCurrentSlotIndex < usbDevice[previous_reader_index].ccid.bMaxSlotIndex)
 						{
+							int slotIndex;
+
 							/* we reuse the same device
 							 * and the reader is multi-slot */
 							usbDevice[reader_index] = usbDevice[previous_reader_index];
@@ -444,6 +447,15 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 							usbDevice[reader_index].ccid.bCurrentSlotIndex++;
 							usbDevice[reader_index].ccid.dwSlotStatus =
 								IFD_ICC_PRESENT;
+
+							// Get PICC reader index
+							if (((usbDevice[reader_index].ccid.readerID == ACS_ACR1222_DUAL_READER) ||
+								(usbDevice[reader_index].ccid.readerID == ACS_ACR1222_1SAM_DUAL_READER))
+								&& (usbDevice[reader_index].ccid.bCurrentSlotIndex == 1))
+							{
+								*usbDevice[reader_index].ccid.pPiccReaderIndex = reader_index;
+							}
+
 							DEBUG_INFO2("Opening slot: %d",
 								usbDevice[reader_index].ccid.bCurrentSlotIndex);
 							goto end;
@@ -638,17 +650,28 @@ again:
 						usbDevice[reader_index].ccid.bVoltageSupport = usb_interface->altsetting->extra[5];
 					}
 
+					// Get number of slots
+					numSlots = usbDevice[reader_index].ccid.bMaxSlotIndex + 1;
+
 					// Allocate array of bStatus
-					usbDevice[reader_index].ccid.bStatus = (unsigned char *) calloc(usbDevice[reader_index].ccid.bMaxSlotIndex + 1, sizeof(unsigned char));
+					usbDevice[reader_index].ccid.bStatus = (unsigned char *) calloc(numSlots, sizeof(unsigned char));
 					if (usbDevice[reader_index].ccid.bStatus == NULL)
 					{
 						usb_close(dev_handle);
 						DEBUG_CRITICAL("Not enough memory");
 						return STATUS_UNSUCCESSFUL;
 					}
-					
+
 					// Initialize array of bStatus
-					memset(usbDevice[reader_index].ccid.bStatus, 0xFF, (usbDevice[reader_index].ccid.bMaxSlotIndex + 1) * sizeof(unsigned char));
+					memset(usbDevice[reader_index].ccid.bStatus, 0xFF, numSlots * sizeof(unsigned char));
+
+					// Initialize PICC enabled
+					usbDevice[reader_index].ccid.piccEnabled = TRUE;
+					usbDevice[reader_index].ccid.pPiccEnabled = &usbDevice[reader_index].ccid.piccEnabled;
+					
+					// Initialize PICC reader index
+					usbDevice[reader_index].ccid.piccReaderIndex = -1;
+					usbDevice[reader_index].ccid.pPiccReaderIndex = &usbDevice[reader_index].ccid.piccReaderIndex;
 #ifdef __APPLE__
 					// Initialize terminated flag to false
 					usbDevice[reader_index].terminated = FALSE;
@@ -877,7 +900,7 @@ status_t CloseUSB(unsigned int reader_index)
 	usbDevice[reader_index].dirname = NULL;
 	usbDevice[reader_index].filename = NULL;
 	usbDevice[reader_index].interface = 0;
-	usbDevice[reader_index].ccid.bStatus = NULL;	// Array of bStatus
+	usbDevice[reader_index].ccid.bStatus = NULL;		// Array of bStatus
 
 	return STATUS_SUCCESS;
 } /* CloseUSB */

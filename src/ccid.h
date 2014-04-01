@@ -134,9 +134,17 @@ typedef struct
 
 #ifdef __APPLE__
 	// Lock for array of bStatus
-	pthread_mutex_t *pbStatusLock;
 	pthread_mutex_t bStatusLock;
+	pthread_mutex_t *pbStatusLock;
 #endif
+
+	// PICC enabled
+	int piccEnabled;
+	int *pPiccEnabled;
+
+	// PICC reader index
+	int piccReaderIndex;
+	int *pPiccReaderIndex;
 } _ccid_descriptor;
 
 /* Features from dwFeatures */
@@ -241,6 +249,7 @@ int ccid_open_hack_pre(unsigned int reader_index);
 int ccid_open_hack_post(unsigned int reader_index);
 void ccid_error(int error, const char *file, int line, const char *function);
 _ccid_descriptor *get_ccid_descriptor(unsigned int reader_index);
+void EnablePicc(unsigned int reader_index, int enabled);
 
 /* convert a 4 byte integer in USB format into an int */
 #define dw2i(a, x) (unsigned int)((((((a[x+3] << 8) + a[x+2]) << 8) + a[x+1]) << 8) + a[x])

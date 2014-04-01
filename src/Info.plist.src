@@ -51,7 +51,7 @@
 	-->
 
 	<key>ifdDriverOptions</key>
-	<string>0x0000</string>
+	<string>0x00C0</string>
 
 	<!-- Possible values for ifdDriverOptions
 	1: DRIVER_OPTION_CCID_EXCHANGE_AUTHORIZED
@@ -88,6 +88,12 @@
 	 16: power on the card at 3V and then, it 3V fails use 5V
 	 32: power on the card at 1.8V, then 3V and then 5V
 	 48: let the reader decide
+
+	0x40: DRIVER_OPTION_REMOVE_PUPI_FROM_ATR
+		Remove PUPI from ATR if ISO 14443-B card is detected (ACR1222).
+
+	0x80: DRIVER_OPTION_DISABLE_PICC
+		Disable PICC if ICC is inserted (ACR1222).
 
 	Default value: 0
 	-->

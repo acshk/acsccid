@@ -1092,10 +1092,35 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			return_value = CmdPowerOn(reader_index, &nlength, pcbuffer,
 				PowerOnVoltage);
 
+			// Enable/Disable PICC
+			if (DriverOptions & DRIVER_OPTION_DISABLE_PICC)
+			{
+				if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+					(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
+					&& (ccid_descriptor->bCurrentSlotIndex == 0))
+				{
+					int i = 0;
+
+					// Perform cold reset after disabling PICC (Try 10 times)
+					while ((return_value != IFD_SUCCESS) || (nlength == 0))
+					{
+						CmdPowerOff(reader_index);
+						usleep(100 * 1000);
+						nlength = sizeof(pcbuffer);
+						return_value = CmdPowerOn(reader_index, &nlength, pcbuffer,
+							PowerOnVoltage);
+		
+						i++;
+						if (i >= 10)
+							break;
+					}
+				}
+			}
+
 			/* set back the old timeout */
 			ccid_descriptor->readTimeout = oldReadTimeout;
 
-			if (return_value != IFD_SUCCESS)
+			if ((return_value != IFD_SUCCESS) || (nlength == 0))	// ACR1222: No ATR is returned
 			{
 				/* used by GemCore SIM PRO: no card is present */
 				get_ccid_descriptor(reader_index)->dwSlotStatus
@@ -1104,6 +1129,52 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 				DEBUG_CRITICAL("PowerUp failed");
 				return_value = IFD_ERROR_POWER_ACTION;
 				goto end;
+			}
+
+			// Remove PUPI from ATR
+			if (DriverOptions & DRIVER_OPTION_REMOVE_PUPI_FROM_ATR)
+			{
+				if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+					(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
+					&& (ccid_descriptor->bCurrentSlotIndex == 1))
+				{
+					// ATR: 3B 8N 80 01 50 XX XX XX XX ... TCK
+					if ((nlength >= 9) &&
+						(pcbuffer[0] == 0x3B) &&
+						((pcbuffer[1] & 0xF0) == 0x80) &&
+						(pcbuffer[2] == 0x80) &&
+						(pcbuffer[3] == 0x01) &&
+						(pcbuffer[4] == 0x50))
+					{
+						unsigned char numHistBytes;
+						int i;
+
+						// Get number of historical bytes
+						numHistBytes = pcbuffer[1] & 0x0F;
+
+						// Update number of historical bytes
+						// Add 1 byte for MBLI (PC/SC 2.0 part 3)
+						numHistBytes = numHistBytes - 5 + 1;
+						pcbuffer[1] = 0x80 | numHistBytes;
+
+						// Move remained bytes
+						if (nlength > 9)
+							memmove(pcbuffer + 4, pcbuffer + 9, nlength - 9);
+
+						// Update ATR length
+						// Add 1 byte for MBLI (PC/SC 2.0 part 3)
+						nlength = nlength - 5 + 1;
+
+						// Assume MBLI is zero here
+						// Note: MBLI must be taken from response of ATTRIB command
+						pcbuffer[nlength - 2] = 0;
+
+						// Update TCK
+						pcbuffer[nlength - 1] = 0;
+						for (i = 1; i < nlength - 1; i++)
+							pcbuffer[nlength - 1] ^= pcbuffer[i];
+					}
+				}
 			}
 
 			/* Power up successful, set state variable to memorise it */
@@ -1580,6 +1651,22 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 		pthread_mutex_unlock(ccid_descriptor->pbStatusLock);
 #endif
 	}
+	// Enable/disable PICC
+	else if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+		(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
+		&& (ccid_descriptor->bCurrentSlotIndex == 1))
+	{
+		if (*(ccid_descriptor->pPiccEnabled))
+		{
+			return_value = CmdGetSlotStatus(reader_index, pcbuffer);
+		}
+		else
+		{
+			// Return absent if PICC is disabled
+			pcbuffer[7] = CCID_ICC_ABSENT;
+			return_value = IFD_SUCCESS;
+		}
+	}
 	else
 		return_value = CmdGetSlotStatus(reader_index, pcbuffer);
 
@@ -1675,6 +1762,41 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 		}
 	}
 #endif
+
+	// Enable/disable PICC
+	if (DriverOptions & DRIVER_OPTION_DISABLE_PICC)
+	{
+		if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+			(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
+			&& (ccid_descriptor->bCurrentSlotIndex == 0))
+		{
+			int piccReaderIndex = *(ccid_descriptor->pPiccReaderIndex);
+			if (piccReaderIndex >= 0)
+			{
+				// If card is present in ICC slot
+				if (return_value == IFD_ICC_PRESENT)
+				{
+					// Disable PICC
+					if (*(ccid_descriptor->pPiccEnabled))
+					{
+						DEBUG_INFO("Disabling PICC...");
+						EnablePicc(piccReaderIndex, FALSE);
+						*(ccid_descriptor->pPiccEnabled) = FALSE;
+					}
+				}
+				else
+				{
+					if (!*(ccid_descriptor->pPiccEnabled))
+					{
+						// Enable PICC
+						DEBUG_INFO("Enabling PICC...");
+						EnablePicc(piccReaderIndex, TRUE);
+						*(ccid_descriptor->pPiccEnabled) = TRUE;
+					}
+				}
+			}
+		}
+	}
 
 end:
 	DEBUG_PERIODIC2("Card %s",
@@ -1967,4 +2089,3 @@ static unsigned int T1_card_timeout(double f, double d, int TC1,
 
 	return timeout;
 } /* T1_card_timeout  */
-

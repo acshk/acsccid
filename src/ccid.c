@@ -400,6 +400,16 @@ int ccid_open_hack_post(unsigned int reader_index)
 			ccid_descriptor->dwFeatures |= CCID_CLASS_SHORT_APDU;
 			break;
 
+		// Enable PICC
+		case ACS_ACR1222_DUAL_READER:
+		case ACS_ACR1222_1SAM_DUAL_READER:
+			if (ccid_descriptor->bCurrentSlotIndex == 1)
+			{
+				DEBUG_INFO("Enabling PICC...");
+				EnablePicc(reader_index, 1);
+			}
+			break;
+
 		default:
 			break;
 	}
@@ -536,3 +546,40 @@ void ccid_error(int error, const char *file, int line, const char *function)
 
 } /* ccid_error */
 
+// Enable PICC
+void EnablePicc(unsigned int reader_index, int enabled)
+{
+	unsigned char pollingOff[] = { 0xE0, 0x00, 0x00, 0x20, 0x01, 0x7F };
+	unsigned char pollingOn[]  = { 0xE0, 0x00, 0x00, 0x20, 0x01, 0xFF };
+
+	unsigned char antennaOff[] = { 0xFF, 0x00, 0x00, 0x00, 0x04, 0xD4, 0x32, 0x01, 0x02 };
+	unsigned char antennaOn[]  = { 0xFF, 0x00, 0x00, 0x00, 0x04, 0xD4, 0x32, 0x01, 0x03 };
+
+	unsigned char response[300];
+	int responseLen;
+
+	if (enabled)
+	{
+		// Turn ON polling
+		responseLen = sizeof(response);
+		if (CmdEscape(reader_index, pollingOn, sizeof(pollingOn), response, &responseLen) != IFD_SUCCESS)
+			DEBUG_CRITICAL("Polling ON failed");
+
+		// Turn ON antenna
+		responseLen = sizeof(response);
+		if (CmdXfrBlock(reader_index, sizeof(antennaOn), antennaOn, &responseLen, response, T_0) != IFD_SUCCESS)
+			DEBUG_CRITICAL("Antenna ON failed");
+	}
+	else
+	{
+		// Turn OFF polling
+		responseLen = sizeof(response);
+		if (CmdEscape(reader_index, pollingOff, sizeof(pollingOff), response, &responseLen) != IFD_SUCCESS)
+			DEBUG_CRITICAL("Polling OFF failed");
+
+		// Turn OFF antenna
+		responseLen = sizeof(response);
+		if (CmdXfrBlock(reader_index, sizeof(antennaOff), antennaOff, &responseLen, response, T_0) != IFD_SUCCESS)
+			DEBUG_CRITICAL("Antenna OFF failed");
+	}
+}
