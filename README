@@ -19,7 +19,7 @@ Contents
 ----------------
 
 Version: 1.0.2
-Release Date: 17/12/2010
+Release Date: 28/1/2011
 
 Supported Readers
 ACR38U-CCID
@@ -27,15 +27,21 @@ ACR83U
 ACR85 PINPad Reader
 ACR88U
 ACR100-CCID
+ACR100 ICC Reader
+ACR101 ICC Reader
+ACR102 ICC Reader
 ACR122U
 ACR122T
 ACR122U-SAM
 ACR1222 Dual Reader
 ACR1222 1SAM Dual Reader
+ACR1222L 3S CL Reader
 ACR125 nPA plus
 ACR128U
-ACR1281 PICC Reader
-ACR1281 Dual Reader
+ACR1281 CL Reader (qPBOC)
+ACR1281 Dual Reader (qPBOC)
+ACR1281 PICC Reader (BSI)
+ACR1281 Dual Reader (BSI)
 APG8201
 
 Operating Systems
@@ -105,15 +111,15 @@ v1.0.2 (2/2/2010)
 2. Enable polling mode automatically for ACR122U v2.06.
 
 v1.0.2 (17/6/2010)
-1. Add ACR125U support.
+1. Add ACR125 nPA plus support.
 
 v1.0.2 (22/11/2010)
-1. Add ACR1281 PICC Reader support.
+1. Add ACR1281 PICC Reader (BSI) support.
 2. Import Mac OS X 10.6 configure script from ccid-1.3.12.
 
 v1.0.2 (17/12/2010)
 1. Add the following readers support:
-   ACR1281 Dual Reader
+   ACR1281 Dual Reader (qPBOC)
    ACR1222 Dual Reader
    ACR1222 1SAM Dual Reader
    ACR83U
@@ -122,6 +128,21 @@ v1.0.2 (17/12/2010)
 2. Secure PIN Entry (SPE) support for ACR83U requires firmware version 4500 or
    later.
 3. Add SCARD_CTL_CODE(3500) support for sending CCID escape command.
+
+v1.0.2 (28/1/2011)
+1. Add the following readers support:
+   ACR100 ICC Reader
+   ACR101 ICC Reader
+   ACR102 ICC Reader
+   ACR1222L 3S CL Reader
+   ACR1281 CL Reader (qPBOC)
+   ACR1281 Dual Reader (BSI)
+2. Fix a bug that APG8201 and ACR85 cannot receive command properly if command
+   length is greater than 64 bytes.
+3. Set infinite timeout in T=0, Short APDU and Extended APDU exchange.
+4. Simulate ACR1281 Dual Reader (composite device) as multi-slot reader.
+5. Improve performance and stability for ACR122U v2.00 - v2.04.
+6. Replace acx_pthread.m4 with ax_pthread.m4 from autoconf archive.
 
 
 
@@ -147,6 +168,7 @@ v1.0.2 (17/12/2010)
 |-- NEWS
 |-- README
 |-- aclocal.m4
+|-- bootstrap
 |-- config
 |   |-- compile
 |   |-- config.guess
@@ -162,7 +184,7 @@ v1.0.2 (17/12/2010)
 |-- m4
 |   |-- Makefile.am
 |   |-- Makefile.in
-|   `-- acx_pthread.m4
+|   `-- ax_pthread.m4
 `-- src
     |-- Info.plist.src
     |-- Makefile.am
