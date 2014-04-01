@@ -1,1 +1,1 @@
-EXTRA_DIST = acx_pthread.m4
+EXTRA_DIST = ax_pthread.m4
