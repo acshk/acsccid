@@ -19,10 +19,11 @@ Contents
 ----------------
 
 Version: 1.0.2
-Release Date: 21/2/2011
+Release Date: 16/3/2011
 
 Supported Readers
 ACR38U-CCID
+ACR3801
 ACR83U
 ACR85 PINPad Reader
 ACR88U
@@ -158,6 +159,11 @@ v1.0.2 (21/2/2011)
    slot is PICC.
 3. Add firmware version check for ACR1222. The driver options are for ACR1222
    v401 only.
+
+v1.0.2 (16/3/2011)
+1. Fix reader hang problem by checking card status of ACR85 PICC if SW1SW2
+   "63 00" is received.
+2. Add ACR3801 support.
 
 
 
