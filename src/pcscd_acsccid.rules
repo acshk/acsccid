@@ -5,6 +5,8 @@ ACTION!="add", GOTO="pcscd_acsccid_rules_end"
 
 # ACS ACR38U-CCID
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90cc", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR3801
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90d8", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR85 PINPad Reader ICC
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8306", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR101 ICC Reader
