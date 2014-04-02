@@ -409,6 +409,10 @@ int ccid_open_hack_post(unsigned int reader_index)
 				EnablePicc(reader_index, 1);
 			}
 			break;
+		case ACS_ACR85_PINPAD_READER_PICC:
+			DEBUG_INFO("Enabling PICC...");
+			EnablePicc(reader_index, 1);
+			break;
 
 		default:
 			break;
@@ -563,23 +567,31 @@ void EnablePicc(unsigned int reader_index, int enabled)
 		// Turn ON polling
 		responseLen = sizeof(response);
 		if (CmdEscape(reader_index, pollingOn, sizeof(pollingOn), response, &responseLen) != IFD_SUCCESS)
+		{
 			DEBUG_CRITICAL("Polling ON failed");
+		}
 
 		// Turn ON antenna
 		responseLen = sizeof(response);
 		if (CmdXfrBlock(reader_index, sizeof(antennaOn), antennaOn, &responseLen, response, T_0) != IFD_SUCCESS)
+		{
 			DEBUG_CRITICAL("Antenna ON failed");
+		}
 	}
 	else
 	{
 		// Turn OFF polling
 		responseLen = sizeof(response);
 		if (CmdEscape(reader_index, pollingOff, sizeof(pollingOff), response, &responseLen) != IFD_SUCCESS)
+		{
 			DEBUG_CRITICAL("Polling OFF failed");
+		}
 
 		// Turn OFF antenna
 		responseLen = sizeof(response);
 		if (CmdXfrBlock(reader_index, sizeof(antennaOff), antennaOff, &responseLen, response, T_0) != IFD_SUCCESS)
+		{
 			DEBUG_CRITICAL("Antenna OFF failed");
+		}
 	}
 }

@@ -1097,7 +1097,8 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			{
 				if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
 					(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
-					&& (ccid_descriptor->bCurrentSlotIndex == 0))
+					&& (ccid_descriptor->bCurrentSlotIndex == 0) ||
+					(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_ICC))
 				{
 					int i = 0;
 
@@ -1136,7 +1137,8 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			{
 				if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
 					(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
-					&& (ccid_descriptor->bCurrentSlotIndex == 1))
+					&& (ccid_descriptor->bCurrentSlotIndex == 1) ||
+					(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC))
 				{
 					// ATR: 3B 8N 80 01 50 XX XX XX XX ... TCK
 					if ((nlength >= 9) &&
@@ -1654,7 +1656,8 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	// Enable/disable PICC
 	else if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
 		(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
-		&& (ccid_descriptor->bCurrentSlotIndex == 1))
+		&& (ccid_descriptor->bCurrentSlotIndex == 1) ||
+		(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC))
 	{
 		if (*(ccid_descriptor->pPiccEnabled))
 		{
@@ -1768,7 +1771,8 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	{
 		if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
 			(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
-			&& (ccid_descriptor->bCurrentSlotIndex == 0))
+			&& (ccid_descriptor->bCurrentSlotIndex == 0) ||
+			(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_ICC))
 		{
 			int piccReaderIndex = *(ccid_descriptor->pPiccReaderIndex);
 			if (piccReaderIndex >= 0)

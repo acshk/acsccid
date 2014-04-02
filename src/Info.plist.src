@@ -90,10 +90,10 @@
 	 48: let the reader decide
 
 	0x40: DRIVER_OPTION_REMOVE_PUPI_FROM_ATR
-		Remove PUPI from ATR if ISO 14443-B card is detected (ACR1222).
+		Remove PUPI from ATR if ISO 14443-B card is detected (ACR85/ACR1222).
 
 	0x80: DRIVER_OPTION_DISABLE_PICC
-		Disable PICC if ICC is inserted (ACR1222).
+		Disable PICC if ICC is inserted (ACR85/ACR1222).
 
 	Default value: 0
 	-->

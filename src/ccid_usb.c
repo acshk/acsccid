@@ -430,8 +430,6 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 							&& (strcmp(usbDevice[previous_reader_index].filename, dev->filename) == 0)
 							&& usbDevice[previous_reader_index].ccid.bCurrentSlotIndex < usbDevice[previous_reader_index].ccid.bMaxSlotIndex)
 						{
-							int slotIndex;
-
 							/* we reuse the same device
 							 * and the reader is multi-slot */
 							usbDevice[reader_index] = usbDevice[previous_reader_index];
@@ -451,7 +449,8 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 							// Get PICC reader index
 							if (((usbDevice[reader_index].ccid.readerID == ACS_ACR1222_DUAL_READER) ||
 								(usbDevice[reader_index].ccid.readerID == ACS_ACR1222_1SAM_DUAL_READER))
-								&& (usbDevice[reader_index].ccid.bCurrentSlotIndex == 1))
+								&& (usbDevice[reader_index].ccid.bCurrentSlotIndex == 1) ||
+								(usbDevice[reader_index].ccid.readerID == ACS_ACR85_PINPAD_READER_ICC))
 							{
 								*usbDevice[reader_index].ccid.pPiccReaderIndex = reader_index;
 							}
