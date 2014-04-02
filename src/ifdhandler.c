@@ -1246,15 +1246,62 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 	RESPONSECODE return_value;
 	unsigned int rx_length;
 	int reader_index;
+	int slot_index;
+	_ccid_descriptor *ccid_descriptor;
+	unsigned char pcbuffer[SIZE_GET_SLOT_STATUS];
 
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
 
 	DEBUG_INFO3("%s (lun: %X)", CcidSlots[reader_index].readerName, Lun);
 
+	ccid_descriptor = get_ccid_descriptor(reader_index);
+	slot_index = ccid_descriptor->bCurrentSlotIndex;
+
+	// Avoid to transmit APDU if no card is inserted to ACR85 PICC
+	if (ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC)
+	{
+		unsigned char bStatus;
+#ifdef __APPLE__
+		pthread_mutex_lock(ccid_descriptor->pbStatusLock);
+#endif
+		bStatus = ccid_descriptor->bStatus[slot_index];
+#ifdef __APPLE__
+		pthread_mutex_unlock(ccid_descriptor->pbStatusLock);
+#endif
+		if (bStatus == CCID_ICC_ABSENT)
+			return IFD_ICC_NOT_PRESENT;
+	}
+
 	rx_length = *RxLength;
 	return_value = CmdXfrBlock(reader_index, TxLength, TxBuffer, &rx_length,
 		RxBuffer, SendPci.Protocol);
+
+	if (IFD_SUCCESS == return_value)
+	{
+		// Check card status of ACR85 PICC if SW1SW2 "63 00" is received
+		if (ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC)
+		{
+			if ((rx_length >= 2) &&
+				(RxBuffer[0] == 0x63) &&
+				(RxBuffer[1] == 0x00))
+			{
+				if (CmdGetSlotStatus(reader_index, pcbuffer) == IFD_SUCCESS)
+				{
+#ifdef __APPLE__
+					pthread_mutex_lock(ccid_descriptor->pbStatusLock);
+#endif
+					ccid_descriptor->bStatus[slot_index] = (pcbuffer[7] & CCID_ICC_STATUS_MASK);
+#ifdef __APPLE__
+					pthread_mutex_unlock(ccid_descriptor->pbStatusLock);
+#endif
+					if (ccid_descriptor->bStatus[slot_index] == CCID_ICC_ABSENT)
+						return_value = IFD_ICC_NOT_PRESENT;
+				}
+			}
+		}
+	}
+
 	if (IFD_SUCCESS == return_value)
 		*RxLength = rx_length;
 	else
