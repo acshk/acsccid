@@ -35,6 +35,8 @@
 #include "commands.h"
 #include "ccid_usb.h"
 
+static int GetFirmwareVersion(unsigned int reader_index);
+
 /*****************************************************************************
  *
  *					ccid_open_hack_pre
@@ -403,6 +405,9 @@ int ccid_open_hack_post(unsigned int reader_index)
 		// Enable PICC
 		case ACS_ACR1222_DUAL_READER:
 		case ACS_ACR1222_1SAM_DUAL_READER:
+			DEBUG_INFO("Getting firmware version...");
+			ccid_descriptor->firmwareVersion = GetFirmwareVersion(reader_index);
+			DEBUG_INFO2("ACR1222: %d", ccid_descriptor->firmwareVersion);
 			if (ccid_descriptor->bCurrentSlotIndex == 1)
 			{
 				DEBUG_INFO("Enabling PICC...");
@@ -594,4 +599,23 @@ void EnablePicc(unsigned int reader_index, int enabled)
 			DEBUG_CRITICAL("Antenna OFF failed");
 		}
 	}
+}
+
+// Get firmware version (ACR1222)
+static int GetFirmwareVersion(unsigned int reader_index)
+{
+	int firmwareVersion = -1;
+
+	unsigned char getFirmwareVersion[] = { 0xE0, 0x00, 0x00, 0x18, 0x00 };
+	unsigned char response[300];
+	int responseLen;
+
+	responseLen = sizeof(response);
+	if (CmdEscape(reader_index, getFirmwareVersion, sizeof(getFirmwareVersion), response, &responseLen) == IFD_SUCCESS)
+	{
+		if (responseLen > 5)
+			sscanf((char *) (response + 5), "ACR1222U_V%d", &firmwareVersion);
+	}
+
+	return firmwareVersion;
 }

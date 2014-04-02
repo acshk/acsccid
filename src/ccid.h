@@ -138,6 +138,9 @@ typedef struct
 	pthread_mutex_t *pbStatusLock;
 #endif
 
+	// Firmware version (ACR1222)
+	int firmwareVersion;
+
 	// PICC enabled
 	int piccEnabled;
 	int *pPiccEnabled;

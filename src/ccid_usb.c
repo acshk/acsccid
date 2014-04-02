@@ -694,6 +694,9 @@ again:
 					// Initialize array of bStatus
 					memset(usbDevice[reader_index].ccid.bStatus, 0xFF, numSlots * sizeof(unsigned char));
 
+					// Initialize firmware version (ACR1222)
+					usbDevice[reader_index].ccid.firmwareVersion = -1;
+
 					// Simulate ACR85 as multi-slot reader
 					if (readerID != ACS_ACR85_PINPAD_READER_PICC)
 					{
