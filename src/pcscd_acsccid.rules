@@ -7,8 +7,6 @@ ACTION!="add", GOTO="pcscd_acsccid_rules_end"
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90cc", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR85 PINPad Reader ICC
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8306", RUN+="/usr/sbin/pcscd --hotplug"
-# ACS ACR85 PINPad Reader PICC
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2210", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR101 ICC Reader
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="1204", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR100 ICC Reader

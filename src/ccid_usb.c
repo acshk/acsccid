@@ -457,7 +457,34 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 
 							DEBUG_INFO2("Opening slot: %d",
 								usbDevice[reader_index].ccid.bCurrentSlotIndex);
-							goto end;
+
+							// Simulate ACR85 as multi-slot reader
+							if (usbDevice[reader_index].ccid.readerID == ACS_ACR85_PINPAD_READER_ICC)
+							{
+								struct usb_device *piccDevice;
+
+								// Reset number of opened slots
+								*usbDevice[reader_index].nb_opened_slots = 1;
+
+								// Find PICC
+								dev = NULL;
+								for (piccDevice = bus->devices; piccDevice; piccDevice = piccDevice->next)
+								{
+									if ((piccDevice->descriptor.idVendor << 16) + piccDevice->descriptor.idProduct == ACS_ACR85_PINPAD_READER_PICC)
+									{
+										dev = piccDevice;
+										break;
+									}
+								}
+
+								if (dev == NULL)
+								{
+									DEBUG_CRITICAL("ACR85 PICC not found.");
+									return STATUS_UNSUCCESSFUL;
+								}
+							}
+							else
+								goto end;
 						}
 						else
 						{
@@ -637,6 +664,9 @@ again:
 							usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
 						else if (readerID == ACS_ACR1222_1SAM_DUAL_READER)
 							usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
+						// Simulate ACR85 as multi-slot reader
+						else if (readerID == ACS_ACR85_PINPAD_READER_ICC)
+							usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
 						else
 							usbDevice[reader_index].ccid.bMaxSlotIndex = usb_interface->altsetting->extra[4];
 
@@ -664,13 +694,17 @@ again:
 					// Initialize array of bStatus
 					memset(usbDevice[reader_index].ccid.bStatus, 0xFF, numSlots * sizeof(unsigned char));
 
-					// Initialize PICC enabled
-					usbDevice[reader_index].ccid.piccEnabled = TRUE;
-					usbDevice[reader_index].ccid.pPiccEnabled = &usbDevice[reader_index].ccid.piccEnabled;
-					
-					// Initialize PICC reader index
-					usbDevice[reader_index].ccid.piccReaderIndex = -1;
-					usbDevice[reader_index].ccid.pPiccReaderIndex = &usbDevice[reader_index].ccid.piccReaderIndex;
+					// Simulate ACR85 as multi-slot reader
+					if (readerID != ACS_ACR85_PINPAD_READER_PICC)
+					{
+						// Initialize PICC enabled
+						usbDevice[reader_index].ccid.piccEnabled = TRUE;
+						usbDevice[reader_index].ccid.pPiccEnabled = &usbDevice[reader_index].ccid.piccEnabled;
+
+						// Initialize PICC reader index
+						usbDevice[reader_index].ccid.piccReaderIndex = -1;
+						usbDevice[reader_index].ccid.pPiccReaderIndex = &usbDevice[reader_index].ccid.piccReaderIndex;
+					}
 #ifdef __APPLE__
 					// Initialize terminated flag to false
 					usbDevice[reader_index].terminated = FALSE;
