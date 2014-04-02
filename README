@@ -19,7 +19,7 @@ Contents
 ----------------
 
 Version: 1.0.2
-Release Date: 14/2/2011
+Release Date: 21/2/2011
 
 Supported Readers
 ACR38U-CCID
@@ -150,6 +150,14 @@ v1.0.2 (14/2/2011)
        Remove PUPI from ATR if ISO 14443-B card is detected (ACR1222).
    DRIVER_OPTION_DISABLE_PICC
        Disable PICC if ICC is inserted (ACR1222).
+
+v1.0.2 (21/2/2011)
+1. Add DRIVER_OPTION_REMOVE_PUPI_FROM_ATR and DRIVER_OPTION_DISABLE_PICC driver
+   options to ACR85.
+2. Simulate ACR85 as multi-slot reader. The first slot is ICC and the second
+   slot is PICC.
+3. Add firmware version check for ACR1222. The driver options are for ACR1222
+   v401 only.
 
 
 
