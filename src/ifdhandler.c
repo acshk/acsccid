@@ -1258,19 +1258,17 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 	ccid_descriptor = get_ccid_descriptor(reader_index);
 	slot_index = ccid_descriptor->bCurrentSlotIndex;
 
-	// Avoid to transmit APDU if no card is inserted to ACR85 PICC
+	// Fix reader hang problem by checking card status of ACR85 PICC before exchanging APDU
 	if (ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC)
 	{
-		unsigned char bStatus;
-#ifdef __APPLE__
-		pthread_mutex_lock(ccid_descriptor->pbStatusLock);
-#endif
-		bStatus = ccid_descriptor->bStatus[slot_index];
-#ifdef __APPLE__
-		pthread_mutex_unlock(ccid_descriptor->pbStatusLock);
-#endif
-		if (bStatus == CCID_ICC_ABSENT)
-			return IFD_ICC_NOT_PRESENT;
+		if (CmdGetSlotStatus(reader_index, pcbuffer) == IFD_SUCCESS)
+		{
+			if ((pcbuffer[7] & CCID_ICC_STATUS_MASK) == CCID_ICC_ABSENT)
+			{
+				return_value = IFD_ICC_NOT_PRESENT;
+				goto err;
+			}
+		}
 	}
 
 	rx_length = *RxLength;
@@ -1288,20 +1286,14 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 			{
 				if (CmdGetSlotStatus(reader_index, pcbuffer) == IFD_SUCCESS)
 				{
-#ifdef __APPLE__
-					pthread_mutex_lock(ccid_descriptor->pbStatusLock);
-#endif
-					ccid_descriptor->bStatus[slot_index] = (pcbuffer[7] & CCID_ICC_STATUS_MASK);
-#ifdef __APPLE__
-					pthread_mutex_unlock(ccid_descriptor->pbStatusLock);
-#endif
-					if (ccid_descriptor->bStatus[slot_index] == CCID_ICC_ABSENT)
+					if ((pcbuffer[7] & CCID_ICC_STATUS_MASK) == CCID_ICC_ABSENT)
 						return_value = IFD_ICC_NOT_PRESENT;
 				}
 			}
 		}
 	}
 
+err:
 	if (IFD_SUCCESS == return_value)
 		*RxLength = rx_length;
 	else
