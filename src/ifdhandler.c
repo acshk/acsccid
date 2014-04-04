@@ -574,6 +574,17 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 	int convention;
 	int reader_index;
 
+	BYTE Fl;
+	BYTE Dl;
+	DWORD numProtocols;
+	DWORD protocolTypes;
+	BYTE tmpProtocol;
+	int specificMode;
+	int i;
+
+	UCHAR atrBuffer[MAX_ATR_SIZE];
+	DWORD atrLen;
+
 	/* Set ccid desc params */
 	CcidDesc *ccid_slot;
 	_ccid_descriptor *ccid_desc;
@@ -625,6 +636,40 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 		}
 	}
 
+	// Get Fl/Dl
+	Fl = 1;
+	Dl = 1;
+	(void)ATR_GetIntegerValue(&atr, ATR_INTEGER_VALUE_FI, &Fl);
+	(void)ATR_GetIntegerValue(&atr, ATR_INTEGER_VALUE_DI, &Dl);
+
+	// Count number of protocols
+	numProtocols = 0;
+	protocolTypes = 0;
+	for (i = 0; i < ATR_MAX_PROTOCOLS; i++)
+	{
+		if (atr.ib[i][ATR_INTERFACE_BYTE_TD].present)
+		{
+			tmpProtocol = atr.ib[i][ATR_INTERFACE_BYTE_TD].value & 0x0F;
+			if (((1 << tmpProtocol) & protocolTypes) == 0)
+				numProtocols++;
+
+			protocolTypes |= 1 << tmpProtocol;
+		}
+	}
+
+	// Check if card is specific mode or not
+	if ((atr.ib[1][ATR_INTERFACE_BYTE_TA].present) ||
+		((numProtocols <= 1) && (Fl == 1) && (Dl == 1)))
+	{
+		DEBUG_COMM("Specific mode");
+		specificMode = TRUE;
+	}
+	else
+	{
+		DEBUG_COMM("Negotiable mode");
+		specificMode = FALSE;
+	}
+
 	/* TCi (i>2) indicates CRC instead of LRC */
 	if (SCARD_PROTOCOL_T1 == Protocol)
 	{
@@ -668,7 +713,6 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 		if (atr.ib[0][ATR_INTERFACE_BYTE_TA].present)
 		{
 			unsigned int card_baudrate;
-			unsigned int default_baudrate;
 			double f, d;
 
 			(void)ATR_GetParameter(&atr, ATR_PARAMETER_D, &d);
@@ -686,77 +730,55 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 			card_baudrate = (unsigned int) (1000 * ccid_desc->dwDefaultClock
 				* d / f);
 
-			default_baudrate = (unsigned int) (1000 * ccid_desc->dwDefaultClock
-				* ATR_DEFAULT_D / ATR_DEFAULT_F);
-
-			/* if the card does not try to lower the default speed */
-			if ((card_baudrate > default_baudrate)
-				/* and the reader is fast enough */
-				&& (card_baudrate <= ccid_desc->dwMaxDataRate))
+			// Fix a problem that the optimal baud rate is not selected properly
+			if (card_baudrate <= ccid_desc->dwMaxDataRate)
 			{
-				/* the reader has no baud rates table */
-				if ((NULL == ccid_desc->arrayOfSupportedDataRates)
-					/* or explicitely support it */
-					|| find_baud_rate(card_baudrate,
-						ccid_desc->arrayOfSupportedDataRates))
-				{
-					pps[1] |= 0x10; /* PTS1 presence */
-					pps[2] = atr.ib[0][ATR_INTERFACE_BYTE_TA].value;
+				pps[1] |= 0x10; /* PTS1 presence */
+				pps[2] = atr.ib[0][ATR_INTERFACE_BYTE_TA].value;
 
-					DEBUG_COMM2("Set speed to %d bauds", card_baudrate);
-				}
-				else
-				{
-					DEBUG_COMM2("Reader does not support %d bauds",
-						card_baudrate);
-
-					/* TA2 present -> specific mode: the card is supporting
-					 * only the baud rate specified in TA1 but reader does not
-					 * support this value. Reject the card. */
-					if (atr.ib[1][ATR_INTERFACE_BYTE_TA].present)
-						return IFD_COMMUNICATION_ERROR;
-				}
+				DEBUG_COMM2("Set speed to %d bauds", card_baudrate);
 			}
 			else
 			{
-				/* the card is too fast for the reader */
-				if ((card_baudrate > ccid_desc->dwMaxDataRate +2)
-					/* but TA1 <= 97 */
-					&& (atr.ib[0][ATR_INTERFACE_BYTE_TA].value <= 0x97)
-					/* and the reader has a baud rate table */
-					&& ccid_desc->arrayOfSupportedDataRates)
+				unsigned char old_TA1;
+
+				// Select default Fl/Dl
+				pps[1] |= 0x10; /* PTS1 presence */
+				pps[2] = 0x11;
+
+				old_TA1 = atr.ib[0][ATR_INTERFACE_BYTE_TA].value;
+				while (atr.ib[0][ATR_INTERFACE_BYTE_TA].value > 0x11)
 				{
-					unsigned char old_TA1;
+					/* use a lower TA1 */
+					atr.ib[0][ATR_INTERFACE_BYTE_TA].value--;
 
-					old_TA1 = atr.ib[0][ATR_INTERFACE_BYTE_TA].value;
-					while (atr.ib[0][ATR_INTERFACE_BYTE_TA].value > 0x94)
-					{
-						/* use a lower TA1 */
-						atr.ib[0][ATR_INTERFACE_BYTE_TA].value--;
+					(void)ATR_GetParameter(&atr, ATR_PARAMETER_D, &d);
+					(void)ATR_GetParameter(&atr, ATR_PARAMETER_F, &f);
 
-						(void)ATR_GetParameter(&atr, ATR_PARAMETER_D, &d);
-						(void)ATR_GetParameter(&atr, ATR_PARAMETER_F, &f);
+					/* Baudrate = f x D/F */
+					card_baudrate = (unsigned int) (1000 *
+						ccid_desc->dwDefaultClock * d / f);
 
-						/* Baudrate = f x D/F */
-						card_baudrate = (unsigned int) (1000 *
-							ccid_desc->dwDefaultClock * d / f);
-
-						if (find_baud_rate(card_baudrate,
+					/* the reader has no baud rates table */
+					if ((ccid_desc->arrayOfSupportedDataRates == NULL) &&
+						(card_baudrate <= ccid_desc->dwMaxDataRate)
+						/* or explicitely support it */
+						|| (ccid_desc->arrayOfSupportedDataRates != NULL) &&
+						find_baud_rate(card_baudrate,
 							ccid_desc->arrayOfSupportedDataRates))
-						{
-							pps[1] |= 0x10; /* PTS1 presence */
-							pps[2] = atr.ib[0][ATR_INTERFACE_BYTE_TA].value;
+					{
+						pps[1] |= 0x10; /* PTS1 presence */
+						pps[2] = atr.ib[0][ATR_INTERFACE_BYTE_TA].value;
 
-							DEBUG_COMM2("Set adapted speed to %d bauds",
-								card_baudrate);
+						DEBUG_COMM2("Set adapted speed to %d bauds",
+							card_baudrate);
 
-							break;
-						}
+						break;
 					}
-
-					/* restore original TA1 value */
-					atr.ib[0][ATR_INTERFACE_BYTE_TA].value = old_TA1;
 				}
+
+				/* restore original TA1 value */
+				atr.ib[0][ATR_INTERFACE_BYTE_TA].value = old_TA1;
 			}
 		}
 	}
@@ -778,10 +800,10 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 	/* Generate PPS */
 	pps[0] = 0xFF;
 
+again:
 	/* Automatic PPS made by the ICC? */
 	if ((! (ccid_desc->dwFeatures & CCID_CLASS_AUTO_PPS_CUR))
-		/* TA2 absent: negociable mode */
-		&& (! atr.ib[1][ATR_INTERFACE_BYTE_TA].present))
+		&& (!specificMode))	// Negotiable mode 
 	{
 		int default_protocol;
 
@@ -792,6 +814,7 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 		 * or a TA1/PPS1 is present */
 		if (((pps[1] & 0x0F) != default_protocol) || (PPS_HAS_PPS1(pps)))
 		{
+			unsigned char pps1;
 #ifdef O2MICRO_OZ776_PATCH
 			if ((OZ776 == ccid_desc->readerID)
 				|| (OZ776_7772 == ccid_desc->readerID))
@@ -804,11 +827,29 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 			}
 			else
 #endif
-			if (PPS_Exchange(reader_index, pps, &len, &pps[2]) != PPS_OK)
+			if (PPS_Exchange(reader_index, pps, &len, &pps1) != PPS_OK)
 			{
 				DEBUG_INFO("PPS_Exchange Failed");
 
-				return IFD_ERROR_PTS_FAILURE;
+				if (pps[2] != 0x11)
+				{
+					RESPONSECODE ret;
+
+					// Cold reset
+					atrLen = sizeof(atrBuffer);
+					(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, atrBuffer, &atrLen);
+					usleep(100 * 1000);
+					atrLen = sizeof(atrBuffer);
+					ret = IFDHPowerICC(Lun, IFD_POWER_UP, atrBuffer, &atrLen);
+					if (ret != IFD_SUCCESS)
+						return ret;
+
+					// Try default Fl/Dl
+					pps[2] = 0x11;
+					goto again;
+				}
+				else
+					return IFD_ERROR_PTS_FAILURE;
 			}
 		}
 	}
@@ -904,9 +945,33 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 
 		DEBUG_COMM2("Timeout: %d seconds", ccid_desc->readTimeout);
 
-		ret = SetParameters(reader_index, 1, sizeof(param), param);
-		if (IFD_SUCCESS != ret)
-			return ret;
+		// Set parameters if not specific mode
+		if (!specificMode)
+		{
+			ret = SetParameters(reader_index, 1, sizeof(param), param);
+			if (IFD_SUCCESS != ret)
+			{
+				DEBUG_INFO("SetParameters (T1) Failed");
+
+				if (param[0] != 0x11)
+				{
+					// Cold reset
+					atrLen = sizeof(atrBuffer);
+					(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, atrBuffer, &atrLen);
+					usleep(100 * 1000);
+					atrLen = sizeof(atrBuffer);
+					ret = IFDHPowerICC(Lun, IFD_POWER_UP, atrBuffer, &atrLen);
+					if (ret != IFD_SUCCESS)
+						return ret;
+
+					// Try default Fl/Dl
+					pps[2] = 0x11;
+					goto again;
+				}
+				else
+					return ret;
+			}
+		}
 	}
 	else
 	/* T=0 */
@@ -946,9 +1011,33 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 		DEBUG_COMM2("Communication timeout: %d seconds",
 			ccid_desc->readTimeout);
 
-		ret = SetParameters(reader_index, 0, sizeof(param), param);
-		if (IFD_SUCCESS != ret)
-			return ret;
+		// Set parameters if not specific mode
+		if (!specificMode)
+		{
+			ret = SetParameters(reader_index, 0, sizeof(param), param);
+			if (IFD_SUCCESS != ret)
+			{
+				DEBUG_INFO("SetParameters (T0) Failed");
+
+				if (param[0] != 0x11)
+				{
+					// Cold reset
+					atrLen = sizeof(atrBuffer);
+					(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, atrBuffer, &atrLen);
+					usleep(100 * 1000);
+					atrLen = sizeof(atrBuffer);
+					ret = IFDHPowerICC(Lun, IFD_POWER_UP, atrBuffer, &atrLen);
+					if (ret != IFD_SUCCESS)
+						return ret;
+
+					// Try default Fl/Dl
+					pps[2] = 0x11;
+					goto again;
+				}
+				else
+					return ret;
+			}
+		}
 	}
 
 	/* set IFSC & IFSD in T=1 */
