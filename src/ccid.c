@@ -45,7 +45,7 @@ static int GetFirmwareVersion(unsigned int reader_index);
 int ccid_open_hack_pre(unsigned int reader_index)
 {
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
-	int doInterruptRead = 1;
+	int doInterruptRead = 0;	// Disable InterruptRead
 	int i;
 
 	switch (ccid_descriptor->readerID)
@@ -71,11 +71,7 @@ int ccid_open_hack_pre(unsigned int reader_index)
 			doInterruptRead = 0;
 			break;
 
-		default:
-			// Disable InterruptRead for all ACS CCID readers
-			// ACR88U and ACR128U does not timeout on Mac OS X
-			doInterruptRead = 0;
-
+		case ACS_ACR122U:
 			// Enable polling mode (ACR122 v2.06)
 			for (i = 0; i < 10; i++)
 			{
