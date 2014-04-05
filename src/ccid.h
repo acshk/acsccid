@@ -217,8 +217,10 @@ typedef struct
 #define ACS_ACR83U						0x072f90d2
 #define ACS_APG8201						0x072f8201
 #define ACS_ACR1281_DUAL_READER_QPBOC	0x072f2208
+#define ACS_ACR1281_PICC_READER_BSI		0x072f0901
 #define ACS_ACR1281_DUAL_READER_BSI		0x072f220a
 #define ACS_ACR122U						0x072f2200
+#define ACS_ACR1281_1S_DUAL_READER		0x072f2224
 
 /*
  * The O2Micro OZ776S reader has a wrong USB descriptor
