@@ -619,7 +619,7 @@ again:
 						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
 						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
 						usbDevice[reader_index].ccid.dwDefaultClock = 3600;
-						usbDevice[reader_index].ccid.dwMaxDataRate = 115200;
+						usbDevice[reader_index].ccid.dwMaxDataRate = 116129;
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 4;
 						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
 						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
@@ -637,7 +637,7 @@ again:
 						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
 						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
 						usbDevice[reader_index].ccid.dwDefaultClock = 3600;
-						usbDevice[reader_index].ccid.dwMaxDataRate = 115200;
+						usbDevice[reader_index].ccid.dwMaxDataRate = 116129;
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
 						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
 						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
