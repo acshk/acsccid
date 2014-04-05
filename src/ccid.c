@@ -416,6 +416,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 			break;
 
 		case ACS_ACR128U:
+		case ACS_ACR1281_1S_DUAL_READER:
 			// Adjust features
 			if (ccid_descriptor->bCurrentSlotIndex == 1)
 				ccid_descriptor->dwFeatures = 0x0002047A;	// Contactless
