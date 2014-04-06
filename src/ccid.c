@@ -416,15 +416,28 @@ int ccid_open_hack_post(unsigned int reader_index)
 
 		case ACS_ACR1222_DUAL_READER:
 		case ACS_ACR1222_1SAM_DUAL_READER:
-			DEBUG_INFO("Getting firmware version...");
-			ccid_descriptor->firmwareVersion = GetFirmwareVersion(reader_index);
-			DEBUG_INFO2("ACR1222: %d", ccid_descriptor->firmwareVersion);
-			if (ccid_descriptor->bCurrentSlotIndex == 1)
 			{
-				DEBUG_INFO("Enabling PICC...");
-				EnablePicc(reader_index, 1);
+				char firmwareVersion[30];
+				unsigned int firmwareVersionLen = sizeof(firmwareVersion);
+
+				DEBUG_INFO("Getting ACR1222 firmware version...");
+				if (ACR1222_GetFirmwareVersion(reader_index, firmwareVersion, &firmwareVersionLen))
+				{
+					DEBUG_INFO2("ACR1222 firmware version: %s", firmwareVersion);
+
+					ccid_descriptor->firmwareFixEnabled = (strcmp(firmwareVersion, "ACR1222U_V401") == 0);
+					DEBUG_INFO2("Firmware fix enabled: %d", ccid_descriptor->firmwareFixEnabled);
+
+					if ((ccid_descriptor->firmwareFixEnabled) &&
+						(ccid_descriptor->bCurrentSlotIndex == 1))
+					{
+						DEBUG_INFO("Enabling PICC...");
+						EnablePicc(reader_index, 1);
+					}
+				}
 			}
 			break;
+
 		case ACS_ACR85_PINPAD_READER_PICC:
 			DEBUG_INFO("Enabling PICC...");
 			EnablePicc(reader_index, 1);
