@@ -737,7 +737,6 @@ again:
 						return STATUS_UNSUCCESSFUL;
 					}
 #endif
-					DEBUG_INFO2("bMaxSlotIndex: %d", usbDevice[reader_index].ccid.bMaxSlotIndex);
 					goto end;
 				}
 			}
