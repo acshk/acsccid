@@ -700,6 +700,13 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 		}
 	}
 
+	// Check if card supports this protocol (Mac OS X)
+	if (!(protocolTypes & Protocol))
+	{
+		DEBUG_COMM2("T=%d not supported", Protocol-SCARD_PROTOCOL_T0);
+		return IFD_ERROR_PTS_FAILURE;
+	}
+
 	// Check if card is specific mode or not
 	if ((atr.ib[1][ATR_INTERFACE_BYTE_TA].present) ||
 		((numProtocols <= 1) && (Fl == 1) && (Dl == 1)))
