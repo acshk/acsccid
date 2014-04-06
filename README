@@ -22,9 +22,10 @@ Contents
 ----------------
 
 Version: 1.0.3
-Release Date: 24/6/2011
+Release Date: 20/7/2011
 
 Supported Readers
+ACR33 ICC Reader
 ACR38U-CCID
 ACR3801
 ACR83U
@@ -198,6 +199,10 @@ v1.0.3 (24/6/2011)
 3. Fix problem using pcsc-lite 1.7.3 or later header files.
 4. Add SCARD_CTL_CODE(2079) support for sending escape command to ACR1222,
    ACR128 and ACR1281 readers.
+
+v1.0.3 (20/7/2011)
+1. Add ACR33 ICC Reader support.
+2. Add firmware version check for ACR85.
 
 
 
