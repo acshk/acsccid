@@ -22,7 +22,7 @@ Contents
 ----------------
 
 Version: 1.0.3
-Release Date: 8/6/2011
+Release Date: 23/6/2011
 
 Supported Readers
 ACR38U-CCID
@@ -48,6 +48,7 @@ ACR1281 Dual Reader (qPBOC)
 ACR1281 PICC Reader (BSI)
 ACR1281 Dual Reader (BSI)
 ACR1281 1S Dual Reader
+ACR1281 2S CL Reader
 APG8201
 
 Operating Systems
@@ -189,6 +190,12 @@ v1.0.3 (8/6/2011)
 9. Add the following readers support:
    ACR1281 PICC Reader (qPBOC)
    ACR1281 1S Dual Reader
+
+v1.0.3 (23/6/2011)
+1. Add ACR1281 2S CL Reader support.
+2. Correct the value of CCID features and maximum data rate of ACR1281 1S Dual
+   Reader.
+3. Fix problem using pcsc-lite 1.7.3 or later header files.
 
 
 
