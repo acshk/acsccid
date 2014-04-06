@@ -388,13 +388,32 @@ int ccid_open_hack_post(unsigned int reader_index)
 
 		case ACS_APG8201:
 			ccid_descriptor->wLcdLayout = 0x0210;
-		case ACS_ACR85_PINPAD_READER_ICC:
+
 			// APG8201 uses short APDU exchange
 			ccid_descriptor->dwFeatures &= ~CCID_CLASS_EXCHANGE_MASK;
 			ccid_descriptor->dwFeatures |= CCID_CLASS_SHORT_APDU;
 			break;
 
-		// Enable PICC
+		case ACS_ACR85_PINPAD_READER_ICC:
+			{
+				unsigned int firmwareVersion;
+
+				// ACR85 ICC uses short APDU exchange
+				ccid_descriptor->dwFeatures &= ~CCID_CLASS_EXCHANGE_MASK;
+				ccid_descriptor->dwFeatures |= CCID_CLASS_SHORT_APDU;
+
+				DEBUG_INFO("Getting ACR85 ICC firmware version...");
+				if (ACR83_GetFirmwareVersion(reader_index, &firmwareVersion))
+				{
+					DEBUG_INFO2("ACR85 ICC firmware version: 0x%04X", firmwareVersion);
+
+					// Set firmware fix enabled
+					ccid_descriptor->firmwareFixEnabled = (firmwareVersion == 0x0001);
+					DEBUG_INFO2("Firmware fix enabled: %d", ccid_descriptor->firmwareFixEnabled);
+				}
+			}
+			break;
+
 		case ACS_ACR1222_DUAL_READER:
 		case ACS_ACR1222_1SAM_DUAL_READER:
 			DEBUG_INFO("Getting firmware version...");
