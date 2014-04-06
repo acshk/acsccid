@@ -40,6 +40,8 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2208", RUN+="/usr
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="0901", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR1281 Dual Reader (BSI)
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="220a", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR1281 1S PICC Reader
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2220", RUN+="/usr/sbin/pcscd --hotplug"
 
 # non CCID generic (InterfaceClass: 0x00)
 # ACS ACR83U
