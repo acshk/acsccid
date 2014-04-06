@@ -2,7 +2,8 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = m4 src
 
-EXTRA_DIST = MacOSX/configure \
+EXTRA_DIST = bootstrap \
+	MacOSX/configure \
 	MacOSX/convert_reader_h.pl \
 	MacOSX/debuglog.h \
 	MacOSX/ifdhandler.h \
