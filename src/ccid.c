@@ -439,8 +439,25 @@ int ccid_open_hack_post(unsigned int reader_index)
 			break;
 
 		case ACS_ACR85_PINPAD_READER_PICC:
-			DEBUG_INFO("Enabling PICC...");
-			EnablePicc(reader_index, 1);
+			{
+				char firmwareVersion[30];
+				unsigned int firmwareVersionLen = sizeof(firmwareVersion);
+
+				DEBUG_INFO("Getting ACR85 PICC firmware version...");
+				if (ACR1222_GetFirmwareVersion(reader_index, firmwareVersion, &firmwareVersionLen))
+				{
+					DEBUG_INFO2("ACR85 PICC firmware version: %s", firmwareVersion);
+
+					ccid_descriptor->firmwareFixEnabled = (strcmp(firmwareVersion, "ACR1222U_V402") == 0);
+					DEBUG_INFO2("Firmware fix enabled: %d", ccid_descriptor->firmwareFixEnabled);
+
+					if (ccid_descriptor->firmwareFixEnabled)
+					{
+						DEBUG_INFO("Enabling PICC...");
+						EnablePicc(reader_index, 1);
+					}
+				}
+			}
 			break;
 
 		case ACS_ACR88U:
