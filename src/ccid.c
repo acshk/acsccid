@@ -440,6 +440,17 @@ int ccid_open_hack_post(unsigned int reader_index)
 			}
 			break;
 
+		case ACS_ACR1281_2S_CL_READER:
+			// Adjust features and maximum data rate
+			if (ccid_descriptor->bCurrentSlotIndex == 1)
+				ccid_descriptor->dwFeatures = 0x0004047A;	// Contactless
+			else
+			{
+				ccid_descriptor->dwFeatures = 0x000204BA;	// SAM
+				ccid_descriptor->dwMaxDataRate = 125000;
+			}
+			break;
+
 		default:
 			break;
 	}
