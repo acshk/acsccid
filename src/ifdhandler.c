@@ -1805,6 +1805,42 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			}
 		}
 	}
+	else
+	{
+		// ACR128 I/O control code for escape command
+		if (IOCTL_ACR128_READER_COMMAND == dwControlCode)
+		{
+			unsigned char *command;
+			unsigned int commandLen = 3 + TxLength;
+			unsigned int iBytesReturned;
+
+			// Allocate command
+			command = (unsigned char *) malloc(commandLen);
+			if (command == NULL)
+				return_value = IFD_COMMUNICATION_ERROR;
+			else
+			{
+				// Fill command header
+				command[0] = 0xE0;
+				command[1] = 0x00;
+				command[2] = 0x00;
+
+				// Copy command
+				memcpy(command + 3, TxBuffer, TxLength);
+
+				iBytesReturned = RxLength;
+				old_read_timeout = ccid_descriptor -> readTimeout;
+				ccid_descriptor -> readTimeout = 0;	// Infinite
+				return_value = CmdEscape(reader_index, command, commandLen, RxBuffer,
+					&iBytesReturned);
+				ccid_descriptor -> readTimeout = old_read_timeout;
+				*pdwBytesReturned = iBytesReturned;
+
+				// Free command
+				free(command);
+			}
+		}
+	}
 
 	if (IFD_SUCCESS != return_value)
 		*pdwBytesReturned = 0;
