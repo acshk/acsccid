@@ -1,6 +1,10 @@
 # list of readers supported by the ACS CCID driver
 
 # Advanced Card Systems
+0x072f:0x8300:ACS ACR33 ICC Reader
+0x072f:0x8301:ACS ACR33 ICC Reader
+0x072f:0x8302:ACS ACR33 ICC Reader
+0x072f:0x8306:ACS ACR33 ICC Reader
 0x072f:0x90cc:ACS ACR38U-CCID
 0x072f:0x90d8:ACS ACR3801
 0x072f:0x90d2:ACS ACR83U
