@@ -1226,11 +1226,11 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			// Enable/Disable PICC
 			if (DriverOptions & DRIVER_OPTION_DISABLE_PICC)
 			{
-				if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
-					(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
-					&& (ccid_descriptor->firmwareVersion == 401)
-					&& (ccid_descriptor->bCurrentSlotIndex == 0) ||
-					(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_ICC))
+				if ((ccid_descriptor->firmwareFixEnabled) &&
+					(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+					(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER)) &&
+					(ccid_descriptor->bCurrentSlotIndex == 0) ||
+					(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_ICC)))
 				{
 					int i = 0;
 
@@ -1267,11 +1267,11 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			// Remove PUPI from ATR
 			if (DriverOptions & DRIVER_OPTION_REMOVE_PUPI_FROM_ATR)
 			{
-				if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
-					(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
-					&& (ccid_descriptor->firmwareVersion == 401)
-					&& (ccid_descriptor->bCurrentSlotIndex == 1) ||
-					(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC))
+				if ((ccid_descriptor->firmwareFixEnabled) &&
+					(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+					(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER)) &&
+					(ccid_descriptor->bCurrentSlotIndex == 1) ||
+					(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC)))
 				{
 					// ATR: 3B 8N 80 01 50 XX XX XX XX ... TCK
 					if ((nlength >= 9) &&
@@ -1390,7 +1390,8 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 	slot_index = ccid_descriptor->bCurrentSlotIndex;
 
 	// Fix reader hang problem by checking card status of ACR85 PICC before exchanging APDU
-	if (ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC)
+	if ((ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC) &&
+		(ccid_descriptor->firmwareFixEnabled))
 	{
 		if (CmdGetSlotStatus(reader_index, pcbuffer) == IFD_SUCCESS)
 		{
@@ -1479,7 +1480,8 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 	if (IFD_SUCCESS == return_value)
 	{
 		// Check card status of ACR85 PICC if SW1SW2 "63 00" is received
-		if (ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC)
+		if ((ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC) &&
+			(ccid_descriptor->firmwareFixEnabled))
 		{
 			if ((rx_length >= 2) &&
 				(RxBuffer[0] == 0x63) &&
@@ -1934,10 +1936,11 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 #endif
 	}
 	// Enable/disable PICC
-	else if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
-		(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
-		&& (ccid_descriptor->bCurrentSlotIndex == 1) ||
-		(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC))
+	else if ((ccid_descriptor->firmwareFixEnabled) &&
+		(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+		(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER)) &&
+		(ccid_descriptor->bCurrentSlotIndex == 1) ||
+		(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC)))
 	{
 		if (*(ccid_descriptor->pPiccEnabled))
 		{
@@ -2049,11 +2052,11 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	// Enable/disable PICC
 	if (DriverOptions & DRIVER_OPTION_DISABLE_PICC)
 	{
-		if (((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
-			(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER))
-			&& (ccid_descriptor->firmwareVersion == 401)
-			&& (ccid_descriptor->bCurrentSlotIndex == 0) ||
-			(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_ICC))
+		if ((ccid_descriptor->firmwareFixEnabled) &&
+			(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+			(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER)) &&
+			(ccid_descriptor->bCurrentSlotIndex == 0) ||
+			(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_ICC)))
 		{
 			int piccReaderIndex = *(ccid_descriptor->pPiccReaderIndex);
 			if (piccReaderIndex >= 0)
