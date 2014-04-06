@@ -22,7 +22,7 @@ Contents
 ----------------
 
 Version: 1.0.3
-Release Date: 20/7/2011
+Release Date: 19/9/2011
 
 Supported Readers
 ACR33 ICC Reader
@@ -50,6 +50,7 @@ ACR1281 PICC Reader (BSI)
 ACR1281 Dual Reader (BSI)
 ACR1281 1S Dual Reader
 ACR1281 2S CL Reader
+ACR1281 1S PICC Reader
 APG8201
 
 Operating Systems
@@ -203,6 +204,11 @@ v1.0.3 (24/6/2011)
 v1.0.3 (20/7/2011)
 1. Add ACR33 ICC Reader support.
 2. Add firmware version check for ACR85.
+
+v1.0.3 (19/9/2011)
+1. Add ACR1281 1S PICC Reader support.
+2. Change PID of ACR33 ICC reader from 0x8306 to 0x8307 because 0x8306 is used
+   by ACR85 ICC.
 
 
 
