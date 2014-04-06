@@ -457,7 +457,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 					if ((GEMALTOPROXDU == readerID) ||
 						(GEMALTOPROXSU == readerID) ||
 						(ACS_ACR1281_DUAL_READER_QPBOC == readerID) ||
-						(ACS_ACR1281_DUAL_READER_BSI == readerID))
+						(ACS_ACR1281_DUAL_READER_BSI == readerID) ||
+						(ACS_ACR1281_1S_PICC_READER == readerID))
 						*Value = 2;
 				}
 #endif
