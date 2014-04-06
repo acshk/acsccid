@@ -35,6 +35,7 @@
 #include "commands.h"
 #include "ccid_usb.h"
 
+static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFirmwareVersion);
 static int GetFirmwareVersion(unsigned int reader_index);
 
 /*****************************************************************************
@@ -631,6 +632,26 @@ void EnablePicc(unsigned int reader_index, int enabled)
 			DEBUG_CRITICAL("Antenna OFF failed");
 		}
 	}
+}
+
+static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFirmwareVersion)
+{
+	int ret = 0;
+	unsigned char command[] = { 0x04, 0x00, 0x00, 0x00, 0x00 };
+	unsigned int commandLen = sizeof(command);
+	unsigned char response[3 + 6];
+	unsigned int responseLen = sizeof(response);
+
+	if (CmdEscape(reader_index, command, commandLen, response, &responseLen) == IFD_SUCCESS)
+	{
+		if ((responseLen >= 7) && (response[0] == 0x84))
+		{
+			*pFirmwareVersion = (response[5] << 8) | response[6];
+			ret = 1;
+		}
+	}
+
+	return ret;
 }
 
 // Get firmware version (ACR1222)
