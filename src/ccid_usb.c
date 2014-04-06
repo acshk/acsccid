@@ -631,7 +631,7 @@ again:
 						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 						usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
 					}
-					else if ((readerID == ACS_ACR128U) || (readerID == ACS_ACR1281_1S_DUAL_READER))
+					else if (readerID == ACS_ACR128U)
 					{
 						usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
 						usbDevice[reader_index].ccid.wLcdLayout = 0;
@@ -640,6 +640,24 @@ again:
 						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
 						usbDevice[reader_index].ccid.dwDefaultClock = 3600;
 						usbDevice[reader_index].ccid.dwMaxDataRate = 116129;
+						usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
+						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+						usbDevice[reader_index].ccid.bInterfaceProtocol = 0;
+						usbDevice[reader_index].ccid.bNumEndpoints = 3;
+						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+						usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+					}
+					else if (readerID == ACS_ACR1281_1S_DUAL_READER)
+					{
+						usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
+						usbDevice[reader_index].ccid.wLcdLayout = 0;
+						usbDevice[reader_index].ccid.bPINSupport = 0;
+						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
+						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
+						usbDevice[reader_index].ccid.dwDefaultClock = 4000;
+						usbDevice[reader_index].ccid.dwMaxDataRate = 344100;
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
 						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
 						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
