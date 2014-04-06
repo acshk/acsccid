@@ -78,6 +78,7 @@ EXTERNAL RESPONSECODE IFDHCreateChannelByName(DWORD Lun, LPSTR lpcDevice)
 {
 	RESPONSECODE return_value = IFD_SUCCESS;
 	int reader_index;
+	_ccid_descriptor *ccid_descriptor;
 	status_t ret;
 
 	if (! DebugInitialized)
@@ -87,6 +88,8 @@ EXTERNAL RESPONSECODE IFDHCreateChannelByName(DWORD Lun, LPSTR lpcDevice)
 
 	if (-1 == (reader_index = GetNewReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
+
+	ccid_descriptor = get_ccid_descriptor(reader_index);
 
 	/* Reset ATR buffer */
 	CcidSlots[reader_index].nATRLength = 0;
@@ -135,7 +138,7 @@ EXTERNAL RESPONSECODE IFDHCreateChannelByName(DWORD Lun, LPSTR lpcDevice)
 			(void)ClosePort(reader_index);
 			ReleaseReaderIndex(reader_index);
 		}
-		else 
+		else
 			/* Maybe we have a special treatment for this reader */
 			(void)ccid_open_hack_post(reader_index);
 	}
@@ -143,6 +146,22 @@ EXTERNAL RESPONSECODE IFDHCreateChannelByName(DWORD Lun, LPSTR lpcDevice)
 #ifdef HAVE_PTHREAD
 	(void)pthread_mutex_unlock(&ifdh_context_mutex);
 #endif
+
+	if (return_value == IFD_SUCCESS)
+	{
+		DEBUG_INFO2("dwFeatures: 0x%08X", ccid_descriptor->dwFeatures);
+		DEBUG_INFO2("wLcdLayout: 0x%04X", ccid_descriptor->wLcdLayout);
+		DEBUG_INFO2("bPINSupport: 0x%02X", ccid_descriptor->bPINSupport);
+		DEBUG_INFO2("dwMaxCCIDMessageLength: %d", ccid_descriptor->dwMaxCCIDMessageLength);
+		DEBUG_INFO2("dwMaxIFSD: %d", ccid_descriptor->dwMaxIFSD);
+		DEBUG_INFO2("dwDefaultClock: %d", ccid_descriptor->dwDefaultClock);
+		DEBUG_INFO2("dwMaxDataRate: %d", ccid_descriptor->dwMaxDataRate);
+		DEBUG_INFO2("bMaxSlotIndex: %d", ccid_descriptor->bMaxSlotIndex);
+		DEBUG_INFO2("bCurrentSlotIndex: %d", ccid_descriptor->bCurrentSlotIndex);
+		DEBUG_INFO2("bInterfaceProtocol: 0x%02X", ccid_descriptor->bInterfaceProtocol);
+		DEBUG_INFO2("bNumEndpoints: %d", ccid_descriptor->bNumEndpoints);
+		DEBUG_INFO2("bVoltageSupport: 0x%02X", ccid_descriptor->bVoltageSupport);
+	}
 
 	return return_value;
 } /* IFDHCreateChannelByName */
