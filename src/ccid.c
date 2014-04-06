@@ -411,16 +411,20 @@ int ccid_open_hack_post(unsigned int reader_index)
 			EnablePicc(reader_index, 1);
 			break;
 
+		case ACS_ACR88U:
+			// Adjust maximum data rate
+			if (ccid_descriptor->bCurrentSlotIndex < 2)
+				ccid_descriptor->dwMaxDataRate = 116129;	// MCU
+			else
+				ccid_descriptor->dwMaxDataRate = 9677;		// SAM
+			break;
+
 		case ACS_ACR128U:
 			// Adjust features
 			if (ccid_descriptor->bCurrentSlotIndex == 1)
 				ccid_descriptor->dwFeatures = 0x0002047A;	// Contactless
 			else
 				ccid_descriptor->dwFeatures = 0x000204BA;	// MCU or SAM
-		case ACS_ACR88U:
-			// Adjust maximum data rate
-			if (ccid_descriptor->bCurrentSlotIndex >= 2)
-				ccid_descriptor->dwMaxDataRate = 9677;		// SAM
 			break;
 
 		case ACS_ACR1281_1S_DUAL_READER:
