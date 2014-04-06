@@ -57,5 +57,15 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2215", RUN+="/usr
 # ACS APG8201
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8201", RUN+="/usr/sbin/pcscd --hotplug"
 
+# non-CCID readers
+# ACS ACR38U
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="9000", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR38U-SAM
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90cf", RUN+="/usr/sbin/pcscd --hotplug"
+# IRIS SCR21U
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90ce", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS CryptoMate
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="9006", RUN+="/usr/sbin/pcscd --hotplug"
+
 # All done
 LABEL="pcscd_acsccid_rules_end"

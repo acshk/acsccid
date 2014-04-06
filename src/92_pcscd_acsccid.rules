@@ -23,5 +23,15 @@ ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2215", GROUP="pcscd"
 # ACS APG8201
 ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8201", GROUP="pcscd"
 
+# non-CCID readers
+# ACS ACR38U
+ATTRS{idVendor}=="072f", ATTRS{idProduct}=="9000", GROUP="pcscd"
+# ACS ACR38U-SAM
+ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90cf", GROUP="pcscd"
+# IRIS SCR21U
+ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90ce", GROUP="pcscd"
+# ACS CryptoMate
+ATTRS{idVendor}=="072f", ATTRS{idProduct}=="9006", GROUP="pcscd"
+
 # All done
 LABEL="pcscd_acsccid_rules_end"
