@@ -43,6 +43,10 @@
 #include <pthread.h>
 #endif
 
+#ifndef IFD_ERROR_INSUFFICIENT_BUFFER
+#define IFD_ERROR_INSUFFICIENT_BUFFER 618
+#endif
+
 /* Array of structures to hold the ATR and other state value of each slot */
 static CcidDesc CcidSlots[CCID_DRIVER_MAX_READERS];
 
@@ -1357,6 +1361,76 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 				return_value = IFD_ICC_NOT_PRESENT;
 				goto err;
 			}
+		}
+	}
+	// Add BSI miscellaneous command for ACR1281 BSI
+	else if ((ccid_descriptor->readerID == ACS_ACR1281_PICC_READER_BSI) ||
+		(ccid_descriptor->readerID == ACS_ACR1281_DUAL_READER_BSI))
+	{
+		if ((TxLength >= 4) &&
+			(memcmp(TxBuffer, "\xFF\x9A\x01\x07", 4) == 0))
+		{
+			unsigned int versionLen = strlen(PACKAGE_VERSION);
+			unsigned int Lc = 0;
+			unsigned int Le = 0;
+			unsigned int dataLen;
+
+			// Check APDU
+			if (TxLength == 5)
+				Le = TxBuffer[4];
+			else if (TxLength > 5)
+			{			
+				Lc = TxBuffer[4];
+
+				dataLen = TxLength - 5;
+				if (dataLen == Lc + 1)
+					Le = TxBuffer[TxLength - 1];
+				else if ((dataLen < Lc) || (dataLen > Lc + 1))
+				{
+					// Length error: 67 00
+					rx_length = 2;
+					if (*RxLength < rx_length)
+						return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
+					else
+					{
+						RxBuffer[rx_length - 2] = 0x67;
+						RxBuffer[rx_length - 1] = 0x00;
+						return_value = IFD_SUCCESS;
+					}
+
+					goto err;
+				}
+			}
+
+			if ((Le != 0) && (Le < versionLen))
+			{
+				// Length Le error: 6C XX
+				rx_length = 2;
+				if (*RxLength < rx_length)
+					return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
+				else
+				{
+					RxBuffer[rx_length - 2] = 0x6C;
+					RxBuffer[rx_length - 1] = (unsigned char) versionLen;
+					return_value = IFD_SUCCESS;
+				}
+			}
+			else
+			{
+				rx_length = versionLen + 2;
+				if (*RxLength < rx_length)
+					return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
+				else
+				{
+					// Return driver version
+					memcpy(RxBuffer, PACKAGE_VERSION, versionLen);
+					RxBuffer[rx_length - 2] = 0x90;
+					RxBuffer[rx_length - 1] = 0x00;
+					return_value = IFD_SUCCESS;
+				}
+			}
+
+			goto err;
 		}
 	}
 
