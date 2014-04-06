@@ -36,7 +36,7 @@
 #include "ccid_usb.h"
 
 static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFirmwareVersion);
-static int GetFirmwareVersion(unsigned int reader_index);
+static int ACR1222_GetFirmwareVersion(unsigned int reader_index, char *firmwareVersion, unsigned int *pFirmwareVersionLen);
 
 /*****************************************************************************
  *
@@ -654,21 +654,23 @@ static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFi
 	return ret;
 }
 
-// Get firmware version (ACR1222)
-static int GetFirmwareVersion(unsigned int reader_index)
+static int ACR1222_GetFirmwareVersion(unsigned int reader_index, char *firmwareVersion, unsigned int *pFirmwareVersionLen)
 {
-	int firmwareVersion = -1;
-
-	unsigned char getFirmwareVersion[] = { 0xE0, 0x00, 0x00, 0x18, 0x00 };
+	int ret = 0;
+	unsigned char command[] = { 0xE0, 0x00, 0x00, 0x18, 0x00 };
 	unsigned char response[300];
-	int responseLen;
+	unsigned int responseLen = sizeof(response);
 
-	responseLen = sizeof(response);
-	if (CmdEscape(reader_index, getFirmwareVersion, sizeof(getFirmwareVersion), response, &responseLen) == IFD_SUCCESS)
+	if (CmdEscape(reader_index, command, sizeof(command), response, &responseLen) == IFD_SUCCESS)
 	{
-		if (responseLen > 5)
-			sscanf((char *) (response + 5), "ACR1222U_V%d", &firmwareVersion);
+		if (*pFirmwareVersionLen >= responseLen - 5 + 1)
+		{
+			*pFirmwareVersionLen = responseLen - 5;
+			memcpy(firmwareVersion, response + 5, *pFirmwareVersionLen);
+			firmwareVersion[*pFirmwareVersionLen] = '\0';
+			ret = 1;
+		}
 	}
 
-	return firmwareVersion;
+	return ret;
 }
