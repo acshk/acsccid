@@ -7,7 +7,7 @@ ACTION!="add", GOTO="pcscd_acsccid_rules_end"
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8300", RUN+="/usr/sbin/pcscd --hotplug"
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8301", RUN+="/usr/sbin/pcscd --hotplug"
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8302", RUN+="/usr/sbin/pcscd --hotplug"
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8306", RUN+="/usr/sbin/pcscd --hotplug"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8307", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR38U-CCID
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="90cc", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR3801
