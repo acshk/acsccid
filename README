@@ -21,8 +21,8 @@ Contents
 1. Release Notes
 ----------------
 
-Version: 1.0.2
-Release Date: 16/3/2011
+Version: 1.0.3
+Release Date: 8/6/2011
 
 Supported Readers
 ACR38U-CCID
@@ -43,9 +43,11 @@ ACR1222L 3S CL Reader
 ACR125 nPA plus
 ACR128U
 ACR1281 CL Reader (qPBOC)
+ACR1281 PICC Reader (qPBOC)
 ACR1281 Dual Reader (qPBOC)
 ACR1281 PICC Reader (BSI)
 ACR1281 Dual Reader (BSI)
+ACR1281 1S Dual Reader
 APG8201
 
 Operating Systems
@@ -61,12 +63,12 @@ Mac OS X 10.5/10.6
 
 2. Enter the following commands to unpack the driver source code.
 
-# tar -jxvf acsccid-1.0.2.tar.bz2
-# cd acsccid-1.0.2
+# tar -jxvf acsccid-1.0.3.tar.bz2
+# cd acsccid-1.0.3
 
 3. Enter the following commands to install the driver. If you want to use udev,
    please enter "./configure --enable-udev". For more information, please refer
-   to the file "acsccid-1.0.2/INSTALL".
+   to the file "acsccid-1.0.3/INSTALL".
 
 # ./configure
 # make
@@ -168,16 +170,32 @@ v1.0.2 (16/3/2011)
    "63 00" is received.
 2. Add ACR3801 support.
 
+v1.0.3 (8/6/2011)
+1. Import udev rules from ccid-1.4.3 to support pcscd auto-start.
+2. Fix reader hang problem by checking card status of ACR85 PICC before
+   exchanging APDU.
+3. Correct the code that enabling polling mode is applied to ACR122U only and
+   not all ACS readers.
+4. Fix a problem that the optimal baud rate is not selected properly in
+   IFDHSetProtocolParameters().
+5. Perform cold reset and try default Fl/Dl (0x11) if PPS_Exchange() or
+   SetParameters() is failed in IFDHSetProtocolParameters().
+6. Protocol parameters will not be set in IFDHSetProtocolParameters() if card is
+   specific mode.
+7. Correct the value of CCID features and maximum data rate of ACR88U and
+   ACR128U.
+8. Add BSI miscellaneous command to return driver version for ACR1281 BSI
+   readers.
+9. Add the following readers support:
+   ACR1281 PICC Reader (qPBOC)
+   ACR1281 1S Dual Reader
+
 
 
 4. File Contents
 ----------------
 
 .
-|-- AUTHORS
-|-- COPYING
-|-- ChangeLog
-|-- INSTALL
 |-- MacOSX
 |   |-- configure
 |   |-- convert_reader_h.pl
@@ -187,12 +205,6 @@ v1.0.2 (16/3/2011)
 |   |-- reader.h.in
 |   |-- winscard.h
 |   `-- wintypes.h
-|-- Makefile.am
-|-- Makefile.in
-|-- NEWS
-|-- README
-|-- aclocal.m4
-|-- bootstrap
 |-- config
 |   |-- compile
 |   |-- config.guess
@@ -202,55 +214,66 @@ v1.0.2 (16/3/2011)
 |   |-- ltmain.sh
 |   |-- missing
 |   `-- ylwrap
-|-- config.h.in
-|-- configure
-|-- configure.ac
 |-- m4
 |   |-- Makefile.am
 |   |-- Makefile.in
 |   `-- ax_pthread.m4
-`-- src
-    |-- Info.plist.src
-    |-- Makefile.am
-    |-- Makefile.in
-    |-- ccid.c
-    |-- ccid.h
-    |-- ccid_ifdhandler.h
-    |-- ccid_usb.c
-    |-- ccid_usb.h
-    |-- commands.c
-    |-- commands.h
-    |-- convert_version.pl
-    |-- create_Info_plist.pl
-    |-- debug.c
-    |-- debug.h
-    |-- defs.h
-    |-- ifdhandler.c
-    |-- misc.h
-    |-- openct
-    |   |-- LICENSE
-    |   |-- buffer.c
-    |   |-- buffer.h
-    |   |-- checksum.c
-    |   |-- checksum.h
-    |   |-- proto-t1.c
-    |   `-- proto-t1.h
-    |-- parser.h
-    |-- pcscd_acsccid.rules
-    |-- strlcpy.c
-    |-- strlcpycat.h
-    |-- supported_readers.txt
-    |-- tokenparser.l
-    |-- towitoko
-    |   |-- COPYING
-    |   |-- README
-    |   |-- atr.c
-    |   |-- atr.h
-    |   |-- defines.h
-    |   |-- pps.c
-    |   `-- pps.h
-    |-- utils.c
-    `-- utils.h
+|-- src
+|   |-- openct
+|   |   |-- LICENSE
+|   |   |-- buffer.c
+|   |   |-- buffer.h
+|   |   |-- checksum.c
+|   |   |-- checksum.h
+|   |   |-- proto-t1.c
+|   |   `-- proto-t1.h
+|   |-- towitoko
+|   |   |-- COPYING
+|   |   |-- README
+|   |   |-- atr.c
+|   |   |-- atr.h
+|   |   |-- defines.h
+|   |   |-- pps.c
+|   |   `-- pps.h
+|   |-- 92_pcscd_acsccid.rules
+|   |-- Info.plist.src
+|   |-- Makefile.am
+|   |-- Makefile.in
+|   |-- ccid.c
+|   |-- ccid.h
+|   |-- ccid_ifdhandler.h
+|   |-- ccid_usb.c
+|   |-- ccid_usb.h
+|   |-- commands.c
+|   |-- commands.h
+|   |-- convert_version.pl
+|   |-- create_Info_plist.pl
+|   |-- debug.c
+|   |-- debug.h
+|   |-- defs.h
+|   |-- ifdhandler.c
+|   |-- misc.h
+|   |-- parser.h
+|   |-- pcscd_acsccid.rules
+|   |-- strlcpy.c
+|   |-- strlcpycat.h
+|   |-- supported_readers.txt
+|   |-- tokenparser.l
+|   |-- utils.c
+|   `-- utils.h
+|-- AUTHORS
+|-- COPYING
+|-- ChangeLog
+|-- INSTALL
+|-- Makefile.am
+|-- Makefile.in
+|-- NEWS
+|-- README
+|-- aclocal.m4
+|-- bootstrap
+|-- config.h.in
+|-- configure
+`-- configure.ac
 
 
 
