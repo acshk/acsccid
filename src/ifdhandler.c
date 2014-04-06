@@ -1888,15 +1888,6 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	if (return_value != IFD_SUCCESS)
 		return return_value;
 
-#ifdef __APPLE__
-	pthread_mutex_lock(ccid_descriptor->pbStatusLock);
-#endif
-	// Store card status
-	ccid_descriptor->bStatus[slot_index] = (pcbuffer[7] & CCID_ICC_STATUS_MASK);
-#ifdef __APPLE__
-	pthread_mutex_unlock(ccid_descriptor->pbStatusLock);
-#endif
-
 	return_value = IFD_COMMUNICATION_ERROR;
 	switch (pcbuffer[7] & CCID_ICC_STATUS_MASK)	/* bStatus */
 	{
