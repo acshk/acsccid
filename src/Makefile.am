@@ -8,6 +8,8 @@ COMMON = ccid.c \
 	ccid_ifdhandler.h \
 	commands.c \
 	commands.h \
+	acr38cmd.c \
+	acr38cmd.h \
 	debug.h \
 	defs.h \
 	ifdhandler.c \
