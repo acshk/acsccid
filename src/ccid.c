@@ -441,9 +441,15 @@ int ccid_open_hack_post(unsigned int reader_index)
 		case ACS_ACR1281_1S_DUAL_READER:
 			// Adjust features and maximum data rate
 			if (ccid_descriptor->bCurrentSlotIndex == 0)
+			{
 				ccid_descriptor->dwFeatures = 0x000204BA;	// MCU
+				ccid_descriptor->dwMaxDataRate = 344100;
+			}
 			else if (ccid_descriptor->bCurrentSlotIndex == 1)
+			{
 				ccid_descriptor->dwFeatures = 0x0004047A;	// Contactless
+				ccid_descriptor->dwMaxDataRate = 344100;
+			}
 			else
 			{
 				ccid_descriptor->dwFeatures = 0x000204BA;	// SAM
@@ -454,7 +460,10 @@ int ccid_open_hack_post(unsigned int reader_index)
 		case ACS_ACR1281_2S_CL_READER:
 			// Adjust features and maximum data rate
 			if (ccid_descriptor->bCurrentSlotIndex == 1)
+			{
 				ccid_descriptor->dwFeatures = 0x0004047A;	// Contactless
+				ccid_descriptor->dwMaxDataRate = 344100;
+			}
 			else
 			{
 				ccid_descriptor->dwFeatures = 0x000204BA;	// SAM
