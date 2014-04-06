@@ -18,6 +18,8 @@ ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2011", GROUP="pcscd"
 ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2100", GROUP="pcscd"
 # ACS ACR1281 1S Dual Reader
 ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2224", GROUP="pcscd"
+# ACS ACR1281 2S CL Reader
+ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2215", GROUP="pcscd"
 # ACS APG8201
 ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8201", GROUP="pcscd"
 
