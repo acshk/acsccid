@@ -537,7 +537,11 @@ again:
 					if (usb_interface->altsetting->extralen != 54)
 					{
 						// These readers do not have altsetting
-						if ((readerID != ACS_ACR88U) &&
+						if ((readerID != ACS_ACR38U) &&
+							(readerID != ACS_ACR38U_SAM) &&
+							(readerID != IRIS_SCR21U) &&
+							(readerID != ACS_CRYPTOMATE) &&
+							(readerID != ACS_ACR88U) &&
 							(readerID != ACS_ACR128U) &&
 							(readerID != ACS_ACR1281_1S_DUAL_READER) &&
 							(readerID != ACS_ACR1281_2S_CL_READER))
@@ -614,8 +618,44 @@ again:
 					// Store bcdDevice for firmware version checking
 					usbDevice[reader_index].ccid.bcdDevice = dev->descriptor.bcdDevice;
 
-					// ACR88U and ACR128U does not have altsetting
-					if (readerID == ACS_ACR88U)
+					// These readers do not have altsetting
+					if ((readerID == ACS_ACR38U) || (readerID == ACS_CRYPTOMATE))
+					{
+						usbDevice[reader_index].ccid.dwFeatures = 0x00010030;
+						usbDevice[reader_index].ccid.wLcdLayout = 0;
+						usbDevice[reader_index].ccid.bPINSupport = 0;
+						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
+						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
+						usbDevice[reader_index].ccid.dwDefaultClock = 4000;
+						usbDevice[reader_index].ccid.dwMaxDataRate = 229390;
+						usbDevice[reader_index].ccid.bMaxSlotIndex = 0;
+						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+						usbDevice[reader_index].ccid.bInterfaceProtocol = PROTOCOL_ACR38;
+						usbDevice[reader_index].ccid.bNumEndpoints = 3;
+						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+						usbDevice[reader_index].ccid.bVoltageSupport = 0x07;
+					}
+					else if ((readerID == ACS_ACR38U_SAM) || (readerID == IRIS_SCR21U))
+					{
+						usbDevice[reader_index].ccid.dwFeatures = 0x00010030;
+						usbDevice[reader_index].ccid.wLcdLayout = 0;
+						usbDevice[reader_index].ccid.bPINSupport = 0;
+						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
+						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
+						usbDevice[reader_index].ccid.dwDefaultClock = 4000;
+						usbDevice[reader_index].ccid.dwMaxDataRate = 229390;
+						usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
+						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+						usbDevice[reader_index].ccid.bInterfaceProtocol = PROTOCOL_ACR38;
+						usbDevice[reader_index].ccid.bNumEndpoints = 3;
+						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+						usbDevice[reader_index].ccid.bVoltageSupport = 0x07;
+					}
+					else if (readerID == ACS_ACR88U)
 					{
 						usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
 						usbDevice[reader_index].ccid.wLcdLayout = 0x0815;

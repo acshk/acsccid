@@ -179,6 +179,7 @@ typedef struct
 /* bInterfaceProtocol for ICCD */
 #define ICCD_A	1	/* ICCD Version A */
 #define ICCD_B	2	/* ICCD Version B */
+#define PROTOCOL_ACR38	38	// ACR38 non-CCID
 
 /* Product identification for special treatments */
 #define GEMPC433	0x08E64433

@@ -33,6 +33,7 @@
 #include "defs.h"
 #include "ccid_ifdhandler.h"
 #include "commands.h"
+#include "acr38cmd.h"
 #include "ccid_usb.h"
 
 static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFirmwareVersion);
@@ -457,6 +458,34 @@ int ccid_open_hack_post(unsigned int reader_index)
 						EnablePicc(reader_index, 1);
 					}
 				}
+			}
+			break;
+
+		case ACS_ACR38U:
+		case ACS_ACR38U_SAM:
+		case IRIS_SCR21U:
+			if (ccid_descriptor->bCurrentSlotIndex == 0)
+			{
+				char firmwareVersion[11];	// Firmware version
+
+				// Get firmware version
+				memset(firmwareVersion, 0, sizeof(firmwareVersion));
+				if (ACR38_GetFirmwareVersion(reader_index, firmwareVersion) == IFD_SUCCESS)
+				{
+					DEBUG_INFO2("Firmware: %s", firmwareVersion);
+
+					if (ccid_descriptor->readerID == IRIS_SCR21U)
+					{
+						// Adjust maximum data rate
+						if (strcmp(firmwareVersion, "ACR38-1042") == 0)
+							ccid_descriptor->dwMaxDataRate = 43010;	// MCU
+					}
+				}
+			}
+			else
+			{
+				// Adjust maximum data rate
+				ccid_descriptor->dwMaxDataRate = 10752;	// SAM
 			}
 			break;
 
