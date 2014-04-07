@@ -895,43 +895,120 @@ status_t ReadUSB(unsigned int reader_index, unsigned int * length,
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 	int duplicate_frame = 0;
 
-read_again:
+	unsigned char epBuffer[64];
+	int responseReceived;
+	int headerReceived;
+	unsigned int bufferLen;
+	unsigned int readLen;
+	unsigned int dataLen;
+	unsigned int tempLen;
+
 	(void)snprintf(debug_header, sizeof(debug_header), "<- %06X ",
 		(int)reader_index);
 
-	rv = usb_bulk_read(usbDevice[reader_index].handle,
-		usbDevice[reader_index].bulk_in, (char *)buffer, *length,
-		usbDevice[reader_index].ccid.readTimeout * 1000);
-
-	if (rv < 0)
+	if (ccid_descriptor->bInterfaceProtocol == PROTOCOL_ACR38)
 	{
-		*length = 0;
-		DEBUG_CRITICAL4("usb_bulk_read(%s/%s): %s",
-			usbDevice[reader_index].dirname, usbDevice[reader_index].filename,
-			strerror(errno));
+		responseReceived = FALSE;
+		headerReceived = FALSE;
+		bufferLen = *length;
+		readLen = 0;
+		dataLen = 0;
+		tempLen = 0;
 
-		if (ENODEV == errno)
-			return STATUS_NO_SUCH_DEVICE;
-
-		return STATUS_UNSUCCESSFUL;
-	}
-
-	*length = rv;
-
-	DEBUG_XXD(debug_header, buffer, *length);
-
-#define BSEQ_OFFSET 6
-	if ((*length >= BSEQ_OFFSET)
-		&& (buffer[BSEQ_OFFSET] < *ccid_descriptor->pbSeq -1))
-	{
-		duplicate_frame++;
-		if (duplicate_frame > 10)
+		while (!responseReceived)
 		{
-			DEBUG_CRITICAL("Too many duplicate frame detected");
+			// Read data from BULK IN endpoint
+			rv = usb_bulk_read(usbDevice[reader_index].handle,
+				usbDevice[reader_index].bulk_in, (char *) epBuffer, sizeof(epBuffer),
+				usbDevice[reader_index].ccid.readTimeout * 1000);
+			if (rv < 0)
+			{
+				*length = 0;
+				DEBUG_CRITICAL4("usb_bulk_read(%s/%s): %s",
+					usbDevice[reader_index].dirname, usbDevice[reader_index].filename,
+					strerror(errno));
+
+				if (ENODEV == errno)
+					return STATUS_NO_SUCH_DEVICE;
+
+				return STATUS_UNSUCCESSFUL;
+			}
+
+			DEBUG_XXD(debug_header, epBuffer, rv);
+
+			// Copy data to buffer
+			if (readLen + rv <= bufferLen)
+				memcpy(buffer + readLen, epBuffer, rv);
+			readLen += rv;
+
+			if (!headerReceived)
+			{
+				if ((readLen >= 4) &&
+					(buffer[0] == 0x01))	// Header
+				{
+					// Header is received
+					headerReceived = TRUE;
+
+					// Get data length
+					dataLen = ((buffer[2] << 8) | buffer[3]) + 4;
+				}
+			}
+
+			if (headerReceived)
+			{
+				if (readLen >= dataLen)
+				{
+					// Response is received
+					*length = readLen;
+					responseReceived = TRUE;
+				}
+			}
+		}
+
+		// Insufficient buffer
+		if (readLen > bufferLen)
+		{
+			DEBUG_CRITICAL("Insufficient buffer");
 			return STATUS_UNSUCCESSFUL;
 		}
-		DEBUG_INFO("Duplicate frame detected");
-		goto read_again;
+	}
+	else
+	{
+	read_again:
+		rv = usb_bulk_read(usbDevice[reader_index].handle,
+			usbDevice[reader_index].bulk_in, (char *)buffer, *length,
+			usbDevice[reader_index].ccid.readTimeout * 1000);
+
+		if (rv < 0)
+		{
+			*length = 0;
+			DEBUG_CRITICAL4("usb_bulk_read(%s/%s): %s",
+				usbDevice[reader_index].dirname, usbDevice[reader_index].filename,
+				strerror(errno));
+
+			if (ENODEV == errno)
+				return STATUS_NO_SUCH_DEVICE;
+
+			return STATUS_UNSUCCESSFUL;
+		}
+
+		*length = rv;
+
+		DEBUG_XXD(debug_header, buffer, *length);
+
+#define BSEQ_OFFSET 6
+		if ((*length >= BSEQ_OFFSET)
+			&& (buffer[BSEQ_OFFSET] < *ccid_descriptor->pbSeq -1))
+		{
+			duplicate_frame++;
+			if (duplicate_frame > 10)
+			{
+				DEBUG_CRITICAL("Too many duplicate frame detected");
+				return STATUS_UNSUCCESSFUL;
+			}
+			DEBUG_INFO("Duplicate frame detected");
+			goto read_again;
+		}
 	}
 
 	return STATUS_SUCCESS;
