@@ -656,6 +656,71 @@ void ccid_error(int error, const char *file, int line, const char *function)
 
 } /* ccid_error */
 
+void acr38_error(int error, const char *file, int line, const char *function)
+{
+	const char *text;
+	char var_text[30];
+
+	switch (error)
+	{
+		case 0x00:
+			text = "Success";
+			break;
+
+		case 0xF4:
+			text = "Procedure byte conflict";
+			break;
+
+		case 0xF6:
+			text = "Bad length";
+			break;
+
+		case 0xF7:
+			text = "Bad Fi/Di";
+			break;
+
+		case 0xF8:
+			text = "Bad ATR TS";
+			break;
+
+		case 0xF9:
+			text = "ICC not powered up";
+			break;
+
+		case 0xFA:
+			text = "ICC not inserted";
+			break;
+
+		case 0xFB:
+			text = "Hardware error";
+			break;
+
+		case 0xFC:
+			text = "XFE overrun";
+			break;
+
+		case 0xFD:
+			text = "XFE parity error";
+			break;
+
+		case 0xFE:
+			text = "ICC mute";
+			break;
+
+		case 0xFF:
+			text = "Command aborted";
+			break;
+
+		default:
+			(void)snprintf(var_text, sizeof(var_text),
+				"Unknown ACR38 error: 0x%02X", error);
+			text = var_text;
+			break;
+	}
+
+	log_msg(PCSC_LOG_ERROR, "%s:%d:%s %s", file, line, function, text);
+}
+
 // Enable PICC
 void EnablePicc(unsigned int reader_index, int enabled)
 {
