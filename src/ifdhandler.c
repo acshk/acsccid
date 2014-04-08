@@ -61,6 +61,10 @@ int DriverOptions = 0;
 int PowerOnVoltage = VOLTAGE_5V;
 static int DebugInitialized = FALSE;
 
+// Card voltage and card type selection for ACR38U, ACR38U-SAM and SCR21U
+int ACR38CardVoltage = 0;
+int ACR38CardType = 0;
+
 /* local functions */
 #if HAVE_DECL_TAG_IFD_POLLING_THREAD && !defined(TWIN_SERIAL) && defined(USE_USB_INTERRUPT)
 static RESPONSECODE IFDHPolling(DWORD Lun);
@@ -132,6 +136,14 @@ EXTERNAL RESPONSECODE IFDHCreateChannelByName(DWORD Lun, LPSTR lpcDevice)
 			CcidSlots[reader_index].pTransmitPPS = ACR38_TransmitPPS;
 			CcidSlots[reader_index].pReceive = ACR38_Receive;
 			CcidSlots[reader_index].pSetParameters = ACR38_SetParameters;
+
+			// Set card voltage
+			(void)ACR38_SetCardVoltage(reader_index, (unsigned char *) &ACR38CardVoltage,
+				sizeof(ACR38CardVoltage), NULL, NULL);
+
+			// Set card type
+			(void)ACR38_SetCardType(reader_index, (unsigned char *) &ACR38CardType,
+				sizeof(ACR38CardType), NULL, NULL);
 		}
 		else
 		{
@@ -279,6 +291,14 @@ EXTERNAL RESPONSECODE IFDHCreateChannel(DWORD Lun, DWORD Channel)
 			CcidSlots[reader_index].pTransmitPPS = ACR38_TransmitPPS;
 			CcidSlots[reader_index].pReceive = ACR38_Receive;
 			CcidSlots[reader_index].pSetParameters = ACR38_SetParameters;
+
+			// Set card voltage
+			(void)ACR38_SetCardVoltage(reader_index, (unsigned char *) &ACR38CardVoltage,
+				sizeof(ACR38CardVoltage), NULL, NULL);
+
+			// Set card type
+			(void)ACR38_SetCardType(reader_index, (unsigned char *) &ACR38CardType,
+				sizeof(ACR38CardType), NULL, NULL);
 		}
 		else
 		{
@@ -2254,6 +2274,20 @@ void init_driver(void)
 		case 3:
 			PowerOnVoltage = VOLTAGE_AUTO;
 			break;
+	}
+
+	// Card voltage selection for ACR38U, ACR38U-SAM and SCR21U
+	if (0 == LTPBundleFindValueWithKey(infofile, "ifdACR38CardVoltage", keyValue, 0))
+	{
+		ACR38CardVoltage = strtoul(keyValue, NULL, 0);
+		DEBUG_INFO2("ACR38CardVoltage: %d", ACR38CardVoltage);
+	}
+
+	// Card type selection for ACR38U, ACR38U-SAM and SCR21U
+	if (0 == LTPBundleFindValueWithKey(infofile, "ifdACR38CardType", keyValue, 0))
+	{
+		ACR38CardType = strtoul(keyValue, NULL, 0);
+		DEBUG_INFO2("ACR38CardType: %d", ACR38CardType);
 	}
 
 	/* initialise the Lun to reader_index mapping */

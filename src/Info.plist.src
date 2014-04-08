@@ -98,6 +98,62 @@
 	Default value: 0
 	-->
 
+	<key>ifdACR38CardVoltage</key>
+	<string>0</string>
+
+	<!-- Possible values for ifdACR38CardVoltage
+	Card voltage selection for ACR38U, ACR38U-SAM and SCR21U readers
+
+	0: Auto Detection
+	1: 5V Card
+	2: 3V Card
+	3: 1.8V Card
+
+	Default value: 0
+	-->
+
+	<key>ifdACR38CardType</key>
+	<string>0</string>
+
+	<!-- Possible values for ifdACR38CardType
+	Card type selection for ACR38U, ACR38U-SAM and SCR21U readers
+	 0: MCU
+
+	 1: IIC (Auto Detect Memory Size)
+		This value is not supported.
+
+	 2: IIC (1K)
+	 3: IIC (2K)
+	 4: IIC (4K)
+	 5: IIC (8K)
+	 6: IIC (16K)
+	 7: IIC (32K)
+	 8: IIC (64K)
+	 9: IIC (128K)
+	10: IIC (256K)
+	11: IIC (512K)
+	12: IIC (1024K)
+	13: AT88SC153
+	14: AT88SC1608
+	15: SLE4418
+	16: SLE4428
+	17: SLE4432
+	18: SLE4442
+
+	19: SLE4406
+	20: SLE4436
+	21: SLE5536
+		These values are not supported in ACR38U-SAM and SCR21U readers.
+
+	22: MCUT0
+	23: MCUT1
+
+	24: Auto Detection
+		This value is not supported.
+
+	Default value: 0
+	-->
+
 	<key>CFBundleExecutable</key>
 	<string>MAGIC_TARGET</string>
 

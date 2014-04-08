@@ -771,6 +771,12 @@ again:
 						usbDevice[reader_index].ccid.piccReaderIndex = -1;
 						usbDevice[reader_index].ccid.pPiccReaderIndex = &usbDevice[reader_index].ccid.piccReaderIndex;
 					}
+
+					// Initialize card voltage (ACR38U, ACR38U-SAM and SCR21U)
+					usbDevice[reader_index].ccid.cardVoltage = 0;
+
+					// Initialize card type (ACR38U, ACR38U-SAM and SCR21U)
+					usbDevice[reader_index].ccid.cardType = 0;
 #ifdef __APPLE__
 					// Initialize terminated flag to false
 					usbDevice[reader_index].terminated = FALSE;

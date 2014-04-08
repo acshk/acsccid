@@ -148,6 +148,12 @@ typedef struct
 	// PICC reader index
 	int piccReaderIndex;
 	int *pPiccReaderIndex;
+
+	// Card voltage (ACR38U, ACR38U-SAM and SCR21U)
+	unsigned char cardVoltage;
+
+	// Card type (ACR38U, ACR38U-SAM and SCR21U)
+	unsigned char cardType;
 } _ccid_descriptor;
 
 /* Features from dwFeatures */
