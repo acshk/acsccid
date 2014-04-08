@@ -22,7 +22,7 @@ Contents
 ----------------
 
 Version: 1.0.3
-Release Date: 20/10/2011
+Release Date: 30/11/2011
 
 Supported CCID Readers
 ACR33 ICC Reader
@@ -38,12 +38,14 @@ ACR102 ICC Reader
 ACR122U
 ACR122T
 ACR122U-SAM
-ACR1222 Dual Reader
-ACR1222 1SAM Dual Reader
-ACR1222L 3S CL Reader
+ACR1222 Dual Reader      (ACR1222U-C6)
+ACR1222 1SAM Dual Reader (ACR1222U-C3)
+ACR1222 3S PICC Reader   (ACR1222L-D1)
+ACR1222 1SAM PICC Reader (ACR1222U-C1)
+ACR1222 1SAM PICC Reader (ACR1222U-C8)
 ACR125 nPA plus
 ACR128U
-ACR1281 CL Reader (qPBOC)
+ACR1281 CL Reader   (qPBOC)
 ACR1281 PICC Reader (qPBOC)
 ACR1281 Dual Reader (qPBOC)
 ACR1281 PICC Reader (BSI)
@@ -52,6 +54,7 @@ ACR1281 1S Dual Reader
 ACR1281 2S CL Reader
 ACR1281 1S PICC Reader
 APG8201
+APG8201Z
 
 Supported non-CCID Readers
 ACR38U
@@ -228,6 +231,13 @@ v1.0.3 (20/10/2011)
    ACR38U-SAM
    SCR21U (IRIS)
    CryptoMate
+
+v1.0.3 (30/11/2011)
+1. Add the following readers support:
+   APG8201Z
+   ACR1222 1SAM PICC Reader (ACR1222U-C1)
+   ACR1222 1SAM PICC Reader (ACR1222U-C8)   
+2. Rename "ACR1222L 3S CL Reader" to "ACR1222 3S PICC Reader".
 
 
 
