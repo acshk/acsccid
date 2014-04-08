@@ -926,7 +926,7 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 again:
 	/* Automatic PPS made by the ICC? */
 	if ((! (ccid_desc->dwFeatures & CCID_CLASS_AUTO_PPS_CUR))
-		&& (!specificMode))	// Negotiable mode 
+		&& (!specificMode))	// Negotiable mode
 	{
 		int default_protocol;
 
@@ -1323,7 +1323,7 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 						nlength = sizeof(pcbuffer);
 						return_value = CcidSlots[reader_index].pPowerOn(reader_index, &nlength, pcbuffer,
 							PowerOnVoltage);
-		
+
 						i++;
 						if (i >= 10)
 							break;
@@ -1499,7 +1499,7 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 			if (TxLength == 5)
 				Le = TxBuffer[4];
 			else if (TxLength > 5)
-			{			
+			{
 				Lc = TxBuffer[4];
 
 				dataLen = TxLength - 5;
@@ -2245,7 +2245,7 @@ void init_driver(void)
 		/* print the log level used */
 		DEBUG_INFO2("LogLevel from LIBCCID_ifdLogLevel: 0x%.4X", LogLevel);
 	}
-	
+
 	/* Driver options */
 	if (0 == LTPBundleFindValueWithKey(infofile, "ifdDriverOptions", keyValue, 0))
 	{

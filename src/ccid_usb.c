@@ -103,7 +103,7 @@ static int get_end_points(struct usb_device *dev, _usbDevice *usbdevice, int num
 int ccid_check_firmware(struct usb_device *dev);
 static unsigned int *get_data_rates(unsigned int reader_index,
 	struct usb_device *dev, int num);
-	
+
 #ifdef __APPLE__
 static void *CardDetectionThread(void *pParam);
 #endif
@@ -782,7 +782,7 @@ again:
 					usbDevice[reader_index].terminated = FALSE;
 					usbDevice[reader_index].pTerminated = &usbDevice[reader_index].terminated;
 					usbDevice[reader_index].ccid.pbStatusLock = &usbDevice[reader_index].ccid.bStatusLock;
-					
+
 					// Create bStatus lock
 					ret = pthread_mutex_init(usbDevice[reader_index].ccid.pbStatusLock, NULL);
 					if (ret != 0)
