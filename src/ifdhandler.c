@@ -1550,304 +1550,337 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	/* Set the return length to 0 to avoid problems */
 	*pdwBytesReturned = 0;
 
-	if (IOCTL_SMARTCARD_VENDOR_IFD_EXCHANGE == dwControlCode)
+	if (ccid_descriptor->bInterfaceProtocol == PROTOCOL_ACR38)
 	{
-		if (FALSE == (DriverOptions & DRIVER_OPTION_CCID_EXCHANGE_AUTHORIZED))
+		// ACR38U, ACR38U-SAM and SCR21U specific I/O controls
+		if ((ACS_ACR38U == ccid_descriptor -> readerID) ||
+			(ACS_ACR38U_SAM == ccid_descriptor -> readerID) ||
+			(IRIS_SCR21U == ccid_descriptor -> readerID))
 		{
-			DEBUG_INFO("ifd exchange (Escape command) not allowed");
-			return_value = IFD_COMMUNICATION_ERROR;
-		}
-		else
-		{
-			unsigned int iBytesReturned;
-
-			iBytesReturned = RxLength;
-			old_read_timeout = ccid_descriptor -> readTimeout;
-			ccid_descriptor -> readTimeout = 0;	// Infinite
-			return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
-				&iBytesReturned);
-			ccid_descriptor -> readTimeout = old_read_timeout;
-			*pdwBytesReturned = iBytesReturned;
-		}
-	}
-
-	/* Implement the PC/SC v2.02.05 Part 10 IOCTL mechanism */
-
-	/* Query for features */
-	if (CM_IOCTL_GET_FEATURE_REQUEST == dwControlCode)
-	{
-		unsigned int iBytesReturned = 0;
-		PCSC_TLV_STRUCTURE *pcsc_tlv = (PCSC_TLV_STRUCTURE *)RxBuffer;
-
-		/* we need room for up to for records */
-		if (RxLength < 4 * sizeof(PCSC_TLV_STRUCTURE))
-			return IFD_COMMUNICATION_ERROR;
-
-		/* We can only support direct verify and/or modify currently */
-		if (ccid_descriptor -> bPINSupport & CCID_CLASS_PIN_VERIFY)
-		{
-			pcsc_tlv -> tag = FEATURE_VERIFY_PIN_DIRECT;
-			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_FEATURE_VERIFY_PIN_DIRECT);
-
-			pcsc_tlv++;
-			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
-		}
-
-		if (ccid_descriptor -> bPINSupport & CCID_CLASS_PIN_MODIFY)
-		{
-			pcsc_tlv -> tag = FEATURE_MODIFY_PIN_DIRECT;
-			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_FEATURE_MODIFY_PIN_DIRECT);
-
-			pcsc_tlv++;
-			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
-		}
-
-#ifdef FEATURE_IFD_PIN_PROPERTIES
-		/* We can always forward wLcdLayout */
-		pcsc_tlv -> tag = FEATURE_IFD_PIN_PROPERTIES;
-		pcsc_tlv -> length = 0x04; /* always 0x04 */
-		pcsc_tlv -> value = htonl(IOCTL_FEATURE_IFD_PIN_PROPERTIES);
-
-		pcsc_tlv++;
-		iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
-#endif
-
-		if (KOBIL_TRIBANK == ccid_descriptor -> readerID)
-		{
-			pcsc_tlv -> tag = FEATURE_MCT_READERDIRECT;
-			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_FEATURE_MCT_READERDIRECT);
-
-			pcsc_tlv++;
-			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
-		}
-
-		*pdwBytesReturned = iBytesReturned;
-		return_value = IFD_SUCCESS;
-	}
-
-#ifdef FEATURE_IFD_PIN_PROPERTIES
-	/* Get PIN handling capabilities */
-	if (IOCTL_FEATURE_IFD_PIN_PROPERTIES == dwControlCode)
-	{
-		// pcsc-lite 1.4.x header files: missing PIN_PROPERTIES_STRUCTURE
-		// pcsc-lite 1.5.x header files: incorrect PIN_PROPERTIES_STRUCTURE
-		unsigned int wLcdLayout = ccid_descriptor -> wLcdLayout;
-
-		if (RxLength >= 4)
-		{
-			RxBuffer[0] = wLcdLayout & 0xFF;
-			RxBuffer[1] = (wLcdLayout >> 8) & 0xFF;
-			RxBuffer[2] = 0x07;
-			RxBuffer[3] = 0;
-
-			*pdwBytesReturned = 4;
-			return_value = IFD_SUCCESS;
-		}
-	}
-#endif
-
-	/* Verify a PIN, plain CCID */
-	if (IOCTL_FEATURE_VERIFY_PIN_DIRECT == dwControlCode)
-	{
-		unsigned int iBytesReturned;
-
-		iBytesReturned = RxLength;
-		return_value = SecurePINVerify(reader_index, TxBuffer, TxLength,
-			RxBuffer, &iBytesReturned);
-		*pdwBytesReturned = iBytesReturned;
-	}
-
-	/* Modify a PIN, plain CCID */
-	if (IOCTL_FEATURE_MODIFY_PIN_DIRECT == dwControlCode)
-	{
-		unsigned int iBytesReturned;
-
-		iBytesReturned = RxLength;
-		return_value = SecurePINModify(reader_index, TxBuffer, TxLength,
-			RxBuffer, &iBytesReturned);
-		*pdwBytesReturned = iBytesReturned;
-	}
-
-	/* MCT: Multifunctional Card Terminal */
-	if (IOCTL_FEATURE_MCT_READERDIRECT == dwControlCode)
-	{
-		if ( (TxBuffer[0] != 0x20)	/* CLA */
-			|| ((TxBuffer[1] & 0xF0) != 0x70)	/* INS */
-			/* valid INS are
-			 * 0x70: SECODER INFO
-			 * 0x71: SECODER SELECT APPLICATION
-			 * 0x72: SECODER APPLICATION ACTIVE
-			 * 0x73: SECODER DATA CONFIRMATION
-			 * 0x74: SECODER PROCESS AUTHENTICATION TOKEN */
-			|| ((TxBuffer[1] & 0x0F) > 4)
-			|| (TxBuffer[2] != 0x00)	/* P1 */
-			|| (TxBuffer[3] != 0x00)	/* P2 */
-			|| (TxBuffer[4] != 0x00)	/* Lind */
-		   )
-		{
-			DEBUG_INFO("MCT Command refused by driver");
-			return_value = IFD_COMMUNICATION_ERROR;
-		}
-		else
-		{
-			unsigned int iBytesReturned;
-
-			/* we just transmit the buffer as a CCID Escape command */
-			iBytesReturned = RxLength;
-			old_read_timeout = ccid_descriptor -> readTimeout;
-			ccid_descriptor -> readTimeout = 0;	// Infinite
-			return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
-				&iBytesReturned);
-			ccid_descriptor -> readTimeout = old_read_timeout;
-			*pdwBytesReturned = iBytesReturned;
-		}
-	}
-
-	// MS CCID I/O control code for escape command
-	if (IOCTL_CCID_ESCAPE == dwControlCode)
-	{
-		unsigned int iBytesReturned;
-
-		iBytesReturned = RxLength;
-		old_read_timeout = ccid_descriptor -> readTimeout;
-		ccid_descriptor -> readTimeout = 0;	// Infinite
-		return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
-			&iBytesReturned);
-		ccid_descriptor -> readTimeout = old_read_timeout;
-		*pdwBytesReturned = iBytesReturned;
-	}
-
-	// ACR83U, ACR85 and APG8201 specific I/O controls
-	if ((ACS_ACR83U == ccid_descriptor -> readerID) ||
-		(ACS_ACR85_PINPAD_READER_ICC == ccid_descriptor -> readerID) ||
-		(ACS_APG8201 == ccid_descriptor -> readerID))
-	{
-		// Get firmware version
-		if (IOCTL_SMARTCARD_GET_FIRMWARE_VERSION == dwControlCode)
-		{
-			unsigned char command[] = { 0x04, 0x00, 0x00, 0x00, 0x00 };
-			unsigned int commandLen = sizeof(command);
-			unsigned char response[3 + 6];
-			unsigned int responseLen = sizeof(response);
-			
-			return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
-			if (return_value == IFD_SUCCESS)
+			// Set card voltage
+			if (IOCTL_SMARTCARD_SET_CARD_VOLTAGE == dwControlCode)
 			{
-				if ((responseLen > 3) && (response[0] == 0x84))
-				{
-					*pdwBytesReturned = responseLen - 3;
-					if (RxLength < *pdwBytesReturned)
-						return_value = IFD_COMMUNICATION_ERROR;
-					else
-						memcpy(RxBuffer, response + 3, *pdwBytesReturned);
-				}
-				else
-					return_value = IFD_COMMUNICATION_ERROR;
+				unsigned int iBytesReturned;
+
+				iBytesReturned = RxLength;
+				return_value = ACR38_SetCardVoltage(reader_index, TxBuffer, TxLength,
+					RxBuffer, &iBytesReturned);
+				*pdwBytesReturned = iBytesReturned;
 			}
-		}
 
-		// Display LCD message
-		if (IOCTL_SMARTCARD_DISPLAY_LCD_MESSAGE == dwControlCode)
-		{
-			unsigned char command[5 + 32] = { 0x05, 0x00, 0x20, 0x00, 0x00 };
-			unsigned int commandLen = sizeof(command);
-			unsigned char response[3 + 2];
-			unsigned int responseLen = sizeof(response);
-			
-			if ((TxLength > 0) && (TxLength <= 32))
+			// Set card type
+			if (IOCTL_SMARTCARD_SET_CARD_TYPE == dwControlCode)
 			{
-				// Fill memory with spaces
-				memset(command + 5, 0x20, 32);
+				unsigned int iBytesReturned;
 
-				// Copy message to command
-				memcpy(command + 5, TxBuffer, TxLength);
-
-				return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
-				if (return_value == IFD_SUCCESS)
-				{
-					if ((responseLen > 3) && (response[0] == 0x85))
-					{
-						*pdwBytesReturned = responseLen - 3;
-						if (RxLength < *pdwBytesReturned)
-							return_value = IFD_COMMUNICATION_ERROR;
-						else
-							memcpy(RxBuffer, response + 3, *pdwBytesReturned);
-					}
-					else
-						return_value = IFD_COMMUNICATION_ERROR;
-				}
-			}
-		}
-
-		// Read key
-		if (IOCTL_SMARTCARD_READ_KEY == dwControlCode)
-		{
-			unsigned char command[5 + 6] = { 0x06, 0x00, 0x06, 0x00, 0x00 };
-			unsigned int commandLen = sizeof(command);
-			unsigned char response[3 + 35];
-			unsigned int responseLen = sizeof(response);
-			
-			if (TxLength == 6)
-			{
-				// Copy message to command
-				memcpy(command + 5, TxBuffer, TxLength);
-
-				old_read_timeout = ccid_descriptor -> readTimeout;
-				ccid_descriptor -> readTimeout = 0;	// Infinite
-				return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
-				ccid_descriptor -> readTimeout = old_read_timeout;
-				if (return_value == IFD_SUCCESS)
-				{
-					if ((responseLen > 3) && (response[0] == 0x86))
-					{
-						*pdwBytesReturned = responseLen - 3;
-						if (RxLength < *pdwBytesReturned)
-							return_value = IFD_COMMUNICATION_ERROR;
-						else
-							memcpy(RxBuffer, response + 3, *pdwBytesReturned);
-					}
-					else
-						return_value = IFD_COMMUNICATION_ERROR;
-				}
+				iBytesReturned = RxLength;
+				return_value = ACR38_SetCardType(reader_index, TxBuffer, TxLength,
+					RxBuffer, &iBytesReturned);
+				*pdwBytesReturned = iBytesReturned;
 			}
 		}
 	}
 	else
 	{
-		// ACR128 I/O control code for escape command
-		if (IOCTL_ACR128_READER_COMMAND == dwControlCode)
+		if (IOCTL_SMARTCARD_VENDOR_IFD_EXCHANGE == dwControlCode)
 		{
-			unsigned char *command;
-			unsigned int commandLen = 3 + TxLength;
-			unsigned int iBytesReturned;
-
-			// Allocate command
-			command = (unsigned char *) malloc(commandLen);
-			if (command == NULL)
+			if (FALSE == (DriverOptions & DRIVER_OPTION_CCID_EXCHANGE_AUTHORIZED))
+			{
+				DEBUG_INFO("ifd exchange (Escape command) not allowed");
 				return_value = IFD_COMMUNICATION_ERROR;
+			}
 			else
 			{
-				// Fill command header
-				command[0] = 0xE0;
-				command[1] = 0x00;
-				command[2] = 0x00;
-
-				// Copy command
-				memcpy(command + 3, TxBuffer, TxLength);
+				unsigned int iBytesReturned;
 
 				iBytesReturned = RxLength;
 				old_read_timeout = ccid_descriptor -> readTimeout;
 				ccid_descriptor -> readTimeout = 0;	// Infinite
-				return_value = CmdEscape(reader_index, command, commandLen, RxBuffer,
+				return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
 					&iBytesReturned);
 				ccid_descriptor -> readTimeout = old_read_timeout;
 				*pdwBytesReturned = iBytesReturned;
+			}
+		}
 
-				// Free command
-				free(command);
+		/* Implement the PC/SC v2.02.05 Part 10 IOCTL mechanism */
+
+		/* Query for features */
+		if (CM_IOCTL_GET_FEATURE_REQUEST == dwControlCode)
+		{
+			unsigned int iBytesReturned = 0;
+			PCSC_TLV_STRUCTURE *pcsc_tlv = (PCSC_TLV_STRUCTURE *)RxBuffer;
+
+			/* we need room for up to for records */
+			if (RxLength < 4 * sizeof(PCSC_TLV_STRUCTURE))
+				return IFD_COMMUNICATION_ERROR;
+
+			/* We can only support direct verify and/or modify currently */
+			if (ccid_descriptor -> bPINSupport & CCID_CLASS_PIN_VERIFY)
+			{
+				pcsc_tlv -> tag = FEATURE_VERIFY_PIN_DIRECT;
+				pcsc_tlv -> length = 0x04; /* always 0x04 */
+				pcsc_tlv -> value = htonl(IOCTL_FEATURE_VERIFY_PIN_DIRECT);
+
+				pcsc_tlv++;
+				iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
+			}
+
+			if (ccid_descriptor -> bPINSupport & CCID_CLASS_PIN_MODIFY)
+			{
+				pcsc_tlv -> tag = FEATURE_MODIFY_PIN_DIRECT;
+				pcsc_tlv -> length = 0x04; /* always 0x04 */
+				pcsc_tlv -> value = htonl(IOCTL_FEATURE_MODIFY_PIN_DIRECT);
+
+				pcsc_tlv++;
+				iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
+			}
+
+#ifdef FEATURE_IFD_PIN_PROPERTIES
+			/* We can always forward wLcdLayout */
+			pcsc_tlv -> tag = FEATURE_IFD_PIN_PROPERTIES;
+			pcsc_tlv -> length = 0x04; /* always 0x04 */
+			pcsc_tlv -> value = htonl(IOCTL_FEATURE_IFD_PIN_PROPERTIES);
+
+			pcsc_tlv++;
+			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
+#endif
+
+			if (KOBIL_TRIBANK == ccid_descriptor -> readerID)
+			{
+				pcsc_tlv -> tag = FEATURE_MCT_READERDIRECT;
+				pcsc_tlv -> length = 0x04; /* always 0x04 */
+				pcsc_tlv -> value = htonl(IOCTL_FEATURE_MCT_READERDIRECT);
+
+				pcsc_tlv++;
+				iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
+			}
+
+			*pdwBytesReturned = iBytesReturned;
+			return_value = IFD_SUCCESS;
+		}
+
+#ifdef FEATURE_IFD_PIN_PROPERTIES
+		/* Get PIN handling capabilities */
+		if (IOCTL_FEATURE_IFD_PIN_PROPERTIES == dwControlCode)
+		{
+			// pcsc-lite 1.4.x header files: missing PIN_PROPERTIES_STRUCTURE
+			// pcsc-lite 1.5.x header files: incorrect PIN_PROPERTIES_STRUCTURE
+			unsigned int wLcdLayout = ccid_descriptor -> wLcdLayout;
+
+			if (RxLength >= 4)
+			{
+				RxBuffer[0] = wLcdLayout & 0xFF;
+				RxBuffer[1] = (wLcdLayout >> 8) & 0xFF;
+				RxBuffer[2] = 0x07;
+				RxBuffer[3] = 0;
+
+				*pdwBytesReturned = 4;
+				return_value = IFD_SUCCESS;
+			}
+		}
+#endif
+
+		/* Verify a PIN, plain CCID */
+		if (IOCTL_FEATURE_VERIFY_PIN_DIRECT == dwControlCode)
+		{
+			unsigned int iBytesReturned;
+
+			iBytesReturned = RxLength;
+			return_value = SecurePINVerify(reader_index, TxBuffer, TxLength,
+				RxBuffer, &iBytesReturned);
+			*pdwBytesReturned = iBytesReturned;
+		}
+
+		/* Modify a PIN, plain CCID */
+		if (IOCTL_FEATURE_MODIFY_PIN_DIRECT == dwControlCode)
+		{
+			unsigned int iBytesReturned;
+
+			iBytesReturned = RxLength;
+			return_value = SecurePINModify(reader_index, TxBuffer, TxLength,
+				RxBuffer, &iBytesReturned);
+			*pdwBytesReturned = iBytesReturned;
+		}
+
+		/* MCT: Multifunctional Card Terminal */
+		if (IOCTL_FEATURE_MCT_READERDIRECT == dwControlCode)
+		{
+			if ( (TxBuffer[0] != 0x20)	/* CLA */
+				|| ((TxBuffer[1] & 0xF0) != 0x70)	/* INS */
+				/* valid INS are
+				 * 0x70: SECODER INFO
+				 * 0x71: SECODER SELECT APPLICATION
+				 * 0x72: SECODER APPLICATION ACTIVE
+				 * 0x73: SECODER DATA CONFIRMATION
+				 * 0x74: SECODER PROCESS AUTHENTICATION TOKEN */
+				|| ((TxBuffer[1] & 0x0F) > 4)
+				|| (TxBuffer[2] != 0x00)	/* P1 */
+				|| (TxBuffer[3] != 0x00)	/* P2 */
+				|| (TxBuffer[4] != 0x00)	/* Lind */
+			   )
+			{
+				DEBUG_INFO("MCT Command refused by driver");
+				return_value = IFD_COMMUNICATION_ERROR;
+			}
+			else
+			{
+				unsigned int iBytesReturned;
+
+				/* we just transmit the buffer as a CCID Escape command */
+				iBytesReturned = RxLength;
+				old_read_timeout = ccid_descriptor -> readTimeout;
+				ccid_descriptor -> readTimeout = 0;	// Infinite
+				return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
+					&iBytesReturned);
+				ccid_descriptor -> readTimeout = old_read_timeout;
+				*pdwBytesReturned = iBytesReturned;
+			}
+		}
+
+		// MS CCID I/O control code for escape command
+		if (IOCTL_CCID_ESCAPE == dwControlCode)
+		{
+			unsigned int iBytesReturned;
+
+			iBytesReturned = RxLength;
+			old_read_timeout = ccid_descriptor -> readTimeout;
+			ccid_descriptor -> readTimeout = 0;	// Infinite
+			return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
+				&iBytesReturned);
+			ccid_descriptor -> readTimeout = old_read_timeout;
+			*pdwBytesReturned = iBytesReturned;
+		}
+
+		// ACR83U, ACR85 and APG8201 specific I/O controls
+		if ((ACS_ACR83U == ccid_descriptor -> readerID) ||
+			(ACS_ACR85_PINPAD_READER_ICC == ccid_descriptor -> readerID) ||
+			(ACS_APG8201 == ccid_descriptor -> readerID))
+		{
+			// Get firmware version
+			if (IOCTL_SMARTCARD_GET_FIRMWARE_VERSION == dwControlCode)
+			{
+				unsigned char command[] = { 0x04, 0x00, 0x00, 0x00, 0x00 };
+				unsigned int commandLen = sizeof(command);
+				unsigned char response[3 + 6];
+				unsigned int responseLen = sizeof(response);
+
+				return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
+				if (return_value == IFD_SUCCESS)
+				{
+					if ((responseLen > 3) && (response[0] == 0x84))
+					{
+						*pdwBytesReturned = responseLen - 3;
+						if (RxLength < *pdwBytesReturned)
+							return_value = IFD_COMMUNICATION_ERROR;
+						else
+							memcpy(RxBuffer, response + 3, *pdwBytesReturned);
+					}
+					else
+						return_value = IFD_COMMUNICATION_ERROR;
+				}
+			}
+
+			// Display LCD message
+			if (IOCTL_SMARTCARD_DISPLAY_LCD_MESSAGE == dwControlCode)
+			{
+				unsigned char command[5 + 32] = { 0x05, 0x00, 0x20, 0x00, 0x00 };
+				unsigned int commandLen = sizeof(command);
+				unsigned char response[3 + 2];
+				unsigned int responseLen = sizeof(response);
+
+				if ((TxLength > 0) && (TxLength <= 32))
+				{
+					// Fill memory with spaces
+					memset(command + 5, 0x20, 32);
+
+					// Copy message to command
+					memcpy(command + 5, TxBuffer, TxLength);
+
+					return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
+					if (return_value == IFD_SUCCESS)
+					{
+						if ((responseLen > 3) && (response[0] == 0x85))
+						{
+							*pdwBytesReturned = responseLen - 3;
+							if (RxLength < *pdwBytesReturned)
+								return_value = IFD_COMMUNICATION_ERROR;
+							else
+								memcpy(RxBuffer, response + 3, *pdwBytesReturned);
+						}
+						else
+							return_value = IFD_COMMUNICATION_ERROR;
+					}
+				}
+			}
+
+			// Read key
+			if (IOCTL_SMARTCARD_READ_KEY == dwControlCode)
+			{
+				unsigned char command[5 + 6] = { 0x06, 0x00, 0x06, 0x00, 0x00 };
+				unsigned int commandLen = sizeof(command);
+				unsigned char response[3 + 35];
+				unsigned int responseLen = sizeof(response);
+
+				if (TxLength == 6)
+				{
+					// Copy message to command
+					memcpy(command + 5, TxBuffer, TxLength);
+
+					old_read_timeout = ccid_descriptor -> readTimeout;
+					ccid_descriptor -> readTimeout = 0;	// Infinite
+					return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
+					ccid_descriptor -> readTimeout = old_read_timeout;
+					if (return_value == IFD_SUCCESS)
+					{
+						if ((responseLen > 3) && (response[0] == 0x86))
+						{
+							*pdwBytesReturned = responseLen - 3;
+							if (RxLength < *pdwBytesReturned)
+								return_value = IFD_COMMUNICATION_ERROR;
+							else
+								memcpy(RxBuffer, response + 3, *pdwBytesReturned);
+						}
+						else
+							return_value = IFD_COMMUNICATION_ERROR;
+					}
+				}
+			}
+		}
+		else
+		{
+			// ACR128 I/O control code for escape command
+			if (IOCTL_ACR128_READER_COMMAND == dwControlCode)
+			{
+				unsigned char *command;
+				unsigned int commandLen = 3 + TxLength;
+				unsigned int iBytesReturned;
+
+				// Allocate command
+				command = (unsigned char *) malloc(commandLen);
+				if (command == NULL)
+					return_value = IFD_COMMUNICATION_ERROR;
+				else
+				{
+					// Fill command header
+					command[0] = 0xE0;
+					command[1] = 0x00;
+					command[2] = 0x00;
+
+					// Copy command
+					memcpy(command + 3, TxBuffer, TxLength);
+
+					iBytesReturned = RxLength;
+					old_read_timeout = ccid_descriptor -> readTimeout;
+					ccid_descriptor -> readTimeout = 0;	// Infinite
+					return_value = CmdEscape(reader_index, command, commandLen, RxBuffer,
+						&iBytesReturned);
+					ccid_descriptor -> readTimeout = old_read_timeout;
+					*pdwBytesReturned = iBytesReturned;
+
+					// Free command
+					free(command);
+				}
 			}
 		}
 	}
