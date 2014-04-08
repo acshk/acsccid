@@ -1729,6 +1729,17 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 				iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 			}
 
+			// APG8201Z supports vendor specific feature
+			if (ACS_APG8201Z == ccid_descriptor -> readerID)
+			{
+				pcsc_tlv -> tag = 0x80;
+				pcsc_tlv -> length = 0x04; /* always 0x04 */
+				pcsc_tlv -> value = 0;
+
+				pcsc_tlv++;
+				iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
+			}
+
 			*pdwBytesReturned = iBytesReturned;
 			return_value = IFD_SUCCESS;
 		}
