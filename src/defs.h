@@ -24,6 +24,29 @@
 #include <pcsclite.h>
 
 #include "openct/proto-t1.h"
+#include <ifdhandler.h>
+
+typedef RESPONSECODE (* PPOWER_ON)(unsigned int reader_index, unsigned int *nlength,
+	/*@out@*/ unsigned char buffer[], int voltage);
+
+typedef RESPONSECODE (* PPOWER_OFF)(unsigned int reader_index);
+
+typedef RESPONSECODE (* PGET_SLOT_STATUS)(unsigned int reader_index,
+	/*@out@*/ unsigned char buffer[]);
+
+typedef RESPONSECODE (* PXFR_BLOCK)(unsigned int reader_index, unsigned int tx_length,
+	unsigned char tx_buffer[], unsigned int *rx_length,
+	unsigned char rx_buffer[], int protoccol);
+
+typedef RESPONSECODE (* PTRANSMIT)(unsigned int reader_index, unsigned int tx_length,
+	const unsigned char tx_buffer[], unsigned short rx_length, unsigned char bBWI);
+
+typedef RESPONSECODE (* PRECEIVE)(unsigned int reader_index,
+	/*@out@*/ unsigned int *rx_length,
+	/*@out@*/ unsigned char rx_buffer[], unsigned char *chain_parameter);
+
+typedef RESPONSECODE (* PSET_PARAMETERS)(unsigned int reader_index, char protocol,
+	unsigned int length, unsigned char buffer[]);
 
 typedef struct CCID_DESC
 {
@@ -45,6 +68,16 @@ typedef struct CCID_DESC
 
 	/* reader name passed to IFDHCreateChannelByName() */
 	char *readerName;
+
+	// Reader operations
+	PPOWER_ON pPowerOn;
+	PPOWER_OFF pPowerOff;
+	PGET_SLOT_STATUS pGetSlotStatus;
+	PXFR_BLOCK pXfrBlock;
+	PTRANSMIT pTransmitT1;
+	PTRANSMIT pTransmitPPS;
+	PRECEIVE pReceive;
+	PSET_PARAMETERS pSetParameters;
 } CcidDesc;
 
 typedef enum {
