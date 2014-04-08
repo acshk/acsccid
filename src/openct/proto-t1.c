@@ -22,6 +22,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defs.h"
+#include "ccid_ifdhandler.h"
+
 /* I block */
 #define T1_I_SEQ_SHIFT		6
 
@@ -641,12 +644,14 @@ static int t1_xcv(t1_state_t * t1, unsigned char *block, size_t slen,
 	size_t rmax)
 {
 	int n, m;
-	_ccid_descriptor *ccid_desc ;
+	CcidDesc *ccid_slot;
+	_ccid_descriptor *ccid_desc;
 	int oldReadTimeout;
 	unsigned int rmax_int;
 
 	DEBUG_XXD("sending: ", block, slen);
 
+	ccid_slot = get_ccid_slot(t1->lun);
 	ccid_desc = get_ccid_descriptor(t1->lun);
 	oldReadTimeout = ccid_desc->readTimeout;
 
@@ -662,7 +667,7 @@ static int t1_xcv(t1_state_t * t1, unsigned char *block, size_t slen,
 	{
 		rmax = 3;
 
-		n = CCID_Transmit(t1 -> lun, slen, block, rmax, t1->wtx);
+		n = ccid_slot->pTransmitT1(t1 -> lun, slen, block, rmax, t1->wtx);
 		if (n != IFD_SUCCESS)
 			return n;
 
@@ -670,7 +675,7 @@ static int t1_xcv(t1_state_t * t1, unsigned char *block, size_t slen,
 		 * so we can't use &rmax since &rmax is a (size_t *) and may not
 		 * be the same on 64-bits architectures for example (iMac G5) */
 		rmax_int = rmax;
-		n = CCID_Receive(t1 -> lun, &rmax_int, block, NULL);
+		n = ccid_slot->pReceive(t1 -> lun, &rmax_int, block, NULL);
 		rmax = rmax_int;
 
 		if (n == IFD_PARITY_ERROR)
@@ -680,12 +685,12 @@ static int t1_xcv(t1_state_t * t1, unsigned char *block, size_t slen,
 
 		rmax = block[2] + 1;
 
-		n = CCID_Transmit(t1 -> lun, 0, block, rmax, t1->wtx);
+		n = ccid_slot->pTransmitT1(t1 -> lun, 0, block, rmax, t1->wtx);
 		if (n != IFD_SUCCESS)
 			return n;
 
 		rmax_int = rmax;
-		n = CCID_Receive(t1 -> lun, &rmax_int, &block[3], NULL);
+		n = ccid_slot->pReceive(t1 -> lun, &rmax_int, &block[3], NULL);
 		rmax = rmax_int;
 		if (n == IFD_PARITY_ERROR)
 			return -2;
@@ -696,14 +701,14 @@ static int t1_xcv(t1_state_t * t1, unsigned char *block, size_t slen,
 	}
 	else
 	{
-		n = CCID_Transmit(t1 -> lun, slen, block, 0, t1->wtx);
+		n = ccid_slot->pTransmitT1(t1 -> lun, slen, block, 0, t1->wtx);
 		t1->wtx = 0;	/* reset to default value */
 		if (n != IFD_SUCCESS)
 			return n;
 
 		/* Get the response en bloc */
 		rmax_int = rmax;
-		n = CCID_Receive(t1 -> lun, &rmax_int, block, NULL);
+		n = ccid_slot->pReceive(t1 -> lun, &rmax_int, block, NULL);
 		rmax = rmax_int;
 		if (n == IFD_PARITY_ERROR)
 			return -2;

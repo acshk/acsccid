@@ -31,6 +31,8 @@
 #include "defs.h"
 #include "debug.h"
 
+#include "ccid_ifdhandler.h"
+
 /*
  * Not exported funtions declaration
  */
@@ -44,23 +46,25 @@ static BYTE PPS_GetPCK (BYTE * block, unsigned length);
 int
 PPS_Exchange (int lun, BYTE * params, unsigned *length, unsigned char *pps1)
 {
+  CcidDesc *ccid_slot;
   BYTE confirm[PPS_MAX_LENGTH];
   unsigned len_request, len_confirm;
   int ret;
 
+  ccid_slot = get_ccid_slot(lun);
   len_request = PPS_GetLength (params);
   params[len_request - 1] = PPS_GetPCK(params, len_request - 1);
 
   DEBUG_XXD ("PPS: Sending request: ", params, len_request);
 
   /* Send PPS request */
-  if (CCID_Transmit (lun, len_request, params, isCharLevel(lun) ? 4 : 0, 0)
+  if (ccid_slot->pTransmitPPS(lun, len_request, params, isCharLevel(lun) ? 4 : 0, 0)
 	!= IFD_SUCCESS)
     return PPS_ICC_ERROR;
 
   /* Get PPS confirm */
   len_confirm = sizeof(confirm);
-  if (CCID_Receive (lun, &len_confirm, confirm, NULL) != IFD_SUCCESS)
+  if (ccid_slot->pReceive(lun, &len_confirm, confirm, NULL) != IFD_SUCCESS)
     return PPS_ICC_ERROR;
 
   DEBUG_XXD ("PPS: Receiving confirm: ", confirm, len_confirm);

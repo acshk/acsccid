@@ -364,7 +364,7 @@ EXTERNAL RESPONSECODE IFDHCloseChannel(DWORD Lun)
 	 * No need to wait too long if the reader disapeared */
 	get_ccid_descriptor(reader_index)->readTimeout = DEFAULT_COM_READ_TIMEOUT;
 
-	(void)CmdPowerOff(reader_index);
+	(void)CcidSlots[reader_index].pPowerOff(reader_index);
 	/* No reader status check, if it failed, what can you do ? :) */
 
 #ifdef HAVE_PTHREAD
@@ -1051,7 +1051,7 @@ again:
 		// Set parameters if not specific mode
 		if (!specificMode)
 		{
-			ret = SetParameters(reader_index, 1, sizeof(param), param);
+			ret = ccid_slot->pSetParameters(reader_index, 1, sizeof(param), param);
 			if (IFD_SUCCESS != ret)
 			{
 				DEBUG_INFO("SetParameters (T1) Failed");
@@ -1117,7 +1117,7 @@ again:
 		// Set parameters if not specific mode
 		if (!specificMode)
 		{
-			ret = SetParameters(reader_index, 0, sizeof(param), param);
+			ret = ccid_slot->pSetParameters(reader_index, 0, sizeof(param), param);
 			if (IFD_SUCCESS != ret)
 			{
 				DEBUG_INFO("SetParameters (T0) Failed");
@@ -1253,7 +1253,7 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			CcidSlots[reader_index].bPowerFlags |= MASK_POWERFLAGS_PDWN;
 
 			/* send the command */
-			if (IFD_SUCCESS != CmdPowerOff(reader_index))
+			if (IFD_SUCCESS != CcidSlots[reader_index].pPowerOff(reader_index))
 			{
 				DEBUG_CRITICAL("PowerDown failed");
 				return_value = IFD_ERROR_POWER_ACTION;
@@ -1281,7 +1281,7 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			ccid_descriptor->readTimeout = 4;	// 60 seconds is too long
 
 			nlength = sizeof(pcbuffer);
-			return_value = CmdPowerOn(reader_index, &nlength, pcbuffer,
+			return_value = CcidSlots[reader_index].pPowerOn(reader_index, &nlength, pcbuffer,
 				PowerOnVoltage);
 
 			// Enable/Disable PICC
@@ -1298,10 +1298,10 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 					// Perform cold reset after disabling PICC (Try 10 times)
 					while ((return_value != IFD_SUCCESS) || (nlength == 0))
 					{
-						CmdPowerOff(reader_index);
+						(void)CcidSlots[reader_index].pPowerOff(reader_index);
 						usleep(100 * 1000);
 						nlength = sizeof(pcbuffer);
-						return_value = CmdPowerOn(reader_index, &nlength, pcbuffer,
+						return_value = CcidSlots[reader_index].pPowerOn(reader_index, &nlength, pcbuffer,
 							PowerOnVoltage);
 		
 						i++;
@@ -1454,7 +1454,7 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 	if ((ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC) &&
 		(ccid_descriptor->firmwareFixEnabled))
 	{
-		if (CmdGetSlotStatus(reader_index, pcbuffer) == IFD_SUCCESS)
+		if (CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer) == IFD_SUCCESS)
 		{
 			if ((pcbuffer[7] & CCID_ICC_STATUS_MASK) == CCID_ICC_ABSENT)
 			{
@@ -1535,7 +1535,7 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 	}
 
 	rx_length = *RxLength;
-	return_value = CmdXfrBlock(reader_index, TxLength, TxBuffer, &rx_length,
+	return_value = CcidSlots[reader_index].pXfrBlock(reader_index, TxLength, TxBuffer, &rx_length,
 		RxBuffer, SendPci.Protocol);
 
 	if (IFD_SUCCESS == return_value)
@@ -1548,7 +1548,7 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 				(RxBuffer[0] == 0x63) &&
 				(RxBuffer[1] == 0x00))
 			{
-				if (CmdGetSlotStatus(reader_index, pcbuffer) == IFD_SUCCESS)
+				if (CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer) == IFD_SUCCESS)
 				{
 					if ((pcbuffer[7] & CCID_ICC_STATUS_MASK) == CCID_ICC_ABSENT)
 						return_value = IFD_ICC_NOT_PRESENT;
@@ -2016,7 +2016,7 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 		if (ccid_descriptor->bStatus[slot_index] == 0xFF)
 		{
 			// Get bStatus from GetSlotStatus
-			return_value = CmdGetSlotStatus(reader_index, pcbuffer);
+			return_value = CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer);
 			if (return_value == IFD_SUCCESS)
 				ccid_descriptor->bStatus[slot_index] = pcbuffer[7];
 		}
@@ -2038,7 +2038,7 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	{
 		if (*(ccid_descriptor->pPiccEnabled))
 		{
-			return_value = CmdGetSlotStatus(reader_index, pcbuffer);
+			return_value = CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer);
 		}
 		else
 		{
@@ -2048,7 +2048,7 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 		}
 	}
 	else
-		return_value = CmdGetSlotStatus(reader_index, pcbuffer);
+		return_value = CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer);
 
 	/* set back the old timeout */
 	ccid_descriptor->readTimeout = oldReadTimeout;
