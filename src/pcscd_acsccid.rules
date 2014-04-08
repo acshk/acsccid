@@ -22,12 +22,16 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="1205", RUN+="/usr
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="1206", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR122U
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2200", RUN+="/usr/sbin/pcscd --hotplug"
-# ACS ACR1222 Dual Reader
+# ACS ACR1222 Dual Reader (ACR1222U-C6)
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2207", RUN+="/usr/sbin/pcscd --hotplug"
-# ACS ACR1222 1SAM Dual Reader
+# ACS ACR1222 1SAM Dual Reader (ACR1222U-C3)
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="1280", RUN+="/usr/sbin/pcscd --hotplug"
-# ACS ACR1222L 3S CL Reader
+# ACS ACR1222 3S PICC Reader (ACR1222L-D1)
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2206", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR1222 1SAM PICC Reader (ACR1222U-C1)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2214", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS ACR1222 1SAM PICC Reader (ACR1222U-C8)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="222B", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR125 nPA plus
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2203", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR1281 CL Reader (qPBOC)
@@ -42,6 +46,8 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="0901", RUN+="/usr
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="220a", RUN+="/usr/sbin/pcscd --hotplug"
 # ACS ACR1281 1S PICC Reader
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2220", RUN+="/usr/sbin/pcscd --hotplug"
+# ACS APG8201Z
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="8202", RUN+="/usr/sbin/pcscd --hotplug"
 
 # non CCID generic (InterfaceClass: 0x00)
 # ACS ACR83U
