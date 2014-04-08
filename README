@@ -22,9 +22,9 @@ Contents
 ----------------
 
 Version: 1.0.3
-Release Date: 19/9/2011
+Release Date: 20/10/2011
 
-Supported Readers
+Supported CCID Readers
 ACR33 ICC Reader
 ACR38U-CCID
 ACR3801
@@ -53,9 +53,15 @@ ACR1281 2S CL Reader
 ACR1281 1S PICC Reader
 APG8201
 
+Supported non-CCID Readers
+ACR38U
+ACR38U-SAM
+SCR21U (IRIS)
+CryptoMate
+
 Operating Systems
 Linux
-Mac OS X 10.5/10.6
+Mac OS X 10.5/10.6/10.7
 
 
 
@@ -113,7 +119,7 @@ v1.0.1 (9/11/2009)
 1. Remove firmware version check.
 2. Modify the driver to use separate thread to poll the slot ICC states from
    interrupt endpoint.
-   
+
 v1.0.2 (2/2/2010)
 1. Do not use separate thread to poll the slot ICC status due to poor
    performance of libusb v0.1.12.
@@ -210,21 +216,25 @@ v1.0.3 (19/9/2011)
 2. Change PID of ACR33 ICC reader from 0x8306 to 0x8307 because 0x8306 is used
    by ACR85 ICC.
 
+v1.0.3 (10/10/2011)
+1. Check if the card supports the selected protocol before setting protocol in
+   IFDHSetProtocolParameters() and return IFD_ERROR_PTS_FAILURE if the card does
+   not support the selected protocol. On Mac OS X 10.6, pcscd will select wrong
+   protocol if Starcos 3.2 card is inserted.
+
+v1.0.3 (20/10/2011)
+1. Add the following non-CCID readers support:
+   ACR38U
+   ACR38U-SAM
+   SCR21U (IRIS)
+   CryptoMate
+
 
 
 4. File Contents
 ----------------
 
 .
-|-- MacOSX
-|   |-- configure
-|   |-- convert_reader_h.pl
-|   |-- debuglog.h
-|   |-- ifdhandler.h
-|   |-- pcsclite.h
-|   |-- reader.h.in
-|   |-- winscard.h
-|   `-- wintypes.h
 |-- config
 |   |-- compile
 |   |-- config.guess
@@ -235,30 +245,42 @@ v1.0.3 (19/9/2011)
 |   |-- missing
 |   `-- ylwrap
 |-- m4
+|   |-- ax_pthread.m4
+|   |-- libtool.m4
+|   |-- lt~obsolete.m4
+|   |-- ltoptions.m4
+|   |-- ltsugar.m4
+|   |-- ltversion.m4
 |   |-- Makefile.am
-|   |-- Makefile.in
-|   `-- ax_pthread.m4
+|   `-- Makefile.in
+|-- MacOSX
+|   |-- configure
+|   |-- convert_reader_h.pl
+|   |-- debuglog.h
+|   |-- ifdhandler.h
+|   |-- pcsclite.h
+|   |-- reader.h.in
+|   |-- winscard.h
+|   `-- wintypes.h
 |-- src
 |   |-- openct
-|   |   |-- LICENSE
 |   |   |-- buffer.c
 |   |   |-- buffer.h
 |   |   |-- checksum.c
 |   |   |-- checksum.h
+|   |   |-- LICENSE
 |   |   |-- proto-t1.c
 |   |   `-- proto-t1.h
 |   |-- towitoko
-|   |   |-- COPYING
-|   |   |-- README
 |   |   |-- atr.c
 |   |   |-- atr.h
+|   |   |-- COPYING
 |   |   |-- defines.h
 |   |   |-- pps.c
-|   |   `-- pps.h
-|   |-- 92_pcscd_acsccid.rules
-|   |-- Info.plist.src
-|   |-- Makefile.am
-|   |-- Makefile.in
+|   |   |-- pps.h
+|   |   `-- README
+|   |-- acr38cmd.c
+|   |-- acr38cmd.h
 |   |-- ccid.c
 |   |-- ccid.h
 |   |-- ccid_ifdhandler.h
@@ -272,6 +294,9 @@ v1.0.3 (19/9/2011)
 |   |-- debug.h
 |   |-- defs.h
 |   |-- ifdhandler.c
+|   |-- Info.plist.src
+|   |-- Makefile.am
+|   |-- Makefile.in
 |   |-- misc.h
 |   |-- parser.h
 |   |-- pcscd_acsccid.rules
@@ -281,19 +306,19 @@ v1.0.3 (19/9/2011)
 |   |-- tokenparser.l
 |   |-- utils.c
 |   `-- utils.h
+|-- aclocal.m4
 |-- AUTHORS
-|-- COPYING
+|-- bootstrap
 |-- ChangeLog
+|-- config.h.in
+|-- configure
+|-- configure.ac
+|-- COPYING
 |-- INSTALL
 |-- Makefile.am
 |-- Makefile.in
 |-- NEWS
-|-- README
-|-- aclocal.m4
-|-- bootstrap
-|-- config.h.in
-|-- configure
-`-- configure.ac
+`-- README
 
 
 
