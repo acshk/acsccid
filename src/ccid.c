@@ -388,6 +388,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 			break;
 
 		case ACS_APG8201:
+		case ACS_APG8201Z:
 			ccid_descriptor->wLcdLayout = 0x0210;
 
 			// APG8201 uses short APDU exchange
