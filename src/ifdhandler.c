@@ -35,6 +35,7 @@
 #include "debug.h"
 #include "utils.h"
 #include "commands.h"
+#include "acr38cmd.h"
 #include "towitoko/atr.h"
 #include "towitoko/pps.h"
 #include "parser.h"
@@ -119,6 +120,32 @@ EXTERNAL RESPONSECODE IFDHCreateChannelByName(DWORD Lun, LPSTR lpcDevice)
 	}
 	else
 	{
+		// Assign reader operations
+		if (ccid_descriptor->bInterfaceProtocol == PROTOCOL_ACR38)
+		{
+			// ACR38 reader
+			CcidSlots[reader_index].pPowerOn = ACR38_CmdPowerOn;
+			CcidSlots[reader_index].pPowerOff = ACR38_CmdPowerOff;
+			CcidSlots[reader_index].pGetSlotStatus = ACR38_CmdGetSlotStatus;
+			CcidSlots[reader_index].pXfrBlock = ACR38_CmdXfrBlock;
+			CcidSlots[reader_index].pTransmitT1 = ACR38_TransmitT1;
+			CcidSlots[reader_index].pTransmitPPS = ACR38_TransmitPPS;
+			CcidSlots[reader_index].pReceive = ACR38_Receive;
+			CcidSlots[reader_index].pSetParameters = ACR38_SetParameters;
+		}
+		else
+		{
+			// CCID reader
+			CcidSlots[reader_index].pPowerOn = CmdPowerOn;
+			CcidSlots[reader_index].pPowerOff = CmdPowerOff;
+			CcidSlots[reader_index].pGetSlotStatus = CmdGetSlotStatus;
+			CcidSlots[reader_index].pXfrBlock = CmdXfrBlock;
+			CcidSlots[reader_index].pTransmitT1 = CCID_Transmit;
+			CcidSlots[reader_index].pTransmitPPS = CCID_Transmit;
+			CcidSlots[reader_index].pReceive = CCID_Receive;
+			CcidSlots[reader_index].pSetParameters = SetParameters;
+		}
+
 		/* Maybe we have a special treatment for this reader */
 		(void)ccid_open_hack_pre(reader_index);
 
