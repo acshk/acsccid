@@ -1836,10 +1836,11 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			*pdwBytesReturned = iBytesReturned;
 		}
 
-		// ACR83U, ACR85 and APG8201 specific I/O controls
+		// ACR83U, ACR85, APG8201 and APG8201Z specific I/O controls
 		if ((ACS_ACR83U == ccid_descriptor -> readerID) ||
 			(ACS_ACR85_PINPAD_READER_ICC == ccid_descriptor -> readerID) ||
-			(ACS_APG8201 == ccid_descriptor -> readerID))
+			(ACS_APG8201 == ccid_descriptor -> readerID) ||
+			(ACS_APG8201Z == ccid_descriptor -> readerID))
 		{
 			// Get firmware version
 			if (IOCTL_SMARTCARD_GET_FIRMWARE_VERSION == dwControlCode)
