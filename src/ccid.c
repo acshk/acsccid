@@ -74,6 +74,8 @@ int ccid_open_hack_pre(unsigned int reader_index)
 			break;
 
 		case ACS_ACR122U:
+		case ACS_AET62_PICC_READER:
+		case ACS_AET62_1SAM_PICC_READER:
 			// Enable polling mode (ACR122 v2.06)
 			for (i = 0; i < 10; i++)
 			{
