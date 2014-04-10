@@ -556,6 +556,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 			{
 				ccid_descriptor->dwFeatures = 0x000204BA;	// SAM
 				ccid_descriptor->dwMaxDataRate = 9677;
+				ccid_descriptor->isSamSlot = 1;
 			}
 			break;
 
