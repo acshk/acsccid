@@ -576,6 +576,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 			{
 				ccid_descriptor->dwFeatures = 0x000204BA;	// SAM
 				ccid_descriptor->dwMaxDataRate = 125000;
+				ccid_descriptor->isSamSlot = 1;
 			}
 			break;
 
@@ -590,7 +591,13 @@ int ccid_open_hack_post(unsigned int reader_index)
 			{
 				ccid_descriptor->dwFeatures = 0x000204BA;	// SAM
 				ccid_descriptor->dwMaxDataRate = 125000;
+				ccid_descriptor->isSamSlot = 1;
 			}
+			break;
+
+		case ACS_ACR1281_1S_PICC_READER:
+			if (ccid_descriptor->bCurrentSlotIndex == 1)
+				ccid_descriptor->isSamSlot = 1;	// SAM
 			break;
 
 		default:
