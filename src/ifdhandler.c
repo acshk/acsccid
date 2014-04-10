@@ -773,6 +773,13 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 		}
 	}
 
+	// Set default supported protocol to T=0 if card does not support any protocol
+	if (protocolTypes == 0)
+	{
+		numProtocols = 1;
+		protocolTypes = SCARD_PROTOCOL_T0;
+	}
+
 	// Check if card supports this protocol (Mac OS X)
 	if (!(protocolTypes & Protocol))
 	{
