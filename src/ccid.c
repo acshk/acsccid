@@ -529,6 +529,17 @@ int ccid_open_hack_post(unsigned int reader_index)
 			}
 			break;
 
+		case ACS_ACR89_ICC_READER:
+		case ACS_ACR89_FP_READER:
+			if (ccid_descriptor->bCurrentSlotIndex > 1)
+				ccid_descriptor->isSamSlot = 1;	// SAM
+			break;
+
+		case ACS_ACR89_DUAL_READER:
+			if (ccid_descriptor->bCurrentSlotIndex > 2)
+				ccid_descriptor->isSamSlot = 1;	// SAM
+			break;
+
 		case ACS_ACR128U:
 			// Adjust features and maximum data rate
 			if (ccid_descriptor->bCurrentSlotIndex == 0)
