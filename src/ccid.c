@@ -523,7 +523,10 @@ int ccid_open_hack_post(unsigned int reader_index)
 			if (ccid_descriptor->bCurrentSlotIndex < 2)
 				ccid_descriptor->dwMaxDataRate = 116129;	// MCU
 			else
+			{
 				ccid_descriptor->dwMaxDataRate = 9677;		// SAM
+				ccid_descriptor->isSamSlot = 1;
+			}
 			break;
 
 		case ACS_ACR128U:
