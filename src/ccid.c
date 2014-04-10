@@ -367,6 +367,14 @@ int ccid_open_hack_post(unsigned int reader_index)
 			break;
 #endif
 
+		case ACS_ACR33U_A1_3SAM_ICC_READER:
+		case ACS_ACR33U_A2_3SAM_ICC_READER:
+		case ACS_ACR33U_A3_3SAM_ICC_READER:
+		case ACS_ACR33U_4SAM_ICC_READER:
+			if (ccid_descriptor->bCurrentSlotIndex > 1)
+				ccid_descriptor->isSamSlot = 1;	// SAM
+			break;
+
 		case ACS_ACR83U:
 			{
 				unsigned int firmwareVersion;
