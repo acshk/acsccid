@@ -465,6 +465,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 		case ACS_ACR38U:
 		case ACS_ACR38U_SAM:
 		case IRIS_SCR21U:
+		case ACS_AET65_1SAM_ICC_READER:
 			if (ccid_descriptor->bCurrentSlotIndex == 0)
 			{
 				char firmwareVersion[11];	// Firmware version
@@ -487,6 +488,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 			{
 				// Adjust maximum data rate
 				ccid_descriptor->dwMaxDataRate = 10752;	// SAM
+				ccid_descriptor->isSamSlot = 1;
 			}
 			break;
 

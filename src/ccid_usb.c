@@ -540,6 +540,7 @@ again:
 						if ((readerID != ACS_ACR38U) &&
 							(readerID != ACS_ACR38U_SAM) &&
 							(readerID != IRIS_SCR21U) &&
+							(readerID != ACS_AET65_1SAM_ICC_READER) &&
 							(readerID != ACS_CRYPTOMATE) &&
 							(readerID != ACS_ACR88U) &&
 							(readerID != ACS_ACR128U) &&
@@ -637,7 +638,8 @@ again:
 						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 						usbDevice[reader_index].ccid.bVoltageSupport = 0x07;
 					}
-					else if ((readerID == ACS_ACR38U_SAM) || (readerID == IRIS_SCR21U))
+					else if ((readerID == ACS_ACR38U_SAM) || (readerID == IRIS_SCR21U) ||
+						(readerID == ACS_AET65_1SAM_ICC_READER))
 					{
 						usbDevice[reader_index].ccid.dwFeatures = 0x00010030;
 						usbDevice[reader_index].ccid.wLcdLayout = 0;
