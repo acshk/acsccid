@@ -86,6 +86,9 @@ int ccid_open_hack_pre(unsigned int reader_index)
 				}
 			}
 			break;
+
+		default:
+			break;
 	}
 
 	/* CCID */
