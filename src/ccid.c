@@ -429,6 +429,11 @@ int ccid_open_hack_post(unsigned int reader_index)
 			}
 			break;
 
+		case ACS_ACR1222_1SAM_PICC_READER:
+			if (ccid_descriptor->bCurrentSlotIndex == 1)
+				ccid_descriptor->isSamSlot = 1;	// SAM
+			break;
+
 		case ACS_ACR1222_DUAL_READER:
 		case ACS_ACR1222_1SAM_DUAL_READER:
 			{
@@ -450,7 +455,15 @@ int ccid_open_hack_post(unsigned int reader_index)
 						EnablePicc(reader_index, 1);
 					}
 				}
+
+				if (ccid_descriptor->bCurrentSlotIndex == 2)
+					ccid_descriptor->isSamSlot = 1;	// SAM
 			}
+			break;
+
+		case ACS_ACR1222_3S_PICC_READER:
+			if (ccid_descriptor->bCurrentSlotIndex > 0)
+				ccid_descriptor->isSamSlot = 1;	// SAM
 			break;
 
 		case ACS_ACR85_PINPAD_READER_PICC:
