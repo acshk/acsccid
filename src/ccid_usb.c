@@ -723,7 +723,8 @@ again:
 						usbDevice[reader_index].ccid.dwMaxDataRate = dw2i(usb_interface->altsetting->extra, 23);
 
 						// Fix ACR1222 incorrect max slot index
-						if (readerID == ACS_ACR1222_DUAL_READER)
+						if ((readerID == ACS_ACR1222_1SAM_PICC_READER) ||
+							(readerID == ACS_ACR1222_DUAL_READER))
 							usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
 						else if (readerID == ACS_ACR1222_1SAM_DUAL_READER)
 							usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
