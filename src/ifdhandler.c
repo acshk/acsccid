@@ -2006,14 +2006,17 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	// Get slot index
 	slot_index = ccid_descriptor->bCurrentSlotIndex;
 
-	if (GEMCORESIMPRO == ccid_descriptor->readerID)
+	// Return dwSlotstatus if it is a SAM slot or reader is GEMCORESIMPRO
+	if ((ccid_descriptor->isSamSlot) ||
+		(GEMCORESIMPRO == ccid_descriptor->readerID))
 	{
 		return_value = ccid_descriptor->dwSlotStatus;
 		goto end;
 	}
+
 #ifndef __APPLE__
 	// ACR1222 reader is required to read data from interrupt endpoint
-	else if ((ACS_ACR85_PINPAD_READER_PICC == ccid_descriptor->readerID) ||
+	if ((ACS_ACR85_PINPAD_READER_PICC == ccid_descriptor->readerID) ||
 		(ACS_ACR1222_DUAL_READER == ccid_descriptor->readerID) ||
 		(ACS_ACR1222_1SAM_DUAL_READER == ccid_descriptor->readerID))
 	{

@@ -778,6 +778,9 @@ again:
 
 					// Initialize card type (ACR38U, ACR38U-SAM and SCR21U)
 					usbDevice[reader_index].ccid.cardType = 0;
+
+					// Initialize isSamSlot
+					usbDevice[reader_index].ccid.isSamSlot = FALSE;
 #ifdef __APPLE__
 					// Initialize terminated flag to false
 					usbDevice[reader_index].terminated = FALSE;

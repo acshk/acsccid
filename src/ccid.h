@@ -154,6 +154,9 @@ typedef struct
 
 	// Card type (ACR38U, ACR38U-SAM and SCR21U)
 	unsigned char cardType;
+
+	// True if it is a SAM slot
+	int isSamSlot;
 } _ccid_descriptor;
 
 /* Features from dwFeatures */
