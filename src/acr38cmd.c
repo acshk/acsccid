@@ -372,13 +372,6 @@ RESPONSECODE ACR38_TransmitT1(unsigned int reader_index, unsigned int tx_length,
 	status_t ret;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
-	/* check that the command is not too large */
-	if (tx_length > CMD_BUF_SIZE)
-	{
-		DEBUG_CRITICAL2("TX Length too big: %d", tx_length);
-		return IFD_NOT_SUPPORTED;
-	}
-
 	// EXCHANGE_TPDU_T1 or EXCHANGE_SAM_TPDU_T1
 	cmd[0] = 0x01;
 	cmd[1] = ccid_descriptor->bCurrentSlotIndex == 0 ? 0xA1 : 0xB1;
