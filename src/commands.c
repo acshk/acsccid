@@ -47,7 +47,9 @@
 #define BOGUS_SCM_FIRMWARE_FOR_dwMaxCCIDMessageLength
 
 #define max( a, b )   ( ( ( a ) > ( b ) ) ? ( a ) : ( b ) )
+#ifndef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
 
 // Fix problem using pcsc-lite 1.6.x header files
 #ifndef IFD_ERROR_INSUFFICIENT_BUFFER
