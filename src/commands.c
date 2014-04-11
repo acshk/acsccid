@@ -1797,6 +1797,15 @@ static RESPONSECODE CmdXfrBlockCHAR_T0(unsigned int reader_index,
 	if (ICCD_A == ccid_descriptor->bInterfaceProtocol)
 	{
 		unsigned char pcbuffer[SIZE_GET_SLOT_STATUS];
+		unsigned int backup_len;
+
+		/* length is on 16-bits only
+		 * if a size > 0x1000 is used then usb_control_msg() fails with
+		 * "Invalid argument" */
+		if (*rcv_len > 0x1000)
+			*rcv_len = 0x1000;
+
+		backup_len = *rcv_len;
 
 		/* Command to send to the smart card (must be 5 bytes) */
 		memset(cmd, 0, sizeof(cmd));
@@ -1823,40 +1832,48 @@ static RESPONSECODE CmdXfrBlockCHAR_T0(unsigned int reader_index,
 		if (return_value != IFD_SUCCESS)
 			return return_value;
 
-		if ((0x20 != pcbuffer[0]) && (snd_len > 0))
+		if (0x10 == pcbuffer[0])
 		{
-			/* continue sending the APDU */
-			return_value = CCID_Transmit(reader_index, snd_len, snd_buf, 0, 0);
-			if (return_value != IFD_SUCCESS)
-				return return_value;
+			if (snd_len > 0)
+			{
+				/* continue sending the APDU */
+				return_value = CCID_Transmit(reader_index, snd_len, snd_buf,
+					0, 0);
+				if (return_value != IFD_SUCCESS)
+					return return_value;
+			}
+			else
+			{
+				/* read apdu data */
+				return_value = CCID_Receive(reader_index, rcv_len, rcv_buf,
+						NULL);
+				if (return_value != IFD_SUCCESS)
+					return return_value;
+			}
 		}
-		else
-		{
-			if ((0x20 == pcbuffer[0]) && (*rcv_len > 2))
-				/* we will just read SW1-SW2 */
-				*rcv_len = 2;
 
-			return_value = CCID_Receive(reader_index, rcv_len, rcv_buf, NULL);
-			if (return_value != IFD_SUCCESS)
-				DEBUG_CRITICAL("CCID_Receive failed");
-
-			return return_value;
-		}
-
-		/* wait for ready */
 		return_value = CmdGetSlotStatus(reader_index, pcbuffer);
 		if (return_value != IFD_SUCCESS)
 			return return_value;
 
-		if ((0x20 == pcbuffer[0]) && (*rcv_len > 2))
-			/* we will just read SW1-SW2 */
+		/* SW1-SW2 available */
+		if (0x20 == pcbuffer[0])
+		{
+			/* backup apdu data length */
+			/* if no data recieved before - backup length must be zero */
+			backup_len = (backup_len == *rcv_len) ? 0 : *rcv_len;
+
+			/* wait for 2 bytes (SW1-SW2) */
 			*rcv_len = 2;
 
-		/* read SW1-SW2 */
-		return_value = CCID_Receive(reader_index, rcv_len, rcv_buf, NULL);
-		if (return_value != IFD_SUCCESS)
-			DEBUG_CRITICAL("CCID_Receive failed");
+			return_value = CCID_Receive(reader_index, rcv_len,
+				rcv_buf + backup_len, NULL);
+			if (return_value != IFD_SUCCESS)
+				DEBUG_CRITICAL("CCID_Receive failed");
 
+			/* restore recieved length */
+			*rcv_len += backup_len;
+		}
 		return return_value;
 	}
 
