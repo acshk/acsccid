@@ -476,7 +476,7 @@ RESPONSECODE SecurePINModify(unsigned int reader_index,
 	unsigned char TxBuffer[], unsigned int TxLength,
 	unsigned char RxBuffer[], unsigned int *RxLength)
 {
-	unsigned char cmd[11+19+CMD_BUF_SIZE];
+	unsigned char cmd[11+19+TxLength];
 	unsigned int a, b;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 	int old_read_timeout;
