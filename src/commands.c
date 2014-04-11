@@ -2040,10 +2040,6 @@ RESPONSECODE SetParameters(unsigned int reader_index, char protocol,
 	cmd[7] = protocol;	/* bProtocolNum */
 	cmd[8] = cmd[9] = 0; /* RFU */
 
-	/* check that the command is not too large */
-	if (length > CMD_BUF_SIZE)
-		return IFD_NOT_SUPPORTED;
-
 	memcpy(cmd+10, buffer, length);
 
 	if (WritePort(reader_index, 10+length, cmd) != STATUS_SUCCESS)
