@@ -630,7 +630,7 @@ RESPONSECODE SecurePINModify(unsigned int reader_index,
 		/* copy to the CCID block 'verbatim' */
 		cmd[a] = TxBuffer[b];
 		a++;
- 	}
+	}
 
 #ifdef BOGUS_PINPAD_FIRMWARE
 	if ((SPR532 == ccid_descriptor->readerID)
@@ -653,11 +653,11 @@ RESPONSECODE SecurePINModify(unsigned int reader_index,
 
 	if (WritePort(reader_index, a, cmd) != STATUS_SUCCESS)
 	{
- 		ret = IFD_COMMUNICATION_ERROR;
+		ret = IFD_COMMUNICATION_ERROR;
 		goto end;
 	}
 
- 	ret = CCID_Receive(reader_index, RxLength, RxBuffer, NULL);
+	ret = CCID_Receive(reader_index, RxLength, RxBuffer, NULL);
 
 	/* T=1 Protocol Management for a TPDU reader */
 	if ((IFD_SUCCESS == ret)
