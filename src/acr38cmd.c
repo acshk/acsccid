@@ -107,7 +107,6 @@ RESPONSECODE ACR38_CmdPowerOn(unsigned int reader_index, unsigned int *nlength,
 	unsigned int length;
 	RESPONSECODE return_value = IFD_SUCCESS;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
-	int samRetries = 1;
 	unsigned char option;
 
 	/* store length of buffer[] */
@@ -132,7 +131,6 @@ RESPONSECODE ACR38_CmdPowerOn(unsigned int reader_index, unsigned int *nlength,
 		(void)ACR38_CmdSelectCardType(reader_index, ccid_descriptor->cardType);
 	}
 
-again:
 	if (ccid_descriptor->bCurrentSlotIndex == 0)
 	{
 		// RESET_WITH_SPECIFIC_VOLTAGE
@@ -145,6 +143,10 @@ again:
 	}
 	else
 	{
+		// Power off SAM
+		(void)ACR38_CmdPowerOff(reader_index);
+		usleep(100 * 1000);
+
 		// RESET_WITH_5_VOLTS_DEFAULT_SAM
 		cmd[0] = 0x01;
 		cmd[1] = 0x90;
@@ -168,22 +170,6 @@ again:
 	if (buffer[ACR38_STATUS_OFFSET] != 0)
 	{
 		acr38_error(buffer[ACR38_STATUS_OFFSET], __FILE__, __LINE__, __FUNCTION__);
-
-		if (ccid_descriptor->bCurrentSlotIndex == 1)
-		{
-			if (samRetries > 0)
-			{
-				DEBUG_INFO("Power up SAM failed. Retry.");
-
-				// Power off SAM
-				(void)ACR38_CmdPowerOff(reader_index);
-				usleep(100 * 1000);
-
-				samRetries--;
-				goto again;
-			}
-		}
-
 		return IFD_COMMUNICATION_ERROR;
 	}
 
