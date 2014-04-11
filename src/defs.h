@@ -102,8 +102,6 @@ typedef enum {
 /* Communication buffer size (max=adpu+Lc+data+Le)
  * we use a 64kB for extended APDU on APDU mode readers */
 #define CMD_BUF_SIZE (4 +3 +64*1024 +3)
-/* Larger communication buffer size (max=reader status+data+sw) */
-#define RESP_BUF_SIZE (1+256+2)
 
 /* Protocols */
 #define T_0 0
