@@ -471,6 +471,7 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 	 * IFD_SUCCESS IFD_ERROR_TAG
 	 */
 	int reader_index;
+	RESPONSECODE return_value = IFD_SUCCESS;
 
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
@@ -485,11 +486,41 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 			/* If Length is not zero, powerICC has been performed.
 			 * Otherwise, return NULL pointer
 			 * Buffer size is stored in *Length */
-			*Length = (*Length < CcidSlots[reader_index].nATRLength) ?
-				*Length : CcidSlots[reader_index].nATRLength;
+			if ((int)*Length >= CcidSlots[reader_index].nATRLength)
+			{
+				*Length = CcidSlots[reader_index].nATRLength;
 
-			if (*Length)
 				memcpy(Value, CcidSlots[reader_index].pcATRBuffer, *Length);
+			}
+			else
+				return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
+			break;
+
+		case SCARD_ATTR_ICC_INTERFACE_STATUS:
+			*Length = 1;
+			if (IFD_ICC_PRESENT == IFDHICCPresence(Lun))
+				/* nonzero if contact is active */
+				*Value = 1;
+			else
+				/* smart card electrical contact is not active */
+				*Value = 0;
+			break;
+
+		case SCARD_ATTR_ICC_PRESENCE:
+			*Length = 1;
+			/* Single byte indicating smart card presence:
+			 * 0 = not present
+			 * 1 = card present but not swallowed (applies only if
+			 *     reader supports smart card swallowing)
+			 * 2 = card present (and swallowed if reader supports smart
+			 *     card swallowing)
+			 * 4 = card confiscated. */
+			if (IFD_ICC_PRESENT == IFDHICCPresence(Lun))
+				/* Card present */
+				*Value = 2;
+			else
+				/* Not present */
+				*Value = 0;
 			break;
 
 #ifdef HAVE_PTHREAD
@@ -499,6 +530,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				*Length = 1;
 				*Value = CCID_DRIVER_MAX_READERS;
 			}
+			else
+				return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
 			break;
 
 		case TAG_IFD_THREAD_SAFE:
@@ -511,6 +544,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				*Value = 1; /* Can talk to multiple readers at the same time */
 #endif
 			}
+			else
+				return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
 			break;
 #endif
 
@@ -537,6 +572,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 #endif
 				DEBUG_INFO2("Reader supports %d slot(s)", *Value);
 			}
+			else
+				return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
 			break;
 
 		case TAG_IFD_SLOT_THREAD_SAFE:
@@ -545,6 +582,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				*Length = 1;
 				*Value = 0; /* Can NOT talk to multiple slots at the same time */
 			}
+			else
+				return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
 			break;
 
 		case SCARD_ATTR_VENDOR_IFD_VERSION:
@@ -618,10 +657,10 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 #endif
 
 		default:
-			return IFD_ERROR_TAG;
+			return_value = IFD_ERROR_TAG;
 	}
 
-	return IFD_SUCCESS;
+	return return_value;
 } /* IFDHGetCapabilities */
 
 
