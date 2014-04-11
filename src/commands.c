@@ -1741,8 +1741,6 @@ static RESPONSECODE T0ProcSW1(unsigned int reader_index,
 {
 	RESPONSECODE return_value = IFD_SUCCESS;
 	UCHAR tmp_buf[512];
-	unsigned char *rcv_buf_tmp = rcv_buf;
-	const unsigned int rcv_len_tmp = *rcv_len;
 	unsigned char sw1, sw2;
 
 	/* store the SW1 */
@@ -1768,16 +1766,8 @@ static RESPONSECODE T0ProcSW1(unsigned int reader_index,
 		in_buf = tmp_buf;
 	}
 	sw2 = *rcv_buf = *in_buf;
-	rcv_buf++;
-	in_buf++;
 	in_len--;
 	(*rcv_len)++;
-
-	if (return_value != IFD_SUCCESS)
-	{
-		rcv_buf_tmp[0] = rcv_buf_tmp[1] = 0;
-		*rcv_len = rcv_len_tmp;
-	}
 
 	DEBUG_COMM3("Exit: SW=%02X %02X", sw1, sw2);
 
