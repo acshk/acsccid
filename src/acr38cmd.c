@@ -345,7 +345,7 @@ RESPONSECODE ACR38_CmdXfrBlock(unsigned int reader_index, unsigned int tx_length
 RESPONSECODE ACR38_TransmitT0(unsigned int reader_index, unsigned int tx_length,
 	const unsigned char tx_buffer[], unsigned short rx_length, unsigned char bBWI)
 {
-	unsigned char cmd[ACR38_HEADER_SIZE + CMD_BUF_SIZE];	/* Header + APDU buffer */
+	unsigned char cmd[ACR38_HEADER_SIZE + tx_length];	/* Header + APDU buffer */
 	status_t ret;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
