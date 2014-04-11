@@ -1098,7 +1098,8 @@ RESPONSECODE CCID_Transmit(unsigned int reader_index, unsigned int tx_length,
 		int r;
 
 		/* Xfr Block */
-		r = ControlUSB(reader_index, 0x21, 0x65, 0, tx_buffer, tx_length);
+		r = ControlUSB(reader_index, 0x21, 0x65, 0,
+			(unsigned char *)tx_buffer, tx_length);
 
 		/* we got an error? */
 		if (r < 0)
@@ -1120,8 +1121,8 @@ RESPONSECODE CCID_Transmit(unsigned int reader_index, unsigned int tx_length,
 
 		/* Xfr Block */
 		DEBUG_COMM2("chain parameter: %d", rx_length);
-		r = ControlUSB(reader_index, 0x21, 0x65, rx_length << 8, tx_buffer,
-			tx_length);
+		r = ControlUSB(reader_index, 0x21, 0x65, rx_length << 8,
+			(unsigned char *)tx_buffer, tx_length);
 
 		/* we got an error? */
 		if (r < 0)
