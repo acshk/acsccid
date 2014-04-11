@@ -298,14 +298,6 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 	cmd[9] = 0;
 	cmd[10] = 0;	/* bPINOperation: PIN Verification */
 
-	/* 19 is the size of the PCSCv2 PIN verify structure
-	 * The equivalent CCID structure is only 14-bytes long */
-	if (TxLength > 19+CMD_BUF_SIZE) /* command too large? */
-	{
-		DEBUG_INFO3("Command too long: %d > %d", TxLength, 19+CMD_BUF_SIZE);
-		return IFD_NOT_SUPPORTED;
-	}
-
 	if (TxLength < 19+4 /* 4 = APDU size */)	/* command too short? */
 	{
 		DEBUG_INFO3("Command too short: %d < %d", TxLength, 19+4);
