@@ -2028,7 +2028,7 @@ static RESPONSECODE CmdXfrBlockTPDU_T1(unsigned int reader_index,
 RESPONSECODE SetParameters(unsigned int reader_index, char protocol,
 	unsigned int length, unsigned char buffer[])
 {
-	unsigned char cmd[10+CMD_BUF_SIZE];	/* CCID + APDU buffer */
+	unsigned char cmd[10+length];	/* CCID + APDU buffer */
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
 	DEBUG_COMM2("length: %d bytes", length);
