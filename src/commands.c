@@ -493,14 +493,6 @@ RESPONSECODE SecurePINModify(unsigned int reader_index,
 	cmd[9] = 0;
 	cmd[10] = 1;	/* bPINOperation: PIN Modification */
 
-	/* 24 is the size of the PCSC PIN modify structure
-	 * The equivalent CCID structure is only 18 or 19-bytes long */
-	if (TxLength > 24+CMD_BUF_SIZE) /* command too large? */
-	{
-		DEBUG_INFO3("Command too long: %d > %d", TxLength, 24+CMD_BUF_SIZE);
-		return IFD_NOT_SUPPORTED;
-	}
-
 	if (TxLength < 24+4 /* 4 = APDU size */) /* command too short? */
 	{
 		DEBUG_INFO3("Command too short: %d < %d", TxLength, 24+4);
