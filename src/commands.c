@@ -1088,7 +1088,7 @@ RESPONSECODE CmdXfrBlock(unsigned int reader_index, unsigned int tx_length,
 RESPONSECODE CCID_Transmit(unsigned int reader_index, unsigned int tx_length,
 	const unsigned char tx_buffer[], unsigned short rx_length, unsigned char bBWI)
 {
-	unsigned char cmd[10+CMD_BUF_SIZE];	/* CCID + APDU buffer */
+	unsigned char cmd[10+tx_length];	/* CCID + APDU buffer */
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 	status_t ret;
 
