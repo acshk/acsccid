@@ -1143,13 +1143,6 @@ RESPONSECODE CCID_Transmit(unsigned int reader_index, unsigned int tx_length,
 	cmd[8] = rx_length & 0xFF;	/* Expected length, in character mode only */
 	cmd[9] = (rx_length >> 8) & 0xFF;
 
-	/* check that the command is not too large */
-	if (tx_length > CMD_BUF_SIZE)
-	{
-		DEBUG_CRITICAL2("TX Length too big: %d", tx_length);
-		return IFD_NOT_SUPPORTED;
-	}
-
 	memcpy(cmd+10, tx_buffer, tx_length);
 
 	ret = WritePort(reader_index, 10+tx_length, cmd);
