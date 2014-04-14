@@ -1113,7 +1113,7 @@ status_t CloseUSB(unsigned int reader_index)
 	usbDevice[reader_index].dirname = NULL;
 	usbDevice[reader_index].filename = NULL;
 	usbDevice[reader_index].interface = 0;
-	usbDevice[reader_index].ccid.bStatus = NULL;		// Array of bStatus
+	usbDevice[reader_index].ccid.bStatus = NULL;	// Array of bStatus
 
 	return STATUS_SUCCESS;
 } /* CloseUSB */
