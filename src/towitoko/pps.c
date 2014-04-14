@@ -4,6 +4,7 @@
 
     This file is part of the Unix driver for Towitoko smartcard readers
     Copyright (C) 2000 2001 Carlos Prados <cprados@yahoo.com>
+    Copyright (C) 2011 Advanced Card Systems Ltd. <info@acs.com.hk>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
