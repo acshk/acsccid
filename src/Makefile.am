@@ -41,6 +41,7 @@ libacsccid_la_SOURCES = $(COMMON) $(USB) $(TOKEN_PARSER) $(PROVIDED_BY_PCSC) $(T
 libacsccid_la_LIBADD = $(LEXLIB) $(LIBUSB_LIBS) $(PTHREAD_LIBS)
 libacsccid_la_CFLAGS = $(PCSC_CFLAGS) $(LIBUSB_CFLAGS) $(PTHREAD_CFLAGS) \
 	$(SYMBOL_VISIBILITY) -D$(CCID_VERSION)
+libacsccid_la_LDFLAGS = -avoid-version
 
 EXTRA_DIST = Info.plist.src create_Info_plist.pl supported_readers.txt \
 	towitoko/COPYING towitoko/README openct/LICENSE \
