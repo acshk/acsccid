@@ -8,6 +8,7 @@ AC_INIT(acsccid, 1.0.5)
 AC_CONFIG_SRCDIR(src/ifdhandler.c)
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE(1.8 dist-bzip2 no-dist-gzip foreign)
+AC_CONFIG_MACRO_DIR([m4])
 
 # silent build by default
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
