@@ -468,7 +468,8 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 						else if ((ACS_ACR1281_DUAL_READER_QPBOC == readerID) ||
 							(ACS_ACR1281_DUAL_READER_BSI == readerID) ||
 							(ACS_ACR1281_1S_PICC_READER == readerID) ||
-							(ACS_ACR1251_1S_CL_READER == readerID))
+							(ACS_ACR1251_1S_CL_READER == readerID) ||
+							(ACS_ACR1251U_C == readerID))
 						{
 							// the CCID interfaces are 0 and 1
 							interface_number = static_interface - 1;
@@ -854,7 +855,8 @@ again:
 
 					// The 2nd interface (composite device) is a SAM slot
 					if ((readerID == ACS_ACR1281_1S_PICC_READER) ||
-						(readerID == ACS_ACR1251_1S_CL_READER))
+						(readerID == ACS_ACR1251_1S_CL_READER) ||
+						(readerID == ACS_ACR1251U_C))
 					{
 						if (interface == 1)
 							usbDevice[reader_index].ccid.isSamSlot = TRUE;
