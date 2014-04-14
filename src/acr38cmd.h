@@ -1,6 +1,6 @@
 /*
 	acr38cmd.h: Emulated CCID reader commands for ACR38 non-CCID reader
-	Copyright (C) 2011 Advanced Card Systems Ltd.
+	Copyright (C) 2011-2012   Advanced Card Systems Ltd.
 
 	This library is free software; you can redistribute it and/or
 	modify it under the terms of the GNU Lesser General Public
