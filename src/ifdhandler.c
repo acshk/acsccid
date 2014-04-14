@@ -739,7 +739,8 @@ EXTERNAL RESPONSECODE IFDHSetCapabilities(DWORD Lun, DWORD Tag,
 	 * IFD_ERROR_VALUE_READ_ONLY
 	 */
 
-	/* By default, say it worked */
+	(void)Length;
+	(void)Value;
 
 	int reader_index;
 
