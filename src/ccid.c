@@ -611,6 +611,22 @@ int ccid_open_hack_post(unsigned int reader_index)
 				ccid_descriptor->isSamSlot = 1;	// SAM
 			break;
 
+		case ACS_ACR1281U_K_DUAL_READER:
+		case ACS_ACR1281U_K_1S_DUAL_READER:
+		case ACS_ACR1281U_K_4S_DUAL_READER:
+			if (ccid_descriptor->bCurrentSlotIndex == 1)
+			{
+				ccid_descriptor->dwFeatures = 0x000204BA;	// ICC
+				ccid_descriptor->dwMaxDataRate = 600000;
+			}
+			else if (ccid_descriptor->bCurrentSlotIndex > 1)
+			{
+				ccid_descriptor->dwFeatures = 0x000204BA;	// SAM
+				ccid_descriptor->dwMaxDataRate = 172043;
+				ccid_descriptor->isSamSlot = 1;
+			}
+			break;
+
 		default:
 			break;
 	}
