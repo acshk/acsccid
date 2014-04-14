@@ -1551,6 +1551,8 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 	_ccid_descriptor *ccid_descriptor;
 	unsigned char pcbuffer[SIZE_GET_SLOT_STATUS];
 
+	(void)RecvPci;
+
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
 
