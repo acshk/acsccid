@@ -784,6 +784,13 @@ again:
 
 					// Initialize isSamSlot
 					usbDevice[reader_index].ccid.isSamSlot = FALSE;
+
+					// The 2nd interface (composite device) is a SAM slot
+					if (readerID == ACS_ACR1281_1S_PICC_READER)
+					{
+						if (interface == 1)
+							usbDevice[reader_index].ccid.isSamSlot = TRUE;
+					}
 #ifdef __APPLE__
 					// Initialize terminated flag to false
 					usbDevice[reader_index].terminated = FALSE;
