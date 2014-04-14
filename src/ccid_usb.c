@@ -274,6 +274,22 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 			/* dirname was just a temporary variable */
 			dirname = NULL;
 		}
+
+		/* format usb:%04x/%04x:libudev:%d:%s
+		 * with %d set to
+		 * 01 (or whatever the interface number is)
+		 * and %s set to
+		 * /dev/bus/usb/008/004
+		 */
+		if ((dirname = strstr(device, "libudev:")) != NULL)
+		{
+			/* convert the interface number */
+			interface_number = atoi(dirname + 8 /* "libudev:" */);
+			DEBUG_COMM2("interface_number: %d", interface_number);
+
+			/* dirname was just a temporary variable */
+			dirname = NULL;
+		}
 	}
 #endif
 
