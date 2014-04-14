@@ -56,6 +56,8 @@ AC_CHECK_HEADER(reader.h,, [AC_MSG_ERROR([$PCSC_ERROR_MSG])])
 CPPFLAGS="$saved_CPPFLAGS"
 
 # Add libtool support.
+# Static lib is disabled by default. Use --enable-static if needed
+LT_INIT(disable-static)
 AM_PROG_LIBTOOL
 
 # Automatically update the libtool script if it becomes out-of-date.
