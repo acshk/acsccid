@@ -2108,19 +2108,6 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 		goto end;
 	}
 
-#ifndef __APPLE__
-	// ACR1222 or ACR1283 is required to read data from interrupt endpoint
-	if ((ACS_ACR85_PINPAD_READER_PICC == ccid_descriptor->readerID) ||
-		(ACS_ACR1222_DUAL_READER == ccid_descriptor->readerID) ||
-		(ACS_ACR1222_1SAM_DUAL_READER == ccid_descriptor->readerID) ||
-		(ACS_ACR1283_4S_CL_READER == ccid_descriptor->readerID) ||
-		(ACS_ACR1283_CL_READER == ccid_descriptor->readerID) ||
-		(ACS_ACR1283U_FW_UPGRADE == ccid_descriptor->readerID))
-	{
-		InterruptRead(reader_index, 10);
-	}
-#endif
-
 	/* save the current read timeout computed from card capabilities */
 	oldReadTimeout = ccid_descriptor->readTimeout;
 
@@ -2180,7 +2167,12 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 		}
 	}
 	else
+	{
+#ifndef __APPLE__
+		InterruptRead(reader_index, 10);
+#endif
 		return_value = CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer);
+	}
 
 	/* set back the old timeout */
 	ccid_descriptor->readTimeout = oldReadTimeout;
