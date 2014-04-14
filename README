@@ -24,7 +24,7 @@ System Requirements
 -------------------
 
 Linux
-Mac OS X 10.5/10.6/10.7
+Mac OS X 10.5 or above
 
 
 
@@ -47,6 +47,7 @@ VID  PID  Reader              Reader Name
 072F B102 ACR39T              ACS ACR39T ICC Reader
 072F B103 ACR39F              ACS ACR39F ICC Reader
 072F B104 ACR39U-SAM          ACS ACR39U-SAM ICC Reader
+072F B000 ACR3901U            ACS ACR3901U ICC Reader
 072F 90D2 ACR83U-A1           ACS ACR83U
 072F 8306 ACR85               ACS ACR85 PINPad Reader
 072F 2011 ACR88U              ACS ACR88U
@@ -64,10 +65,15 @@ VID  PID  Reader              Reader Name
 072F 2207 ACR1222U-C6         ACS ACR1222 Dual Reader
 072F 222B ACR1222U-C8         ACS ACR1222 1SAM PICC Reader
 072F 2206 ACR1222L-D1         ACS ACR1222 3S PICC Reader
+072F 222E ACR123U             ACS ACR123 3S Reader
+072F 2237 ACR123U             ACS ACR123 PICC Reader
+072F 2219 ACR123U Bootloader  ACS ACR123US_BL
 072F 2203 ACR125              ACS ACR125 nPA plus
 072F 221A ACR1251U-A1         ACS ACR1251 1S CL Reader
 072F 2229 ACR1251U-A2         ACS ACR1251 CL Reader
 072F 222D [OEM Reader]        [OEM Reader Name]
+072F 2218 ACR1251U-C (SAM)    ACS ACR1251U-C Smart Card Reader
+072F 221B ACR1251U-C          ACS ACR1251U-C Smart Card Reader
 072F 2100 ACR128U             ACS ACR128U
 072F 2224 ACR1281U-C1         ACS ACR1281 1S Dual Reader
 072F 220F ACR1281U-C2 (qPBOC) ACS ACR1281 CL Reader
@@ -77,6 +83,10 @@ VID  PID  Reader              Reader Name
 072F 220A ACR1281U-C5 (BSI)   ACS ACR1281 Dual Reader
 072F 2215 ACR1281U-C6         ACS ACR1281 2S CL Reader
 072F 2220 ACR1281U-C7         ACS ACR1281 1S PICC Reader
+072F 2233 ACR1281U-K          ACS ACR1281U-K PICC Reader
+072F 2234 ACR1281U-K          ACS ACR1281U-K Dual Reader
+072F 2235 ACR1281U-K          ACS ACR1281U-K 1S Dual Reader
+072F 2236 ACR1281U-K          ACS ACR1281U-K 4S Dual Reader
 072F 2213 ACR1283L-D1         ACS ACR1283 4S CL Reader
 072F 222C ACR1283L-D2         ACS ACR1283 CL Reader
 072F 220C ACR1283 Bootloader  ACS ACR1283U FW Upgrade
@@ -101,6 +111,24 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.0.5 (2/9/2013)
+- Fix a bug that ACR38U cannot select the card type reading from Info.plist on
+  Linux x64 platform.
+- Fix a bug that ACR1222U-C1 and ACR39U cannot detect the card.
+- Fix a bug that the driver cannot start the debug mode on Mac OS X 10.8.
+- Import udev rules from ccid-1.4.12 to remove pcscd group support.
+- Add the following readers support:
+  ACR3901U ICC Reader
+  ACR123 3S Reader
+  ACR123 PICC Reader
+  ACR123US_BL
+  ACR1251U-C Smart Card Reader (SAM)
+  ACR1251U-C Smart Card Reader
+  ACR1281U-K PICC Reader
+  ACR1281U-K Dual Reader
+  ACR1281U-K 1S Dual Reader
+  ACR1281U-K 4S Dual Reader
 
 v1.0.4 (15/6/2012)
 - Add the following readers support:
@@ -271,7 +299,7 @@ Fax: +852 2796 1286
 
 
 -------------------------------------------------------------------------------
-Copyright (C) 2009-2012 Advanced Card Systems Ltd.
+Copyright (C) 2009-2013 Advanced Card Systems Ltd.
 Copyright (C) 2003-2009 Ludovic Rousseau
 Copyright (C) 2000-2001 Carlos Prados
 Copyright (C) 2003 Olaf Kirch
