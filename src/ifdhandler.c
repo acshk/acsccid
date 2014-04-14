@@ -1719,7 +1719,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		// ACR38U, ACR38U-SAM and SCR21U specific I/O controls
 		if ((ACS_ACR38U == ccid_descriptor -> readerID) ||
 			(ACS_ACR38U_SAM == ccid_descriptor -> readerID) ||
-			(IRIS_SCR21U == ccid_descriptor -> readerID))
+			(IRIS_SCR21U == ccid_descriptor -> readerID) ||
+			(ACS_AET65_1SAM_ICC_READER == ccid_descriptor -> readerID))
 		{
 			// Set card voltage
 			if (IOCTL_SMARTCARD_SET_CARD_VOLTAGE == dwControlCode)
