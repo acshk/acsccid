@@ -606,6 +606,11 @@ int ccid_open_hack_post(unsigned int reader_index)
 				ccid_descriptor->isSamSlot = 1;	// SAM
 			break;
 
+		case ACS_ACR39U_SAM_ICC_READER:
+			if (ccid_descriptor->bCurrentSlotIndex == 1)
+				ccid_descriptor->isSamSlot = 1;	// SAM
+			break;
+
 		default:
 			break;
 	}
