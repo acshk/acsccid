@@ -492,7 +492,7 @@ RESPONSECODE ACR38_SetCardVoltage(unsigned int reader_index,
 	unsigned char RxBuffer[], unsigned int *RxLength)
 {
 	RESPONSECODE return_value = IFD_SUCCESS;
-	unsigned char cardVoltage;
+	BYTE cardVoltage;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
 	if ((TxBuffer != NULL) && (TxLength >= 1))
@@ -520,12 +520,12 @@ RESPONSECODE ACR38_SetCardType(unsigned int reader_index,
 	unsigned char RxBuffer[], unsigned int *RxLength)
 {
 	RESPONSECODE return_value = IFD_SUCCESS;
-	unsigned long cardType;
+	DWORD cardType;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
 	if ((TxBuffer != NULL) && (TxLength >= sizeof(cardType)))
 	{
-		cardType = *((unsigned long *) TxBuffer);
+		cardType = *((PDWORD) TxBuffer);
 		switch (cardType)
 		{
 			case CARD_TYPE_MCU_AUTO:

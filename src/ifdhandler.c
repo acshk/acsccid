@@ -63,8 +63,8 @@ int PowerOnVoltage = VOLTAGE_5V;
 static int DebugInitialized = FALSE;
 
 // Card voltage and card type selection for ACR38U, ACR38U-SAM and SCR21U
-int ACR38CardVoltage = 0;
-int ACR38CardType = 0;
+BYTE ACR38CardVoltage = 0;
+DWORD ACR38CardType = 0;
 
 /* local functions */
 #if HAVE_DECL_TAG_IFD_POLLING_THREAD && !defined(TWIN_SERIAL) && defined(USE_USB_INTERRUPT)
