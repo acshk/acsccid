@@ -2109,10 +2109,13 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	}
 
 #ifndef __APPLE__
-	// ACR1222 reader is required to read data from interrupt endpoint
+	// ACR1222 or ACR1283 is required to read data from interrupt endpoint
 	if ((ACS_ACR85_PINPAD_READER_PICC == ccid_descriptor->readerID) ||
 		(ACS_ACR1222_DUAL_READER == ccid_descriptor->readerID) ||
-		(ACS_ACR1222_1SAM_DUAL_READER == ccid_descriptor->readerID))
+		(ACS_ACR1222_1SAM_DUAL_READER == ccid_descriptor->readerID) ||
+		(ACS_ACR1283_4S_CL_READER == ccid_descriptor->readerID) ||
+		(ACS_ACR1283_CL_READER == ccid_descriptor->readerID) ||
+		(ACS_ACR1283U_FW_UPGRADE == ccid_descriptor->readerID))
 	{
 		InterruptRead(reader_index, 10);
 	}
