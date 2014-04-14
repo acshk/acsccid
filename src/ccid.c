@@ -627,6 +627,15 @@ int ccid_open_hack_post(unsigned int reader_index)
 			}
 			break;
 
+		case ACS_ACR123_3S_READER:
+			if (ccid_descriptor->bCurrentSlotIndex > 0)
+			{
+				ccid_descriptor->dwFeatures = 0x000204BA;	// SAM
+				ccid_descriptor->dwMaxDataRate = 125000;
+				ccid_descriptor->isSamSlot = 1;
+			}
+			break;
+
 		default:
 			break;
 	}
