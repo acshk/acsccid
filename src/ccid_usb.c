@@ -1367,6 +1367,15 @@ int ControlUSB(int reader_index, int requesttype, int request, int value,
 		request, value, usbDevice[reader_index].interface, (char *)bytes, size,
 		usbDevice[reader_index].ccid.readTimeout * 1000);
 
+	if (ret < 0)
+	{
+		DEBUG_CRITICAL4("control failed (%s/%s): %s",
+			usbDevice[reader_index].dirname, usbDevice[reader_index].filename,
+			strerror(errno));
+
+		return ret;
+	}
+
 	if (requesttype & 0x80)
 		DEBUG_XXD("receive: ", bytes, ret);
 
