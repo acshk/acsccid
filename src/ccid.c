@@ -601,6 +601,11 @@ int ccid_open_hack_post(unsigned int reader_index)
 				ccid_descriptor->isSamSlot = 1;	// SAM
 			break;
 
+		case ACS_ACR1283_4S_CL_READER:
+			if (ccid_descriptor->bCurrentSlotIndex > 0)
+				ccid_descriptor->isSamSlot = 1;	// SAM
+			break;
+
 		default:
 			break;
 	}
