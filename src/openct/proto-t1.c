@@ -5,6 +5,7 @@
  *
  * improvements by:
  * Copyright (C) 2004 Ludovic Rousseau <ludovic.rousseau@free.fr>
+ * Copyright (C) 2011 Advanced Card Systems Ltd. <info@acs.com.hk>
  */
 
 #include <pcsclite.h>
