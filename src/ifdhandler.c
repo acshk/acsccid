@@ -1387,7 +1387,7 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			 * 1 ETU = 372 cycles during ATR
 			 * with a 4 MHz clock => 29 seconds
 			 */
-			ccid_descriptor->readTimeout = 4;	// 60 seconds is too long
+			ccid_descriptor->readTimeout = 10;	// 60 seconds is too long
 
 			nlength = sizeof(pcbuffer);
 			return_value = CcidSlots[reader_index].pPowerOn(reader_index, &nlength, pcbuffer,
