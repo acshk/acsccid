@@ -4,7 +4,7 @@
 # Require autoconf 2.61
 AC_PREREQ(2.61)
 
-AC_INIT(acsccid, 1.0.3)
+AC_INIT(acsccid, 1.0.4)
 AC_CONFIG_SRCDIR(src/ifdhandler.c)
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE(1.8 dist-bzip2 no-dist-gzip)
