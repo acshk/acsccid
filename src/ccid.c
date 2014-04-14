@@ -38,6 +38,7 @@
 #include "ccid_usb.h"
 
 static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFirmwareVersion);
+static int ACR83_DisplayLcdMessage(unsigned int reader_index, const char *message);
 static int ACR1222_GetFirmwareVersion(unsigned int reader_index, char *firmwareVersion, unsigned int *pFirmwareVersionLen);
 
 /*****************************************************************************
@@ -379,6 +380,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 		case ACS_ACR83U:
 			{
 				unsigned int firmwareVersion;
+				char *msg = "     ACR 83";
 
 				ccid_descriptor->wLcdLayout = 0x0210;
 
@@ -398,6 +400,9 @@ int ccid_open_hack_post(unsigned int reader_index)
 						ccid_descriptor->bPINSupport = 0;
 					}
 				}
+
+				// Display default message
+				(void)ACR83_DisplayLcdMessage(reader_index, msg);
 			}
 			break;
 
@@ -864,6 +869,36 @@ static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFi
 		if ((responseLen >= 7) && (response[0] == 0x84))
 		{
 			*pFirmwareVersion = (response[5] << 8) | response[6];
+			ret = 1;
+		}
+	}
+
+	return ret;
+}
+
+static int ACR83_DisplayLcdMessage(unsigned int reader_index, const char *message)
+{
+	int ret = 0;
+	unsigned char command[5 + 32] = { 0x05, 0x00, 0x20, 0x00, 0x00 };
+	unsigned int commandLen = sizeof(command);
+	unsigned char response[3 + 2];
+	unsigned int responseLen = sizeof(response);
+	int messageLen = strlen(message);
+
+	if (messageLen > 32)
+		messageLen = 32;
+
+	// Fill memory with spaces
+	memset(command + 5, 0x20, 32);
+
+	// Copy message to command
+	memcpy(command + 5, message, messageLen);
+
+	if (CmdEscape(reader_index, command, commandLen, response, &responseLen) == IFD_SUCCESS)
+	{
+		if ((responseLen >= 5) && (response[0] == 0x85) &&
+			(response[3] == 0) && (response[4] == 0))
+		{
 			ret = 1;
 		}
 	}
