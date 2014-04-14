@@ -49,7 +49,7 @@ EXTRA_DIST = Info.plist.src create_Info_plist.pl supported_readers.txt \
 
 if UDEV
 ifdCapabilities=0x00000001
-INSTALL_UDEV_RULE_FILE=@echo -e "\n\33[01;31m***************\n" ; echo "copy the src/pcscd_acsccid.rules file in udev directory (/etc/udev/rules.d/)" ; echo -e "\n***************\n\33[0m"
+INSTALL_UDEV_RULE_FILE=@echo -e "\n\33[01;31m***************\n" ; echo "copy the src/pcscd_acsccid.rules file (pcsc-lite < 1.6.5) or src/92_pcscd_acsccid.rules (pcsc-lite >= 1.6.5) to udev directory (/etc/udev/rules.d/)" ; echo -e "\n***************\n\33[0m"
 else
 ifdCapabilities=0x00000000
 endif
