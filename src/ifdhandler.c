@@ -1696,14 +1696,14 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	 *
 	 * Notes: RxLength should be zero on error.
 	 */
-	RESPONSECODE return_value = IFD_COMMUNICATION_ERROR;
+	RESPONSECODE return_value = IFD_ERROR_NOT_SUPPORTED;
 	int reader_index;
 	int old_read_timeout;
 	_ccid_descriptor *ccid_descriptor;
 
 	reader_index = LunToReaderIndex(Lun);
 	if ((-1 == reader_index) || (NULL == pdwBytesReturned))
-		return return_value;
+		return IFD_COMMUNICATION_ERROR;
 
 	ccid_descriptor = get_ccid_descriptor(reader_index);
 
