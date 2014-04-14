@@ -1,0 +1,12 @@
+# udev rules for ACS CCID devices
+
+# If not adding the device, go away
+ACTION!="add", GOTO="pcscd_acsccid_rules_end"
+SUBSYSTEM!="usb", GOTO="pcscd_acsccid_rules_end"
+ENV{DEVTYPE}!="usb_device", GOTO="pcscd_acsccid_rules_end"
+
+# set USB power management to auto.
+ENV{ID_USB_INTERFACES}==":0b0000:", RUN+="/bin/sh -c 'echo auto > /sys/$devpath/power/control'"
+
+# All done
+LABEL="pcscd_acsccid_rules_end"
