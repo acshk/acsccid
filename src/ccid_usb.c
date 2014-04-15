@@ -469,7 +469,8 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 							(ACS_ACR1281_DUAL_READER_BSI == readerID) ||
 							(ACS_ACR1281_1S_PICC_READER == readerID) ||
 							(ACS_ACR1251_1S_CL_READER == readerID) ||
-							(ACS_ACR1251U_C == readerID))
+							(ACS_ACR1251U_C == readerID) ||
+							(ACS_ACR1251K_DUAL_READER == readerID))
 						{
 							// the CCID interfaces are 0 and 1
 							interface_number = static_interface - 1;

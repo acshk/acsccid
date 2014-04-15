@@ -624,7 +624,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 						(ACS_ACR1281_DUAL_READER_BSI == readerID) ||
 						(ACS_ACR1281_1S_PICC_READER == readerID) ||
 						(ACS_ACR1251_1S_CL_READER == readerID) ||
-						(ACS_ACR1251U_C == readerID))
+						(ACS_ACR1251U_C == readerID) ||
+						(ACS_ACR1251K_DUAL_READER == readerID))
 						*Value = 2;
 				}
 #endif
