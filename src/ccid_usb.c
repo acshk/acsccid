@@ -804,6 +804,9 @@ again:
 						// Simulate ACR85 as multi-slot reader
 						else if (readerID == ACS_ACR85_PINPAD_READER_ICC)
 							usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
+						// Fix ACR32 incorrect max slot index
+						else if (readerID == ACS_ACR32_ICC_READER)
+							usbDevice[reader_index].ccid.bMaxSlotIndex = 0;
 						else
 							usbDevice[reader_index].ccid.bMaxSlotIndex = usb_interface->altsetting->extra[4];
 
