@@ -812,7 +812,12 @@ again:
 
 						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
 						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
-						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = get_data_rates(reader_index, dev, num);
+
+						if (usb_interface->altsetting->extra[27] == 0)
+							usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+						else
+							usbDevice[reader_index].ccid.arrayOfSupportedDataRates = get_data_rates(reader_index, dev, num);
+
 						usbDevice[reader_index].ccid.bInterfaceProtocol = usb_interface->altsetting->bInterfaceProtocol;
 						usbDevice[reader_index].ccid.bNumEndpoints = usb_interface->altsetting->bNumEndpoints;
 						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
