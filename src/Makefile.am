@@ -45,7 +45,8 @@ libacsccid_la_LDFLAGS = -avoid-version
 
 EXTRA_DIST = Info.plist.src create_Info_plist.pl supported_readers.txt \
 	towitoko/COPYING towitoko/README openct/LICENSE \
-	convert_version.pl pcscd_acsccid.rules 92_pcscd_acsccid.rules
+	convert_version.pl pcscd_acsccid.rules 92_pcscd_acsccid.rules \
+	92_pcscd_acsccid_group.rules
 
 if UDEV
 ifdCapabilities=0x00000001
