@@ -301,7 +301,6 @@ EOF
 
 # Write Makefiles.
 AC_CONFIG_FILES(Makefile
-	m4/Makefile
 	src/Makefile)
 
 AC_OUTPUT

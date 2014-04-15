@@ -1,9 +1,10 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = m4 src
+SUBDIRS = src
 
 EXTRA_DIST = bootstrap \
 	ChangeLog \
+	m4/ax_pthread.m4 \
 	MacOSX/configure \
 	MacOSX/convert_reader_h.pl \
 	MacOSX/debuglog.h \
