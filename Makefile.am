@@ -3,6 +3,7 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = m4 src
 
 EXTRA_DIST = bootstrap \
+	ChangeLog \
 	MacOSX/configure \
 	MacOSX/convert_reader_h.pl \
 	MacOSX/debuglog.h \
@@ -11,3 +12,8 @@ EXTRA_DIST = bootstrap \
 	MacOSX/reader.h.in \
 	MacOSX/winscard.h \
 	MacOSX/wintypes.h
+
+DISTCLEANFILES = ChangeLog
+
+ChangeLog:
+	git2cl > $@
