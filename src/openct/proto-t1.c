@@ -774,7 +774,7 @@ int t1_negotiate_ifsd(t1_state_t * t1, unsigned int dad, int ifsd)
 
 		retries--;
 		/* ISO 7816-3 Rule 7.4.2 */
-		if (retries == 0)
+		if (retries <= 0)
 			goto error;
 
 		if (-1 == n)
