@@ -1398,6 +1398,14 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			return_value = CcidSlots[reader_index].pPowerOn(reader_index, &nlength, pcbuffer,
 				PowerOnVoltage);
 
+			// Fix ACR39U card power on problem.
+			if (return_value != IFD_SUCCESS)
+			{
+				nlength = sizeof(pcbuffer);
+				return_value = CcidSlots[reader_index].pPowerOn(reader_index, &nlength, pcbuffer,
+					PowerOnVoltage);
+			}
+
 			// Enable/Disable PICC
 			if (DriverOptions & DRIVER_OPTION_DISABLE_PICC)
 			{
