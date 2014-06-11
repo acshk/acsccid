@@ -114,6 +114,9 @@
 # ACR1251UK
 0x072f:0x2232:ACS ACR1251K Dual Reader
 
+# ACR1251U-C1
+0x072f:0x2242:ACS ACR1251 1S Dual Reader
+
 # ACR1252U-A1
 0x072f:0x223b:ACS ACR1252 1S CL Reader
 
@@ -183,6 +186,12 @@
 
 # CryptoMate64
 0x072f:0x90db:ACS CryptoMate64
+
+# CryptoMate T1
+0x072f:0xb200:ACS CryptoMate (T1)
+
+# CryptoMate T2
+0x072f:0xb106:ACS CryptoMate (T2)
 
 #
 # non-CCID readers
