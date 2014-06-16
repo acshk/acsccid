@@ -76,6 +76,7 @@ VID  PID  Reader              Reader Name
 072F 2218 ACR1251U-C (SAM)    ACS ACR1251U-C Smart Card Reader
 072F 221B ACR1251U-C          ACS ACR1251U-C Smart Card Reader
 072F 2232 ACR1251UK           ACS ACR1251K Dual Reader
+072F 2242 ACR1251U-C1         ACS ACR1251 1S Dual Reader
 072F 223B ACR1252U-A1         ACS ACR1252 1S CL Reader
 072F 223E ACR1252U-A2         ACS ACR1252 CL Reader
 072F 223D ACR1252U BL         ACS ACR1252 USB FW_Upgrade v100
@@ -102,6 +103,8 @@ VID  PID  Reader              Reader Name
 072F 8201 APG8201-A1          ACS APG8201
 072F 8202 [OEM Reader]        [OEM Reader Name]
 072F 90DB CryptoMate64        ACS CryptoMate64
+072F B200 ACOS5T1             ACS CryptoMate (T1)
+072F B106 ACOS5T2             ACS CryptoMate (T2)
 
 non-CCID Readers
 
@@ -117,6 +120,14 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.0.7 (16/6/2014)
+- Fix ACR39U card power on problem.
+- Add the following readers support:
+  ACR1251 1S Dual Reader
+  CryptoMate (T1)
+  CryptoMate (T2)
+- Remove ChangeLog from DISTCLEANFILES.
 
 v1.0.6 (17/4/2014)
 - Add the following readers support:
