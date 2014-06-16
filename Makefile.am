@@ -14,8 +14,6 @@ EXTRA_DIST = bootstrap \
 	MacOSX/winscard.h \
 	MacOSX/wintypes.h
 
-DISTCLEANFILES = ChangeLog
-
 # Automatically update the libtool script if it becomes out-of-date.
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
 libtool: $(LIBTOOL_DEPS)
