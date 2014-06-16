@@ -566,6 +566,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 			}
 			break;
 
+		case ACS_ACR1251_1S_DUAL_READER:
 		case ACS_ACR1281_1S_DUAL_READER:
 			// Adjust features and maximum data rate
 			if (ccid_descriptor->bCurrentSlotIndex == 0)
