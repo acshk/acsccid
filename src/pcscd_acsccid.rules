@@ -19,6 +19,9 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2011", RUN+="/usr
 # ACS ACR1251 1S Dual Reader
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2242", RUN+="/usr/sbin/pcscd --hotplug"
 
+# ACS ACR1261 1S Dual Reader
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2211", RUN+="/usr/sbin/pcscd --hotplug"
+
 # ACS ACR128U
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2100", RUN+="/usr/sbin/pcscd --hotplug"
 
