@@ -765,6 +765,7 @@ again:
 						usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
 					}
 					else if ((readerID == ACS_ACR1251_1S_DUAL_READER) ||
+						(readerID == ACS_ACR1261_1S_DUAL_READER) ||
 						(readerID == ACS_ACR1281_1S_DUAL_READER) ||
 						(readerID == ACS_ACR1281_2S_CL_READER))
 					{
