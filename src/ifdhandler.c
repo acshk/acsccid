@@ -1168,32 +1168,28 @@ again:
 
 		DEBUG_COMM2("Timeout: %d seconds", ccid_desc->readTimeout);
 
-		// Set parameters if not specific mode
-		if (!specificMode)
+		ret = ccid_slot->pSetParameters(reader_index, 1, sizeof(param), param);
+		if (IFD_SUCCESS != ret)
 		{
-			ret = ccid_slot->pSetParameters(reader_index, 1, sizeof(param), param);
-			if (IFD_SUCCESS != ret)
+			DEBUG_INFO("SetParameters (T1) Failed");
+
+			if (param[0] != 0x11)
 			{
-				DEBUG_INFO("SetParameters (T1) Failed");
-
-				if (param[0] != 0x11)
-				{
-					// Cold reset
-					atrLen = sizeof(atrBuffer);
-					(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, atrBuffer, &atrLen);
-					usleep(100 * 1000);
-					atrLen = sizeof(atrBuffer);
-					ret = IFDHPowerICC(Lun, IFD_POWER_UP, atrBuffer, &atrLen);
-					if (ret != IFD_SUCCESS)
-						return ret;
-
-					// Try default Fl/Dl
-					pps[2] = 0x11;
-					goto again;
-				}
-				else
+				// Cold reset
+				atrLen = sizeof(atrBuffer);
+				(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, atrBuffer, &atrLen);
+				usleep(100 * 1000);
+				atrLen = sizeof(atrBuffer);
+				ret = IFDHPowerICC(Lun, IFD_POWER_UP, atrBuffer, &atrLen);
+				if (ret != IFD_SUCCESS)
 					return ret;
+
+				// Try default Fl/Dl
+				pps[2] = 0x11;
+				goto again;
 			}
+			else
+				return ret;
 		}
 	}
 	else
@@ -1234,32 +1230,28 @@ again:
 		DEBUG_COMM2("Communication timeout: %d seconds",
 			ccid_desc->readTimeout);
 
-		// Set parameters if not specific mode
-		if (!specificMode)
+		ret = ccid_slot->pSetParameters(reader_index, 0, sizeof(param), param);
+		if (IFD_SUCCESS != ret)
 		{
-			ret = ccid_slot->pSetParameters(reader_index, 0, sizeof(param), param);
-			if (IFD_SUCCESS != ret)
+			DEBUG_INFO("SetParameters (T0) Failed");
+
+			if (param[0] != 0x11)
 			{
-				DEBUG_INFO("SetParameters (T0) Failed");
-
-				if (param[0] != 0x11)
-				{
-					// Cold reset
-					atrLen = sizeof(atrBuffer);
-					(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, atrBuffer, &atrLen);
-					usleep(100 * 1000);
-					atrLen = sizeof(atrBuffer);
-					ret = IFDHPowerICC(Lun, IFD_POWER_UP, atrBuffer, &atrLen);
-					if (ret != IFD_SUCCESS)
-						return ret;
-
-					// Try default Fl/Dl
-					pps[2] = 0x11;
-					goto again;
-				}
-				else
+				// Cold reset
+				atrLen = sizeof(atrBuffer);
+				(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, atrBuffer, &atrLen);
+				usleep(100 * 1000);
+				atrLen = sizeof(atrBuffer);
+				ret = IFDHPowerICC(Lun, IFD_POWER_UP, atrBuffer, &atrLen);
+				if (ret != IFD_SUCCESS)
 					return ret;
+
+				// Try default Fl/Dl
+				pps[2] = 0x11;
+				goto again;
 			}
+			else
+				return ret;
 		}
 	}
 
