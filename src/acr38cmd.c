@@ -145,7 +145,7 @@ RESPONSECODE ACR38_CmdPowerOn(unsigned int reader_index, unsigned int *nlength,
 	{
 		// Power off SAM
 		(void)ACR38_CmdPowerOff(reader_index);
-		usleep(100 * 1000);
+		usleep(10 * 1000);
 
 		// RESET_WITH_5_VOLTS_DEFAULT_SAM
 		cmd[0] = 0x01;
