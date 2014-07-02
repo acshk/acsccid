@@ -1065,7 +1065,7 @@ again:
 					// Cold reset
 					atrLen = sizeof(atrBuffer);
 					(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, atrBuffer, &atrLen);
-					usleep(100 * 1000);
+					usleep(10 * 1000);
 					atrLen = sizeof(atrBuffer);
 					ret = IFDHPowerICC(Lun, IFD_POWER_UP, atrBuffer, &atrLen);
 					if (ret != IFD_SUCCESS)
@@ -1178,7 +1178,7 @@ again:
 				// Cold reset
 				atrLen = sizeof(atrBuffer);
 				(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, atrBuffer, &atrLen);
-				usleep(100 * 1000);
+				usleep(10 * 1000);
 				atrLen = sizeof(atrBuffer);
 				ret = IFDHPowerICC(Lun, IFD_POWER_UP, atrBuffer, &atrLen);
 				if (ret != IFD_SUCCESS)
@@ -1240,7 +1240,7 @@ again:
 				// Cold reset
 				atrLen = sizeof(atrBuffer);
 				(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, atrBuffer, &atrLen);
-				usleep(100 * 1000);
+				usleep(10 * 1000);
 				atrLen = sizeof(atrBuffer);
 				ret = IFDHPowerICC(Lun, IFD_POWER_UP, atrBuffer, &atrLen);
 				if (ret != IFD_SUCCESS)
