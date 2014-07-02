@@ -1413,7 +1413,7 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 					while ((return_value != IFD_SUCCESS) || (nlength == 0))
 					{
 						(void)CcidSlots[reader_index].pPowerOff(reader_index);
-						usleep(100 * 1000);
+						usleep(10 * 1000);
 						nlength = sizeof(pcbuffer);
 						return_value = CcidSlots[reader_index].pPowerOn(reader_index, &nlength, pcbuffer,
 							PowerOnVoltage);
