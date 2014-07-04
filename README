@@ -80,7 +80,7 @@ VID  PID  Reader              Reader Name
 072F 223B ACR1252U-A1         ACS ACR1252 1S CL Reader
 072F 223E ACR1252U-A2         ACS ACR1252 CL Reader
 072F 223D ACR1252U BL         ACS ACR1252 USB FW_Upgrade v100
-072F 2244 ACR1252U-A1 (PICC)  ACS ACR1252 BADANAMU MAGIC READER
+072F 2244 ACR1252U-A1 (PICC)  ACS ACR1252U BADANAMU MAGIC READER
 072F 2239 ACR1256U            ACS ACR1256U PICC Reader
 072F 2211 ACR1261U-C1         ACS ACR1261 1S Dual Reader
 072F 2100 ACR128U             ACS ACR128U
@@ -125,7 +125,7 @@ History
 
 v1.0.8 (3/7/2014)
 - Add the following readers support:
-  ACS ACR1252 BADANAMU MAGIC READER
+  ACS ACR1252U BADANAMU MAGIC READER
   ACS ACR1261 1S Dual Reader
 - Change the delay of cold reset to 10 ms.
 - Remove the checking of specific mode before setting the parameters.
