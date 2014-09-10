@@ -594,6 +594,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 			{
 				ccid_descriptor->dwFeatures = 0x0004047A;	// Contactless
 				ccid_descriptor->dwMaxDataRate = 344100;
+				ccid_descriptor->isSamSlot = 0;
 			}
 			else
 			{
