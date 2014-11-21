@@ -18,11 +18,12 @@
 */
 
 /*
- * $Id: debug.c 6646 2013-06-03 08:58:01Z rousseau $
+ * $Id: debug.c 6975 2014-09-04 11:33:05Z rousseau $
  */
 
 
-#include "config.h"
+#include <config.h>
+#include "misc.h"
 #include "debug.h"
 
 #include <stdarg.h>
@@ -66,7 +67,7 @@ void log_msg(const int priority, const char *fmt, ...)
 			unsigned int i;
 
 			/* for each known color terminal */
-			for (i = 0; i < sizeof(terms) / sizeof(terms[0]); i++)
+			for (i = 0; i < COUNT_OF(terms); i++)
 			{
 				/* we found a supported term? */
 				if (0 == strcmp(terms[i], term))
