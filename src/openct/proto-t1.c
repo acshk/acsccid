@@ -8,6 +8,8 @@
  * Copyright (C) 2011 Advanced Card Systems Ltd. <info@acs.com.hk>
  */
 
+#include <config.h>
+
 #include <pcsclite.h>
 #include <ifdhandler.h>
 #include "commands.h"
@@ -18,10 +20,9 @@
 
 #include "ccid.h"
 
-#include <sys/poll.h>
-#include <unistd.h>
-#include <stdlib.h>
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 
 #include "defs.h"
 #include "ccid_ifdhandler.h"
