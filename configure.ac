@@ -20,7 +20,7 @@ AC_PREFIX_DEFAULT(/usr/local)
 AC_CANONICAL_HOST
 
 # create a config.h file (Automake will add -DHAVE_CONFIG_H)
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 
 # Options
 AM_MAINTAINER_MODE
