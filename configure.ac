@@ -210,6 +210,15 @@ class=no
 NOCLASS="--no-class"
 AC_SUBST(NOCLASS)
 
+# --enable-embedded
+AC_ARG_ENABLE(embedded,
+  AS_HELP_STRING([--enable-embedded],[limit RAM and CPU ressources by disabling features (log)]),
+  [ use_embedded="${enableval}" ])
+
+if test x$use_embedded = xyes; then
+  AC_DEFINE(NO_LOG, 1, [Disable logging support])
+fi
+
 # Setup dist stuff
 AC_SUBST(ac_aux_dir)
 AC_SUBST(bundle)
