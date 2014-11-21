@@ -1,11 +1,38 @@
 /*
- * MUSCLE SmartCard Development ( http://www.linuxnet.com )
+ * MUSCLE SmartCard Development ( http://pcsclite.alioth.debian.org/pcsclite.html )
  *
  * Copyright (C) 2003
  *  Toni Andjelkovic <toni@soth.at>
+ * Copyright (C) 2003-2009
  *  Ludovic Rousseau <ludovic.rousseau@free.fr>
  *
- * $Id: parser.h 4248 2009-06-05 08:41:19Z rousseau $
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+Changes to this license can be made only by the copyright author with
+explicit written consent.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * $Id: parser.h 6851 2014-02-14 15:43:32Z rousseau $
  */
 
 /**
@@ -16,25 +43,16 @@
 #ifndef __parser_h__
 #define __parser_h__
 
-#ifdef __cplusplus
-extern "C"
+#include "simclist.h"
+
+struct bundleElt
 {
-#endif
+	char *key;
+	list_t values;
+};
 
-#define TOKEN_MAX_KEY_SIZE   200
-#define TOKEN_MAX_VALUE_SIZE 200
-
-#define TOKEN_TYPE_KEY         1
-#define TOKEN_TYPE_STRING      2
-
-int LTPBundleFindValueWithKey(const char *fileName, const char *tokenKey,
-                              /*@out@*/ char *tokenValue, int tokenIndice);
-
-int LTPBundleFindOptionalValueWithKey(const char *fileName,
-	const char *tokenKey, /*@out@*/ char *tokenValue, int tokenIndice);
-
-#ifdef __cplusplus
-}
-#endif
+int LTPBundleFindValueWithKey(list_t *l, const char *key, list_t **values);
+int bundleParse(const char *fileName, list_t *l);
+void bundleRelease(list_t *l);
 
 #endif
