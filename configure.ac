@@ -255,7 +255,6 @@ multi threading:         ${multithread}
 bundle directory name:   ${bundle}
 USB drop directory:      ${usbdropdir}
 compiled for pcsc-lite:  ${pcsclite}
-udev support:            ${udev}
 class driver:            ${class}
 
 EOF
