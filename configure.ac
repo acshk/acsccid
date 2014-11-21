@@ -250,7 +250,6 @@ SYMBOL_VISIBILITY:   ${SYMBOL_VISIBILITY}
 NOCLASS:             ${NOCLASS}
 
 libusb support:          ${use_libusb}
-use USB interrupt:       ${use_usb_interrupt}
 composite as multislot:  ${use_composite_as_multislot}
 multi threading:         ${multithread}
 bundle directory name:   ${bundle}
