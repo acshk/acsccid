@@ -48,12 +48,7 @@ EXTRA_DIST = Info.plist.src create_Info_plist.pl supported_readers.txt \
 	convert_version.pl pcscd_acsccid.rules 92_pcscd_acsccid.rules \
 	92_pcscd_acsccid_group.rules
 
-if UDEV
-ifdCapabilities=0x00000001
-INSTALL_UDEV_RULE_FILE=@echo -e "\n\33[01;31m***************\n" ; echo "copy the src/pcscd_acsccid.rules file (pcsc-lite < 1.6.5) or src/92_pcscd_acsccid.rules (pcsc-lite >= 1.6.5) to udev directory (/etc/udev/rules.d/)" ; echo -e "\n***************\n\33[0m"
-else
-ifdCapabilities=0x00000000
-endif
+INSTALL_UDEV_RULE_FILE=@/bin/echo -e "\n\33[01;31m***************\n" ; echo "copy the src/92_pcscd_acsccid.rules file in udev directory (/etc/udev/rules.d/)" ; /bin/echo -e "\n***************\n\33[0m"
 
 Info.plist: Info.plist.src $(srcdir)/supported_readers.txt
 	$(srcdir)/create_Info_plist.pl $(srcdir)/supported_readers.txt $(srcdir)/Info.plist.src --ifdCapabilities=$(ifdCapabilities) --target=$(CCID_LIB) --version=$(VERSION) --bundle=$(CCID_BUNDLE) $(NOCLASS) > Info.plist
