@@ -17,6 +17,8 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #    02110-1301 USA.
 
+# $Id: configure 6792 2013-11-25 13:03:21Z rousseau $
+
 # to use
 # ./MacOSX/configure
 # make
@@ -37,16 +39,15 @@ then
 	exit;
 fi
 
-./MacOSX/convert_reader_h.pl MacOSX/reader.h.in > MacOSX/reader.h
-
 # find pcsc-lite header files in MacOSX/
 # use ${varname:-word} to return word only if varname is not already defined
 PCSC_CFLAGS=${PCSC_CFLAGS:--I$(pwd)/MacOSX}
 PCSC_LIBS=${PCSC_LIBS:--framework PCSC}
 
-# use libusb-0.1
-LIBUSB_CFLAGS=-I/usr/local/include
-LIBUSB_LIBS="/usr/local/lib/libusb.a -Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation"
+# use libusb-1.0 (or libusbx-1.0)
+LIBUSB_ARCHIVE=$(pkg-config --variable=libdir libusb-1.0)/libusb-1.0.a
+LIBUSB_CFLAGS=$(pkg-config --cflags --static libusb-1.0)
+LIBUSB_LIBS=$(pkg-config --libs --static libusb-1.0)
 
 # RESPONSECODE is already defined by PCSC/wintypes.h
 # define needed here to compile examples/scardcontrol.c since config.h is
@@ -54,8 +55,21 @@ LIBUSB_LIBS="/usr/local/lib/libusb.a -Wl,-framework -Wl,IOKit -Wl,-framework -Wl
 CFLAGS="$CFLAGS -DRESPONSECODE_DEFINED_IN_WINTYPES_H"
 
 # Build a Universal Binary
-CFLAGS="$CFLAGS -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch ppc -arch i386 -arch x86_64"
-LDFLAGS="-arch ppc -arch i386 -arch x86_64"
+UB=$(file $LIBUSB_ARCHIVE | grep "Mach-O universal binary")
+echo $UB
+if [ -z "$UB" ]
+then
+	echo -en $RED
+	echo "*************************"
+	echo "No Universal Binary build"
+	echo "*************************"
+	echo -en $NORMAL
+else
+	echo "Universal Binary build"
+	CFLAGS="$CFLAGS -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk -arch i386 -arch x86_64"
+fi
+echo
+
 CONFIGURE_ARGS="--disable-dependency-tracking"
 
 # do not build a static driver
@@ -68,8 +82,19 @@ CONFIGURE_ARGS="$CONFIGURE_ARGS --disable-pcsclite"
 # simulate a composite device as multi slots
 CONFIGURE_ARGS="$CONFIGURE_ARGS --enable-composite-as-multislot"
 
-# use a specific bundle name to NOT overwrite the official CCID driver
-#CONFIGURE_ARGS="$CONFIGURE_ARGS --enable-bundle=ifd-ccid-foobar.bundle"
+# set BUNDLE_ID to a specific value for a specific driver
+#BUNDLE_ID="vendor-reader"
+if [ ! -z "$BUNDLE_ID" ]
+then
+	# do not build a class driver (not yet used by pcsc-lite on Mac OS X)
+	CONFIGURE_ARGS="$CONFIGURE_ARGS --disable-class"
+
+	# use a specific bundle name to NOT overwrite the official CCID driver
+	CONFIGURE_ARGS="$CONFIGURE_ARGS --enable-bundle=ifd-ccid-$BUNDLE_ID.bundle"
+
+	# differentiate each libccid library by the dynamic linker
+	CONFIGURE_ARGS="$CONFIGURE_ARGS	--prefix=/fake/$BUNDLE_ID"
+fi
 
 set -x
 ./configure \
