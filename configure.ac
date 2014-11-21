@@ -134,8 +134,7 @@ AM_CONDITIONAL(WITH_LIBUSB, test "${use_libusb}" != "no")
 # --enable-composite-as-multislot
 use_composite_as_multislot=no
 AC_ARG_ENABLE(composite-as-multislot,
-	AC_HELP_STRING([--enable-composite-as-multislot],
-		[composite device are seen as multi-slots]),
+	AS_HELP_STRING([--enable-composite-as-multislot],[composite device are seen as multi-slots]),
 	[ use_composite_as_multislot="${enableval}" ] )
 
 if test "x$use_composite_as_multislot" = xyes; then
@@ -155,7 +154,7 @@ AC_SUBST(SYMBOL_VISIBILITY)
 
 # --disable-multi-thread
 AC_ARG_ENABLE(multi-thread,
-	AC_HELP_STRING([--disable-multi-thread],[disable multi threading]),
+	AS_HELP_STRING([--disable-multi-thread],[disable multi threading]),
 	[ multithread="${enableval}" ], [ multithread=yes ] )
 
 if test "${multithread}" != no ; then
@@ -173,7 +172,7 @@ AC_DEFINE_UNQUOTED(BUNDLE, "$bundle", [bundle directory name])
 
 # --enable-usbdropdir=DIR
 AC_ARG_ENABLE(usbdropdir,
-	AC_HELP_STRING([--enable-usbdropdir=DIR],[directory containing USB
+	AS_HELP_STRING([--enable-usbdropdir=DIR],[directory containing USB
 	drivers (default to pcscd config or $(prefix)/pcsc/drivers)]),
 	[usbdropdir="${enableval}"], [usbdropdir=false])
 if test "${usbdropdir}" = false ; then
@@ -186,7 +185,7 @@ fi
 
 # --disable-pcsclite
 AC_ARG_ENABLE(pcsclite,
-	AC_HELP_STRING([--disable-pcsclite],[do not use pcsc-lite debug support]),
+	AS_HELP_STRING([--disable-pcsclite],[do not use pcsc-lite debug support]),
 	[ pcsclite="${enableval}" ], [ pcsclite=yes ] )
 
 if test "${pcsclite}" != no ; then
