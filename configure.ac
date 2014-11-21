@@ -93,70 +93,43 @@ SunOS)
 	;;
 	esac
 
-use_usb_interrupt=no
+# --disable-libusb
+AC_ARG_ENABLE(libusb,
+	AS_HELP_STRING([--disable-libusb],[do not use libusb]),
+	[ use_libusb="${enableval}" ], [ use_libusb=yes ] )
 
-PKG_CHECK_EXISTS([libusb], [
-PKG_CHECK_MODULES(LIBUSB, libusb, [],
-	[
-		AC_CHECK_PROG([LIBUSBCONFIG], [libusb-config], [yes])
-
-		if test "$LIBUSBCONFIG" = "yes" ; then
-			LIBUSB_CFLAGS="$LIBUSB_CFLAGS `libusb-config --cflags`"
-			LIBUSB_LIBS="$LIBUSB_LIBS `libusb-config --libs`"
-		else
-			AC_MSG_WARN([libusb-config not found.])
-		fi
+# check if libusb is used
+LIBUSB_NEEDED_VERSION="1.0.8"
+if test "x$use_libusb" != xno ; then
+	PKG_CHECK_EXISTS([libusb-1.0], [
+	PKG_CHECK_MODULES(LIBUSB, libusb-1.0 >= $LIBUSB_NEEDED_VERSION, [],
+		[
+		AC_MSG_WARN([install libusb $LIBUSB_NEEDED_VERSION or later])
+		PKG_CHECK_MODULES(LIBUSB, libusb-1.0)
+		])
 	])
-])
 
-saved_CPPFLAGS="$CPPFLAGS"
-saved_LIBS="$LIBS"
+	saved_CPPFLAGS="$CPPFLAGS"
+	saved_LIBS="$LIBS"
 
-CPPFLAGS="$CPPFLAGS $LIBUSB_CFLAGS"
-LIBS="$LDFLAGS $LIBUSB_LIBS"
+	CPPFLAGS="$CPPFLAGS $LIBUSB_CFLAGS"
+	LIBS="$LDFLAGS $LIBUSB_LIBS"
 
-AC_CHECK_HEADERS(usb.h, [],
-	[ AC_MSG_ERROR([usb.h not found, install libusb or use ./configure LIBUSB_CFLAGS=...]) ])
+	AC_CHECK_HEADERS(libusb.h, [],
+		[ AC_MSG_ERROR([libusb.h not found, install libusb or use ./configure LIBUSB_CFLAGS=...]) ])
 
-AC_MSG_CHECKING([for usb_init])
-AC_TRY_LINK_FUNC(usb_init, [ AC_MSG_RESULT([yes]) ],
-	[ AC_MSG_ERROR([libusb not found, use ./configure LIBUSB_LIBS=...]) ])
+	AC_MSG_CHECKING([for libusb_init])
+	AC_TRY_LINK_FUNC(libusb_init, [ AC_MSG_RESULT([yes]) ],
+		[ AC_MSG_ERROR([libusb not found, use ./configure LIBUSB_LIBS=...]) ])
 
-AC_MSG_CHECKING([for usb_interrupt_read])
-AC_TRY_LINK_FUNC(usb_interrupt_read, [ AC_MSG_RESULT([yes]) ],
-	[ AC_MSG_ERROR([your libusb is too old. install version 0.1.12 or above]) ])
+	CPPFLAGS="$saved_CPPFLAGS"
+	LIBS="$saved_LIBS"
 
-AC_CHECK_FUNC(usb_detach_kernel_driver_np,
-	[ AC_DEFINE(HAVE_USB_DETACH_KERNEL_DRIVER_NP, 1, [Define if usb_detach_kernel_driver_np() is available]) ])
-
-CPPFLAGS="$saved_CPPFLAGS"
-LIBS="$saved_LIBS"
-
-use_libusb=yes
-
-AC_MSG_CHECKING([if libusb is emulated by libusb-compat])
-a=`$PKG_CONFIG --variable=emulated libusb`
-if test "x$a" = "x1";
-then
-	AC_MSG_RESULT([yes])
-	use_usb_interrupt=yes
-else
-	AC_MSG_RESULT([no])
+	use_libusb=yes
 fi
-
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
-
-# --enable-usb-interrupt
-AC_ARG_ENABLE(usb-interrupt,
-	AC_HELP_STRING([--enable-usb-interrupt], [force the use of USB
-	interrupt even with an old libusb]),
-	[ use_usb_interrupt="${enableval}" ] )
-
-if test "x$use_usb_interrupt" = xyes; then
-	AC_DEFINE(USE_USB_INTERRUPT, 1, [use libusb usb_interrupt_read()
-	instead of polling])
-fi
+AM_CONDITIONAL(WITH_LIBUSB, test "${use_libusb}" != "no")
 
 # --enable-composite-as-multislot
 use_composite_as_multislot=no
