@@ -205,12 +205,6 @@ if test "${pcsclite}" != no ; then
 fi
 AM_CONDITIONAL(WITHOUT_PCSC, test "${pcsclite}" != "yes")
 
-# --enable-udev
-AC_ARG_ENABLE(udev,
-	AC_HELP_STRING([--enable-udev],[udev support for pcscd hotplug]),
-	[udev="${enableval}"], [udev=no])
-AM_CONDITIONAL(UDEV, test "${udev}" != "no")
-
 # class driver is disabled
 class=no
 NOCLASS="--no-class"
