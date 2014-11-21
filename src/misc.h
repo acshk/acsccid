@@ -1,21 +1,42 @@
 /*
  * This handles GCC attributes
  *
- * MUSCLE SmartCard Development ( http://www.linuxnet.com )
+ * MUSCLE SmartCard Development ( http://pcsclite.alioth.debian.org/pcsclite.html )
  *
- * Copyright (C) 2005
+ * Copyright (C) 2005-2010
  *  Ludovic Rousseau <ludovic.rousseau@free.fr>
  *
- * $Id: misc.h 2481 2007-03-15 08:23:07Z rousseau $
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+Changes to this license can be made only by the copyright author with
+explicit written consent.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * $Id: misc.h 6851 2014-02-14 15:43:32Z rousseau $
  */
 
 #ifndef __misc_h__
 #define __misc_h__
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 /*
  * Declare the function as internal to the library: the function name is
@@ -24,9 +45,13 @@ extern "C"
  * see http://gcc.gnu.org/onlinedocs/gcc-3.3.5/gcc/Function-Attributes.html#Function-Attributes
  * see http://www.nedprod.com/programs/gccvisibility.html
  */
-#if defined __GNUC__ && (__GNUC__ >= 4 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3))
+#if defined __GNUC__ && (! defined (__sun)) && (__GNUC__ >= 4 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3))
 #define INTERNAL __attribute__ ((visibility("hidden")))
 #define PCSC_API __attribute__ ((visibility("default")))
+#elif (! defined __GNUC__ ) && defined (__sun)
+/* http://wikis.sun.com/display/SunStudio/Macros+for+Shared+Library+Symbol+Visibility */
+#define INTERNAL __hidden
+#define PCSC_API __global
 #else
 #define INTERNAL
 #define PCSC_API
@@ -56,8 +81,8 @@ extern "C"
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
-#ifdef __cplusplus
-}
+#ifndef COUNT_OF
+#define COUNT_OF(arr) (sizeof(arr)/sizeof(arr[0]))
 #endif
 
 #endif /* __misc_h__ */
