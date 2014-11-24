@@ -10,7 +10,7 @@ EXTRA_DIST = bootstrap \
 	MacOSX/debuglog.h \
 	MacOSX/ifdhandler.h \
 	MacOSX/pcsclite.h \
-	MacOSX/reader.h.in \
+	MacOSX/reader.h \
 	MacOSX/winscard.h \
 	MacOSX/wintypes.h
 
