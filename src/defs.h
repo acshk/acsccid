@@ -1,6 +1,6 @@
 /*
     defs.h:
-    Copyright (C) 2003   Ludovic Rousseau
+    Copyright (C) 2003-2010   Ludovic Rousseau
     Copyright (C) 2011-2012   Advanced Card Systems Ltd.
 
     This library is free software; you can redistribute it and/or
@@ -19,7 +19,7 @@
 */
 
 /*
- * $Id: defs.h 4292 2009-07-01 12:28:01Z rousseau $
+ * $Id: defs.h 6926 2014-06-17 09:22:00Z rousseau $
  */
 
 #include <pcsclite.h>
@@ -55,12 +55,12 @@ typedef struct CCID_DESC
 	 * ATR
 	 */
 	int nATRLength;
-	UCHAR pcATRBuffer[MAX_ATR_SIZE];
+	unsigned char pcATRBuffer[MAX_ATR_SIZE];
 
 	/*
 	 * Card state
 	 */
-	UCHAR bPowerFlags;
+	unsigned char bPowerFlags;
 
 	/*
 	 * T=1 Protocol context
@@ -108,8 +108,19 @@ typedef enum {
 #define T_0 0
 #define T_1 1
 
-/* Default communication read timeout in seconds */
-#define DEFAULT_COM_READ_TIMEOUT 2
+/* Default communication read timeout in milliseconds */
+#define DEFAULT_COM_READ_TIMEOUT (3*1000)
+
+/* DWORD type formating */
+#ifdef __APPLE__
+/* Apple defines DWORD as uint32_t */
+#define DWORD_X "%X"
+#define DWORD_D "%d"
+#else
+/* pcsc-lite defines DWORD as unsigned long */
+#define DWORD_X "%lX"
+#define DWORD_D "%ld"
+#endif
 
 /*
  * communication ports abstraction
