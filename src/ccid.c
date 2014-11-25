@@ -262,19 +262,20 @@ static void set_gemalto_firmware_features(unsigned int reader_index)
 int ccid_open_hack_post(unsigned int reader_index)
 {
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
+	RESPONSECODE return_value = IFD_SUCCESS;
 
 	switch (ccid_descriptor->readerID)
 	{
 		case GEMPCKEY:
 		case GEMPCTWIN:
-			/* Reader announces TPDU but can do APDU */
+			/* Reader announces TPDU but can do APDU (EMV in fact) */
 			if (DriverOptions & DRIVER_OPTION_GEMPC_TWIN_KEY_APDU)
 			{
-				unsigned char cmd[] = { 0xA0, 0x02 };
+				unsigned char cmd[] = { 0x1F, 0x02 };
 				unsigned char res[10];
 				unsigned int length_res = sizeof(res);
 
-				if (CmdEscape(reader_index, cmd, sizeof(cmd), res, &length_res) == IFD_SUCCESS)
+				if (CmdEscape(reader_index, cmd, sizeof(cmd), res, &length_res, 0) == IFD_SUCCESS)
 				{
 					ccid_descriptor->dwFeatures &= ~CCID_CLASS_EXCHANGE_MASK;
 					ccid_descriptor->dwFeatures |= CCID_CLASS_SHORT_APDU;
@@ -282,6 +283,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 			}
 			break;
 
+		case VEGAALPHA:
 		case GEMPCPINPAD:
 			/* load the l10n strings in the pinpad memory */
 			{
@@ -390,10 +392,28 @@ int ccid_open_hack_post(unsigned int reader_index)
 					"Card Error",
 					"PIN blocked" };
 
-				char *lang;
+				const char *lang;
 				const char **l10n;
 
+#ifdef __APPLE__
+				CFArrayRef cfa;
+				CFStringRef slang;
+
+				/* Get the complete ordered list */
+				cfa = CFLocaleCopyPreferredLanguages();
+
+				/* Use the first/preferred language
+				 * As the driver is run as root we get the language
+				 * selected during install */
+				slang = CFArrayGetValueAtIndex(cfa, 0);
+
+				/* CFString -> C string */
+				lang = CFStringGetCStringPtr(slang, kCFStringEncodingMacRoman);
+#else
+				/* The other Unixes just use the LANG env variable */
 				lang = getenv("LANG");
+#endif
+				DEBUG_COMM2("Using lang: %s", lang);
 				if (NULL == lang)
 					l10n = en;
 				else
@@ -416,6 +436,10 @@ int ccid_open_hack_post(unsigned int reader_index)
 						l10n = en;
 				}
 
+#ifdef __APPLE__
+				/* Release the allocated array */
+				CFRelease(cfa);
+#endif
 				offset = 0;
 				cmd[offset++] = 0xB2;	/* load strings */
 				cmd[offset++] = 0xA0;	/* address of the memory */
@@ -436,15 +460,40 @@ int ccid_open_hack_post(unsigned int reader_index)
 				}
 
 				(void)sleep(1);
-				if (IFD_SUCCESS == CmdEscape(reader_index, cmd, sizeof(cmd), res, &length_res))
+				if (IFD_SUCCESS == CmdEscape(reader_index, cmd, sizeof(cmd), res, &length_res, DEFAULT_COM_READ_TIMEOUT))
 				{
 					DEBUG_COMM("l10n string loaded successfully");
 				}
 				else
 				{
 					DEBUG_COMM("Failed to load l10n strings");
+					return_value = IFD_COMMUNICATION_ERROR;
+				}
+
+				if (DriverOptions & DRIVER_OPTION_DISABLE_PIN_RETRIES)
+				{
+					/* disable VERIFY from reader */
+					const unsigned char cmd2[] = {0xb5, 0x00};
+					length_res = sizeof(res);
+					if (IFD_SUCCESS == CmdEscape(reader_index, cmd2, sizeof(cmd2), res, &length_res, DEFAULT_COM_READ_TIMEOUT))
+					{
+						DEBUG_COMM("Disable SPE retry counter successfull");
+					}
+					else
+					{
+						DEBUG_CRITICAL("Failed to disable SPE retry counter");
+					}
 				}
 			}
+			break;
+
+		case HPSMARTCARDKEYBOARD:
+		case HP_CCIDSMARTCARDKEYBOARD:
+		case FUJITSUSMARTKEYB:
+			/* the Secure Pin Entry is bogus so disable it
+			 * http://martinpaljak.net/2011/03/19/insecure-hp-usb-smart-card-keyboard/
+			 */
+			ccid_descriptor->bPINSupport = 0;
 			break;
 
 #if 0
@@ -467,8 +516,8 @@ int ccid_open_hack_post(unsigned int reader_index)
 				unsigned char res[20];
 				unsigned int length_res = sizeof(res);
 
-				if ((IFD_SUCCESS == CmdEscape(reader_index, cmd1, sizeof(cmd1), res, &length_res))
-					&& (IFD_SUCCESS == CmdEscape(reader_index, cmd2, sizeof(cmd2), res, &length_res)))
+				if ((IFD_SUCCESS == CmdEscape(reader_index, cmd1, sizeof(cmd1), res, &length_res, 0))
+					&& (IFD_SUCCESS == CmdEscape(reader_index, cmd2, sizeof(cmd2), res, &length_res, 0)))
 				{
 					DEBUG_COMM("SCM SCR331-DI contactless detected");
 				}
@@ -760,7 +809,11 @@ int ccid_open_hack_post(unsigned int reader_index)
 			break;
 	}
 
-	return 0;
+	/* Gemalto readers may report additional information */
+	if (GET_VENDOR(ccid_descriptor->readerID) == VENDOR_GEMALTO)
+		set_gemalto_firmware_features(reader_index);
+
+	return return_value;
 } /* ccid_open_hack_post */
 
 /*****************************************************************************
