@@ -65,6 +65,8 @@
 /* #define ctx NULL */
 libusb_context *ctx = NULL;
 
+#define CCID_INTERRUPT_SIZE 8
+
 typedef struct
 {
 	usb_dev_handle *handle;
