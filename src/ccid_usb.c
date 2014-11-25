@@ -185,6 +185,29 @@ static struct _bogus_firmware Bogus_firmwares[] = {
 /* data rates supported by the secondary slots on the GemCore Pos Pro & SIM Pro */
 unsigned int SerialCustomDataRates[] = { GEMPLUS_CUSTOM_DATA_RATES, 0 };
 
+/*****************************************************************************
+ *
+ *					close_libusb_if_needed
+ *
+ ****************************************************************************/
+static void close_libusb_if_needed(void)
+{
+	int i, to_exit = TRUE;
+
+	/* if at least 1 reader is still in use we do not exit libusb */
+	for (i=0; i<CCID_DRIVER_MAX_READERS; i++)
+	{
+		if (usbDevice[i].dev_handle != NULL)
+			to_exit = FALSE;
+	}
+
+	if (to_exit)
+	{
+		DEBUG_INFO1("libusb_exit");
+		libusb_exit(ctx);
+		ctx = NULL;
+	}
+} /* close_libusb_if_needed */
 
 /*****************************************************************************
  *
