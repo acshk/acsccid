@@ -60,6 +60,11 @@
 
 #define BUS_DEVICE_STRSIZE 32
 
+/* Using the default libusb context */
+/* does not work for libusb <= 1.0.8 */
+/* #define ctx NULL */
+libusb_context *ctx = NULL;
+
 typedef struct
 {
 	usb_dev_handle *handle;
