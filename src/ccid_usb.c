@@ -146,9 +146,9 @@ static void *CardDetectionThread(void *pParam);
 /* ne need to initialize to 0 since it is static */
 static _usbDevice usbDevice[CCID_DRIVER_MAX_READERS];
 
-#define PCSCLITE_MANUKEY_NAME                   "ifdVendorID"
-#define PCSCLITE_PRODKEY_NAME                   "ifdProductID"
-#define PCSCLITE_NAMEKEY_NAME                   "ifdFriendlyName"
+#define PCSCLITE_MANUKEY_NAME "ifdVendorID"
+#define PCSCLITE_PRODKEY_NAME "ifdProductID"
+#define PCSCLITE_NAMEKEY_NAME "ifdFriendlyName"
 
 struct _bogus_firmware
 {
