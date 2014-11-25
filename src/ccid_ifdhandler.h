@@ -1,6 +1,6 @@
 /*
     ccid_ifdhandler.h: non-generic ifdhandler functions
-    Copyright (C) 2004-2009   Ludovic Rousseau
+    Copyright (C) 2004-2010   Ludovic Rousseau
     Copyright (C) 2010-2012   Advanced Card Systems Ltd.
 
     This library is free software; you can redistribute it and/or
@@ -19,7 +19,7 @@
 */
 
 /*
- * $Id: ccid_ifdhandler.h 4279 2009-06-26 14:58:03Z rousseau $
+ * $Id: ccid_ifdhandler.h 6876 2014-03-23 12:00:57Z rousseau $
  */
 
 #ifndef _ccid_ifd_handler_h_
@@ -32,24 +32,12 @@
 	SCARD_CTL_CODE(FEATURE_VERIFY_PIN_DIRECT + CLASS2_IOCTL_MAGIC)
 #define IOCTL_FEATURE_MODIFY_PIN_DIRECT \
 	SCARD_CTL_CODE(FEATURE_MODIFY_PIN_DIRECT + CLASS2_IOCTL_MAGIC)
-
-// Fix problem using pcsc-lite 1.7.3 or later header files
-#ifndef FEATURE_MCT_READERDIRECT
-#define FEATURE_MCT_READERDIRECT	FEATURE_MCT_READER_DIRECT
-#endif
-
-#define IOCTL_FEATURE_MCT_READERDIRECT \
-	SCARD_CTL_CODE(FEATURE_MCT_READERDIRECT + CLASS2_IOCTL_MAGIC)
-
-// Fix problem using pcsc-lite 1.4.x header files
-#ifdef FEATURE_IFD_PIN_PROP
-#define FEATURE_IFD_PIN_PROPERTIES	FEATURE_IFD_PIN_PROP
-#endif
-
-#ifdef FEATURE_IFD_PIN_PROPERTIES
+#define IOCTL_FEATURE_MCT_READER_DIRECT \
+	SCARD_CTL_CODE(FEATURE_MCT_READER_DIRECT + CLASS2_IOCTL_MAGIC)
 #define IOCTL_FEATURE_IFD_PIN_PROPERTIES \
 	SCARD_CTL_CODE(FEATURE_IFD_PIN_PROPERTIES + CLASS2_IOCTL_MAGIC)
-#endif
+#define IOCTL_FEATURE_GET_TLV_PROPERTIES \
+	SCARD_CTL_CODE(FEATURE_GET_TLV_PROPERTIES + CLASS2_IOCTL_MAGIC)
 
 // MS CCID I/O control code for escape command
 #define IOCTL_CCID_ESCAPE	SCARD_CTL_CODE(3500)
@@ -70,6 +58,7 @@
 #define DRIVER_OPTION_GEMPC_TWIN_KEY_APDU 2
 #define DRIVER_OPTION_USE_BOGUS_FIRMWARE 4
 #define DRIVER_OPTION_RESET_ON_CLOSE 8
+#define DRIVER_OPTION_DISABLE_PIN_RETRIES (1 << 6)
 
 // ACR1222/ACR85 driver option
 #define DRIVER_OPTION_REMOVE_PUPI_FROM_ATR	0x40
