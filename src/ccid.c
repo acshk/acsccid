@@ -64,17 +64,10 @@ static int ACR1222_GetFirmwareVersion(unsigned int reader_index, char *firmwareV
 int ccid_open_hack_pre(unsigned int reader_index)
 {
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
-	int doInterruptRead = 0;	// Disable InterruptRead
 	int i;
 
 	switch (ccid_descriptor->readerID)
 	{
-		case CARDMAN3121+1:
-			/* Reader announces APDU but is in fact TPDU */
-			ccid_descriptor->dwFeatures &= ~CCID_CLASS_EXCHANGE_MASK;
-			ccid_descriptor->dwFeatures |= CCID_CLASS_TPDU;
-			break;
-
 		case MYSMARTPAD:
 			ccid_descriptor->dwMaxIFSD = 254;
 			break;
@@ -82,12 +75,24 @@ int ccid_open_hack_pre(unsigned int reader_index)
 		case CL1356D:
 			/* the firmware needs some time to initialize */
 			(void)sleep(1);
-			ccid_descriptor->readTimeout = 60; /* 60 seconds */
+			ccid_descriptor->readTimeout = 60*1000; /* 60 seconds */
 			break;
 
-		case KOBIL_TRIBANK:
-			/* the InterruptRead does not timeout (on Mac OS X) */
-			doInterruptRead = 0;
+		case GEMPCTWIN:
+		case GEMPCKEY:
+		case DELLSCRK:
+			/* Only the chipset with firmware version 2.00 is "bogus"
+			 * The reader may send packets of 0 bytes when the reader is
+			 * connected to a USB 3 port */
+			if (0x0200 == ccid_descriptor->IFD_bcdDevice)
+			{
+				ccid_descriptor->zlp = TRUE;
+				DEBUG_INFO1("ZLP fixup");
+			}
+			break;
+
+		case OZ776_7772:
+			ccid_descriptor->dwMaxDataRate = 9600;
 			break;
 
 		case ACS_ACR122U:
@@ -109,16 +114,17 @@ int ccid_open_hack_pre(unsigned int reader_index)
 	}
 
 	/* CCID */
-	if (doInterruptRead && (0 == ccid_descriptor->bInterfaceProtocol))
+	if ((PROTOCOL_CCID == ccid_descriptor->bInterfaceProtocol)
+		&& (3 == ccid_descriptor -> bNumEndpoints))
 	{
 #ifndef TWIN_SERIAL
-		/* just wait for 10ms in case a notification is in the pipe */
-		(void)InterruptRead(reader_index, 10);
+		/* just wait for 100ms in case a notification is in the pipe */
+		(void)InterruptRead(reader_index, 100);
 #endif
 	}
 
 	/* ICCD type A */
-	if (ICCD_A == ccid_descriptor->bInterfaceProtocol)
+	if (PROTOCOL_ICCD_A == ccid_descriptor->bInterfaceProtocol)
 	{
 		unsigned char tmp[MAX_ATR_SIZE];
 		unsigned int n = sizeof(tmp);
@@ -130,7 +136,7 @@ int ccid_open_hack_pre(unsigned int reader_index)
 	}
 
 	/* ICCD type B */
-	if (ICCD_B == ccid_descriptor->bInterfaceProtocol)
+	if (PROTOCOL_ICCD_B == ccid_descriptor->bInterfaceProtocol)
 	{
 		unsigned char tmp[MAX_ATR_SIZE];
 		unsigned int n = sizeof(tmp);
