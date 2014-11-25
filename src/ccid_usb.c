@@ -24,10 +24,6 @@
 
 #define __CCID_USB__
 
-#ifdef __APPLE__
-#include <IOKit/usb/IOUSBLib.h>
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -110,53 +106,7 @@ static unsigned int *get_data_rates(unsigned int reader_index,
 	struct usb_device *dev, int num);
 
 #ifdef __APPLE__
-
-#if defined (kIOUSBInterfaceInterfaceID220)
-#define usb_interface_t	IOUSBInterfaceInterface220
-#elif defined (kIOUSBInterfaceInterfaceID197)
-#define usb_interface_t	IOUSBInterfaceInterface197
-#elif defined (kIOUSBInterfaceInterfaceID190)
-#define usb_interface_t	IOUSBInterfaceInterface190
-#elif defined (kIOUSBInterfaceInterfaceID182)
-#define usb_interface_t	IOUSBInterfaceInterface182
-#else
-#define usb_interface_t	IOUSBInterfaceInterface
-#endif
-
-#if defined (kIOUSBDeviceInterfaceID197)
-#define usb_device_t	IOUSBDeviceInterface197
-#elif defined (kIOUSBDeviceInterfaceID187)
-#define usb_device_t	IOUSBDeviceInterface187
-#elif defined (kIOUSBDeviceInterfaceID182)
-#define usb_device_t	IOUSBDeviceInterface182
-#else
-#define usb_device_t	IOUSBDeviceInterface
-#endif
-
-struct darwin_dev_handle {
-	usb_device_t **device;
-	usb_interface_t **interface;
-	int open;
-
-	int num_endpoints;
-	unsigned char *endpoint_addrs;
-};
-
-struct usb_dev_handle {
-	int fd;
-
-	struct usb_bus *bus;
-	struct usb_device *device;
-
-	int config;
-	int interface;
-	int altsetting;
-
-	void *impl_info;
-};
-
 static void *CardDetectionThread(void *pParam);
-static int GetPipeRef(struct darwin_dev_handle *device, int ep);
 #endif
 
 /* ne need to initialize to 0 since it is static */
@@ -1146,37 +1096,26 @@ status_t CloseUSB(unsigned int reader_index)
 	/* release the allocated ressources for the last slot only */
 	if (0 == *usbDevice[reader_index].nb_opened_slots)
 	{
-#ifdef __APPLE__
-		struct darwin_dev_handle *device;
-		int pipeRef;
-#endif
 		DEBUG_COMM("Last slot closed. Release resources");
 
 		/* reset so that bSeq starts at 0 again */
 		if (DriverOptions & DRIVER_OPTION_RESET_ON_CLOSE)
 			(void)usb_reset(usbDevice[reader_index].handle);
+
+		(void)usb_release_interface(usbDevice[reader_index].handle,
+			usbDevice[reader_index].interface);
+		(void)usb_close(usbDevice[reader_index].handle);
 #ifdef __APPLE__
 		DEBUG_INFO3("Terminating thread: %s/%s",
 			usbDevice[reader_index].dirname, usbDevice[reader_index].filename);
 
 		// Terminate thread
 		*usbDevice[reader_index].pTerminated = TRUE;
-
-		// Abort interrupt pipe
-		device = (struct darwin_dev_handle *) usbDevice[reader_index].handle->impl_info;
-		pipeRef = GetPipeRef(device, usbDevice[reader_index].interrupt);
-		(*(device->interface))->AbortPipe(device->interface, pipeRef);
-
-		// Wait thread
 		pthread_join(usbDevice[reader_index].hThread, NULL);
 
 		// Free bStatus lock
 		pthread_mutex_destroy(usbDevice[reader_index].ccid.pbStatusLock);
 #endif
-		(void)usb_release_interface(usbDevice[reader_index].handle,
-			usbDevice[reader_index].interface);
-		(void)usb_close(usbDevice[reader_index].handle);
-
 		// Free array of bStatus
 		free(usbDevice[reader_index].ccid.bStatus);
 
@@ -1538,17 +1477,5 @@ static void *CardDetectionThread(void *pParam)
 
 	DEBUG_INFO2("Exit: Reader: %d", reader_index);
 	return ((void *) 0);
-}
-
-// Get pipe reference from endpoint number
-static int GetPipeRef(struct darwin_dev_handle *device, int ep)
-{
-	int i;
-
-	for (i = 0; i < device->num_endpoints; i++)
-		if (device->endpoint_addrs[i] == ep)
-			return i + 1;
-
-	return -1;
 }
 #endif
