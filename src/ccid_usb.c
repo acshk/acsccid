@@ -216,6 +216,8 @@ static void close_libusb_if_needed(void)
  ****************************************************************************/
 status_t OpenUSB(unsigned int reader_index, /*@unused@*/ int Channel)
 {
+	(void)Channel;
+
 	return OpenUSBByName(reader_index, NULL);
 } /* OpenUSB */
 
