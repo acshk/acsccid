@@ -1,6 +1,6 @@
 /*
     ccid.h: CCID structures
-    Copyright (C) 2003-2009   Ludovic Rousseau
+    Copyright (C) 2003-2010   Ludovic Rousseau
     Copyright (C) 2009-2014   Advanced Card Systems Ltd.
 
     This library is free software; you can redistribute it and/or
@@ -19,7 +19,7 @@
 */
 
 /*
- * $Id: ccid.h 4280 2009-06-26 14:58:23Z rousseau $
+ * $Id: ccid.h 6922 2014-06-16 13:55:33Z rousseau $
  */
 
 #ifdef __APPLE__
@@ -91,7 +91,7 @@ typedef struct
 
 	/*
 	 * Read communication port timeout
-	 * value is seconds
+	 * value is milliseconds
 	 * this value can evolve dynamically if card request it (time processing).
 	 */
 	unsigned int readTimeout;
@@ -127,8 +127,30 @@ typedef struct
 	 */
 	int bVoltageSupport;
 
-	// bcdDevice
-	unsigned int bcdDevice;
+	/*
+	 * USB serial number of the device (if any)
+	 */
+	char *sIFD_serial_number;
+
+	/*
+	 * USB iManufacturer string
+	 */
+	char *sIFD_iManufacturer;
+
+	/*
+	 * USB bcdDevice
+	 */
+	int IFD_bcdDevice;
+
+	/*
+	 * Gemalto extra features, if any
+	 */
+	struct GEMALTO_FIRMWARE_FEATURES *gemalto_firmware_features;
+
+	/*
+	 * Zero Length Packet fixup (boolean)
+	 */
+	char zlp;
 
 	// Pointer to array of bStatus
 	unsigned char *bStatus;
@@ -187,8 +209,9 @@ typedef struct
 #define CCID_TIME_EXTENSION			0x80	/* 10 0000 00 */
 
 /* bInterfaceProtocol for ICCD */
-#define ICCD_A	1	/* ICCD Version A */
-#define ICCD_B	2	/* ICCD Version B */
+#define PROTOCOL_CCID	0	/* plain CCID */
+#define PROTOCOL_ICCD_A	1	/* ICCD Version A */
+#define PROTOCOL_ICCD_B	2	/* ICCD Version B */
 #define PROTOCOL_ACR38	38	// ACR38 non-CCID
 
 /* Product identification for special treatments */
@@ -197,9 +220,11 @@ typedef struct
 #define GEMPCTWIN	0x08E63437
 #define GEMPCPINPAD 0x08E63478
 #define GEMCORESIMPRO 0x08E63480
+#define GEMCORESIMPRO2 0x08E60000 /* Does NOT match a real VID/PID as new firmware release exposes same VID/PID */
 #define GEMCOREPOSPRO 0x08E63479
 #define GEMALTOPROXDU 0x08E65503
 #define GEMALTOPROXSU 0x08E65504
+#define GEMALTO_EZIO_CBP 0x08E634C3
 #define CARDMAN3121	0x076B3021
 #define LTC31		0x07830003
 #define SCR331DI	0x04E65111
@@ -217,7 +242,14 @@ typedef struct
 #define SEG			0x08E68000
 #define BLUDRIVEII_CCID	0x1B0E1078
 #define DELLSCRK    0x413C2101
+#define DELLSK      0x413C2100
 #define KOBIL_TRIBANK	0x0D463010
+#define KOBIL_MIDENTITY_VISUAL	0x0D460D46
+#define VEGAALPHA   0x09820008
+#define HPSMARTCARDKEYBOARD 0x03F01024
+#define HP_CCIDSMARTCARDKEYBOARD 0x03F00036
+#define KOBIL_IDTOKEN 0x0D46301D
+#define FUJITSUSMARTKEYB 0x0BF81017
 
 // CCID readers
 #define ACS_ACR32_ICC_READER			0x072fb301
@@ -270,6 +302,9 @@ typedef struct
 #define ACS_AET65_1SAM_ICC_READER		0x072f0101
 #define ACS_CRYPTOMATE					0x072f9006
 
+#define VENDOR_GEMALTO 0x08E6
+#define GET_VENDOR(readerID) ((readerID >> 16) & 0xFFFF)
+
 /*
  * The O2Micro OZ776S reader has a wrong USB descriptor
  * The extra[] field is associated with the last endpoint instead of the
@@ -321,4 +356,73 @@ void EnablePicc(unsigned int reader_index, int enabled);
 
 /* data rates supported by the secondary slots on the GemCore Pos Pro & SIM Pro */
 #define GEMPLUS_CUSTOM_DATA_RATES 10753, 21505, 43011, 125000
+
+/* data rates for GemCore SIM Pro 2 */
+#define SIMPRO2_ISO_DATA_RATES 8709, 10322, 12403, 12500, \
+		12903, 17204, 18750, 20645, 24806, \
+		25000, 25806, 28125, 30967, 34408, \
+		37500, 41290, 46875, 49612, 50000, \
+		51612, 56250, 62500, 64516, 68817, \
+		74418, 75000, 82580, 86021, 93750, \
+		99224, 100000, 103225, 112500, 124031, \
+		125000, 137634, 150000, 154838, 165161, \
+		172043, 187500, 198449, 200000, 206451, \
+		258064, 275268, 300000, 396899, 400000, \
+		412903, 550537, 600000, 825806
+
+/* Structure returned by Gemalto readers for the CCID Escape command 0x6A */
+struct GEMALTO_FIRMWARE_FEATURES
+{
+	unsigned char	bLogicalLCDLineNumber;	/* Logical number of LCD lines */
+	unsigned char	bLogicalLCDRowNumber;	/* Logical number of characters per LCD line */
+	unsigned char	bLcdInfo;				/* b0 indicates if scrolling is available */
+	unsigned char	bEntryValidationCondition;	/* See PIN_PROPERTIES */
+
+	/* Here come the PC/SC bit features to report */
+	unsigned char	VerifyPinStart:1;
+	unsigned char	VerifyPinFinish:1;
+	unsigned char	ModifyPinStart:1;
+	unsigned char	ModifyPinFinish:1;
+	unsigned char	GetKeyPressed:1;
+	unsigned char	VerifyPinDirect:1;
+	unsigned char	ModifyPinDirect:1;
+	unsigned char	Abort:1;
+
+	unsigned char	GetKey:1;
+	unsigned char	WriteDisplay:1;
+	unsigned char	SetSpeMessage:1;
+	unsigned char	RFUb1:5;
+
+	unsigned char	RFUb2[2];
+
+	/* Additional flags */
+	unsigned char	bTimeOut2:1;
+	unsigned char	bListSupportedLanguages:1;	/* Reader is able to indicate
+	   the list of supported languages through CCID-ESC 0x6B */
+	unsigned char	bNumberMessageFix:1;	/* Reader handles correctly shifts
+		made by bNumberMessage in PIN modification data structure */
+	unsigned char	bPPDUSupportOverXferBlock:1;	/* Reader supports PPDU over
+		PC_to_RDR_XferBlock command */
+	unsigned char	bPPDUSupportOverEscape:1;	/* Reader supports PPDU over
+		PC_to_RDR_Escape command with abData[0]=0xFF */
+	unsigned char	RFUb3:3;
+
+	unsigned char	RFUb4[3];
+
+	unsigned char	VersionNumber;	/* ?? */
+	unsigned char	MinimumPINSize;	/* for Verify and Modify */
+	unsigned char	MaximumPINSize;
+
+	/* Miscellaneous reader features */
+	unsigned char	Firewall:1;
+	unsigned char	RFUb5:7;
+
+	/* The following fields, FirewalledCommand_SW1 and
+	 * FirewalledCommand_SW2 are only valid if Firewall=1
+	 * These fields give the SW1 SW2 value used by the reader to
+	 * indicate a command has been firewalled */
+	unsigned char	FirewalledCommand_SW1;
+	unsigned char	FirewalledCommand_SW2;
+	unsigned char	RFUb6[3];
+};
 
