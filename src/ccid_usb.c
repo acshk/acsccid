@@ -67,6 +67,20 @@ libusb_context *ctx = NULL;
 
 #define CCID_INTERRUPT_SIZE 8
 
+struct usbDevice_MultiSlot_Extension
+{
+	int reader_index;
+
+	/* The multi-threaded polling part */
+	int terminated;
+	int status;
+	unsigned char buffer[CCID_INTERRUPT_SIZE];
+	pthread_t thread_proc;
+	pthread_mutex_t mutex;
+	pthread_cond_t condition;
+	struct libusb_transfer *transfer;
+};
+
 typedef struct
 {
 	usb_dev_handle *handle;
