@@ -160,7 +160,6 @@ struct _bogus_firmware
 static struct _bogus_firmware Bogus_firmwares[] = {
 	{ 0x04e6, 0xe001, 0x0516 },	/* SCR 331 */
 	{ 0x04e6, 0x5111, 0x0620 },	/* SCR 331-DI */
-	{ 0x04e6, 0x5115, 0x0514 },	/* SCR 335 */
 	{ 0x04e6, 0xe003, 0x0510 },	/* SPR 532 */
 	{ 0x0D46, 0x3001, 0x0037 },	/* KAAN Base */
 	{ 0x0D46, 0x3002, 0x0037 },	/* KAAN Advanced */
@@ -168,8 +167,13 @@ static struct _bogus_firmware Bogus_firmwares[] = {
 	{ 0x0DC3, 0x1004, 0x0502 },	/* ASE IIIe USBv2 */
 	{ 0x0DC3, 0x1102, 0x0607 },	/* ASE IIIe KB USB */
 	{ 0x058F, 0x9520, 0x0102 },	/* Alcor AU9520-G */
-	// Remove firmware version checking
-	// { 0x072F, 0x2200, 0x0206 }, /* ACS ACR122U-WB-R */
+	{ 0x08C3, 0x0402, 0x5000 },	/* Precise Biometrics Precise 200 MC */
+	{ 0x08C3, 0x0401, 0x5000 },	/* Precise Biometrics Precise 250 MC */
+	{ 0x0B0C, 0x0050, 0x0101 },	/* Todos Argos Mini II */
+	{ 0x0DC3, 0x0900, 0x0200 }, /* Athena IDProtect Key v2 */
+	{ 0x03F0, 0x0036, 0x0124 }, /* HP USB CCID Smartcard Keyboard */
+	{ 0x062D, 0x0001, 0x0102 }, /* THRC Smart Card Reader */
+	{ 0x04E6, 0x5291, 0x0112 }, /* SCM SCL010 Contactless Reader */
 
 	/* the firmware version is not correct since I do not have received a
 	 * working reader yet */
