@@ -126,10 +126,18 @@ typedef struct
 /* The _usbDevice structure must be defined before including ccid_usb.h */
 #include "ccid_usb.h"
 
-static int get_end_points(struct usb_device *dev, _usbDevice *usbdevice, int num);
-int ccid_check_firmware(struct usb_device *dev);
+/* Specific hooks for multislot readers */
+static int Multi_InterruptRead(int reader_index, int timeout /* in ms */);
+static void Multi_InterruptStop(int reader_index);
+static struct usbDevice_MultiSlot_Extension *Multi_CreateFirstSlot(int reader_index);
+static struct usbDevice_MultiSlot_Extension *Multi_CreateNextSlot(int physical_reader_index);
+static void Multi_PollingTerminate(struct usbDevice_MultiSlot_Extension *msExt);
+
+static int get_end_points(struct libusb_config_descriptor *desc,
+	_usbDevice *usbdevice, int num);
+int ccid_check_firmware(struct libusb_device_descriptor *desc);
 static unsigned int *get_data_rates(unsigned int reader_index,
-	struct usb_device *dev, int num);
+	struct libusb_config_descriptor *desc, int num);
 
 #ifdef __APPLE__
 static void *CardDetectionThread(void *pParam);
