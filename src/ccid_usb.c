@@ -83,9 +83,9 @@ struct usbDevice_MultiSlot_Extension
 
 typedef struct
 {
-	usb_dev_handle *handle;
-	char *dirname;
-	char *filename;
+	libusb_device_handle *dev_handle;
+	uint8_t bus_number;
+	uint8_t device_address;
 	int interface;
 
 	/*
@@ -103,6 +103,12 @@ typedef struct
 	 * CCID infos common to USB and serial
 	 */
 	_ccid_descriptor ccid;
+
+	/* libusb transfer for the polling (or NULL) */
+	struct libusb_transfer *polling_transfer;
+
+	/* pointer to the multislot extension (if any) */
+	struct usbDevice_MultiSlot_Extension *multislot_extension;
 
 #ifdef __APPLE__
 	// Thread handle for card detection
