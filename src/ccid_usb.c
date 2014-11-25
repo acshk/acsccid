@@ -409,6 +409,7 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 				int num = 0;
 				const unsigned char *device_descriptor;
 				int readerID = (vendorID << 16) + productID;
+				int numSlots = 0;
 
 #ifdef USE_COMPOSITE_AS_MULTISLOT
 				static int static_interface = 1;
@@ -439,6 +440,18 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 
 					/* the CCID interfaces are 1 and 2 */
 					interface_number = static_interface;
+				}
+				// Simulate ACR1281 Dual Reader (composite device) as multi-slot reader
+				else if ((ACS_ACR1281_DUAL_READER_QPBOC == readerID) ||
+					(ACS_ACR1281_DUAL_READER_BSI == readerID) ||
+					(ACS_ACR1281_1S_PICC_READER == readerID) ||
+					(ACS_ACR1251_1S_CL_READER == readerID) ||
+					(ACS_ACR1251U_C == readerID) ||
+					(ACS_ACR1251K_DUAL_READER == readerID) ||
+					(ACS_ACR1252_1S_CL_READER == readerID))
+				{
+					// the CCID interfaces are 0 and 1
+					interface_number = static_interface - 1;
 				}
 #endif
 				/* is it already opened? */
@@ -487,10 +500,51 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 						DEBUG_INFO2("Opening slot: %d",
 							usbDevice[reader_index].ccid.bCurrentSlotIndex);
 
-						/* This is a multislot reader
-						 * Init the multislot stuff for this next slot */
-						usbDevice[reader_index].multislot_extension = Multi_CreateNextSlot(previous_reader_index);
-						goto end;
+						// Simulate ACR85 as multi-slot reader
+						if (usbDevice[reader_index].ccid.readerID == ACS_ACR85_PINPAD_READER_ICC)
+						{
+							libusb_device *picc_dev = NULL;
+							int picc_index = 0;
+							struct libusb_device_descriptor picc_desc;
+							uint8_t picc_bus_number = 0;
+
+							// Reset number of opened slots
+							*usbDevice[reader_index].nb_opened_slots = 1;
+
+							// Find PICC
+							dev = NULL;
+							while ((picc_dev = devs[picc_index++]) != NULL)
+							{
+								picc_bus_number = libusb_get_bus_number(picc_dev);
+
+								r = libusb_get_device_descriptor(picc_dev, &picc_desc);
+								if (r < 0)
+								{
+									continue;
+								}
+
+								if ((picc_bus_number == bus_number) &&
+									((picc_desc.idVendor << 16) + picc_desc.idProduct == ACS_ACR85_PINPAD_READER_PICC))
+								{
+									dev = picc_dev;
+									break;
+								}
+							}
+
+							if (dev == NULL)
+							{
+								DEBUG_CRITICAL("ACR85 PICC not found.");
+								return_value = STATUS_UNSUCCESSFUL;
+								goto end2;
+							}
+						}
+						else
+						{
+							/* This is a multislot reader
+							 * Init the multislot stuff for this next slot */
+							usbDevice[reader_index].multislot_extension = Multi_CreateNextSlot(previous_reader_index);
+							goto end;
+						}
 					}
 					else
 					{
@@ -573,11 +627,23 @@ again:
 				device_descriptor = get_ccid_device_descriptor(usb_interface);
 				if (NULL == device_descriptor)
 				{
-					(void)libusb_close(dev_handle);
-					DEBUG_CRITICAL3("Unable to find the device descriptor for %d/%d",
-						bus_number, device_address);
-					return_value = STATUS_UNSUCCESSFUL;
-					goto end2;
+					// These readers do not have altsetting
+					if ((readerID != ACS_ACR38U) &&
+						(readerID != ACS_ACR38U_SAM) &&
+						(readerID != IRIS_SCR21U) &&
+						(readerID != ACS_AET65_1SAM_ICC_READER) &&
+						(readerID != ACS_CRYPTOMATE) &&
+						(readerID != ACS_ACR88U) &&
+						(readerID != ACS_ACR128U) &&
+						(readerID != ACS_ACR1281_1S_DUAL_READER) &&
+						(readerID != ACS_ACR1281_2S_CL_READER))
+					{
+						(void)libusb_close(dev_handle);
+						DEBUG_CRITICAL3("Unable to find the device descriptor for %d/%d",
+							bus_number, device_address);
+						return_value = STATUS_UNSUCCESSFUL;
+						goto end2;
+					}
 				}
 
 				interface = usb_interface->altsetting->bInterfaceNumber;
@@ -646,28 +712,143 @@ again:
 				usbDevice[reader_index].ccid.pbSeq = &usbDevice[reader_index].ccid.real_bSeq;
 				usbDevice[reader_index].ccid.readerID =
 					(desc.idVendor << 16) + desc.idProduct;
-				usbDevice[reader_index].ccid.dwFeatures = dw2i(device_descriptor, 40);
-				usbDevice[reader_index].ccid.wLcdLayout =
-					(device_descriptor[51] << 8) + device_descriptor[50];
-				usbDevice[reader_index].ccid.bPINSupport = device_descriptor[52];
-				usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = dw2i(device_descriptor, 44);
-				usbDevice[reader_index].ccid.dwMaxIFSD = dw2i(device_descriptor, 28);
-				usbDevice[reader_index].ccid.dwDefaultClock = dw2i(device_descriptor, 10);
-				usbDevice[reader_index].ccid.dwMaxDataRate = dw2i(device_descriptor, 23);
-				usbDevice[reader_index].ccid.bMaxSlotIndex = device_descriptor[4];
-				usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
-				usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
-				if (device_descriptor[27])
-					usbDevice[reader_index].ccid.arrayOfSupportedDataRates = get_data_rates(reader_index, config_desc, num);
+
+				// These readers do not have altsetting
+				if ((readerID == ACS_ACR38U) || (readerID == ACS_CRYPTOMATE))
+				{
+					usbDevice[reader_index].ccid.dwFeatures = 0x00010030;
+					usbDevice[reader_index].ccid.wLcdLayout = 0;
+					usbDevice[reader_index].ccid.bPINSupport = 0;
+					usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
+					usbDevice[reader_index].ccid.dwMaxIFSD = 248;
+					usbDevice[reader_index].ccid.dwDefaultClock = 4000;
+					usbDevice[reader_index].ccid.dwMaxDataRate = 229390;
+					usbDevice[reader_index].ccid.bMaxSlotIndex = 0;
+					usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+					usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+					usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+					usbDevice[reader_index].ccid.bInterfaceProtocol = PROTOCOL_ACR38;
+					usbDevice[reader_index].ccid.bNumEndpoints = 3;
+					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+					usbDevice[reader_index].ccid.bVoltageSupport = 0x07;
+				}
+				else if ((readerID == ACS_ACR38U_SAM) || (readerID == IRIS_SCR21U) ||
+					(readerID == ACS_AET65_1SAM_ICC_READER))
+				{
+					usbDevice[reader_index].ccid.dwFeatures = 0x00010030;
+					usbDevice[reader_index].ccid.wLcdLayout = 0;
+					usbDevice[reader_index].ccid.bPINSupport = 0;
+					usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
+					usbDevice[reader_index].ccid.dwMaxIFSD = 248;
+					usbDevice[reader_index].ccid.dwDefaultClock = 4000;
+					usbDevice[reader_index].ccid.dwMaxDataRate = 229390;
+					usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
+					usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+					usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+					usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+					usbDevice[reader_index].ccid.bInterfaceProtocol = PROTOCOL_ACR38;
+					usbDevice[reader_index].ccid.bNumEndpoints = 3;
+					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+					usbDevice[reader_index].ccid.bVoltageSupport = 0x07;
+				}
+				else if (readerID == ACS_ACR88U)
+				{
+					usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
+					usbDevice[reader_index].ccid.wLcdLayout = 0x0815;
+					usbDevice[reader_index].ccid.bPINSupport = 0x03;
+					usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
+					usbDevice[reader_index].ccid.dwMaxIFSD = 248;
+					usbDevice[reader_index].ccid.dwDefaultClock = 3600;
+					usbDevice[reader_index].ccid.dwMaxDataRate = 116129;
+					usbDevice[reader_index].ccid.bMaxSlotIndex = 4;
+					usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+					usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+					usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+					usbDevice[reader_index].ccid.bInterfaceProtocol = 0;
+					usbDevice[reader_index].ccid.bNumEndpoints = 3;
+					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+					usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+				}
+				else if (readerID == ACS_ACR128U)
+				{
+					usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
+					usbDevice[reader_index].ccid.wLcdLayout = 0;
+					usbDevice[reader_index].ccid.bPINSupport = 0;
+					usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
+					usbDevice[reader_index].ccid.dwMaxIFSD = 248;
+					usbDevice[reader_index].ccid.dwDefaultClock = 3600;
+					usbDevice[reader_index].ccid.dwMaxDataRate = 116129;
+					usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
+					usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+					usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+					usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+					usbDevice[reader_index].ccid.bInterfaceProtocol = 0;
+					usbDevice[reader_index].ccid.bNumEndpoints = 3;
+					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+					usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+				}
+				else if ((readerID == ACS_ACR1251_1S_DUAL_READER) ||
+					(readerID == ACS_ACR1261_1S_DUAL_READER) ||
+					(readerID == ACS_ACR1281_1S_DUAL_READER) ||
+					(readerID == ACS_ACR1281_2S_CL_READER))
+				{
+					usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
+					usbDevice[reader_index].ccid.wLcdLayout = 0;
+					usbDevice[reader_index].ccid.bPINSupport = 0;
+					usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
+					usbDevice[reader_index].ccid.dwMaxIFSD = 248;
+					usbDevice[reader_index].ccid.dwDefaultClock = 4000;
+					usbDevice[reader_index].ccid.dwMaxDataRate = 344100;
+					usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
+					usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+					usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+					usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+					usbDevice[reader_index].ccid.bInterfaceProtocol = 0;
+					usbDevice[reader_index].ccid.bNumEndpoints = 3;
+					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+					usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+				}
 				else
 				{
-					usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
-					DEBUG_INFO1("bNumDataRatesSupported is 0");
+					usbDevice[reader_index].ccid.dwFeatures = dw2i(device_descriptor, 40);
+					usbDevice[reader_index].ccid.wLcdLayout =
+						(device_descriptor[51] << 8) + device_descriptor[50];
+					usbDevice[reader_index].ccid.bPINSupport = device_descriptor[52];
+					usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = dw2i(device_descriptor, 44);
+					usbDevice[reader_index].ccid.dwMaxIFSD = dw2i(device_descriptor, 28);
+					usbDevice[reader_index].ccid.dwDefaultClock = dw2i(device_descriptor, 10);
+					usbDevice[reader_index].ccid.dwMaxDataRate = dw2i(device_descriptor, 23);
+
+					// Fix ACR1222 incorrect max slot index
+					if ((readerID == ACS_ACR1222_1SAM_PICC_READER) ||
+						(readerID == ACS_ACR1222_DUAL_READER))
+						usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
+					else if (readerID == ACS_ACR1222_1SAM_DUAL_READER)
+						usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
+					// Simulate ACR85 as multi-slot reader
+					else if (readerID == ACS_ACR85_PINPAD_READER_ICC)
+						usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
+					// Fix ACR32 incorrect max slot index
+					else if (readerID == ACS_ACR32_ICC_READER)
+						usbDevice[reader_index].ccid.bMaxSlotIndex = 0;
+					else
+						usbDevice[reader_index].ccid.bMaxSlotIndex = device_descriptor[4];
+
+					usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+					usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+					if (device_descriptor[27])
+						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = get_data_rates(reader_index, config_desc, num);
+					else
+					{
+						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+						DEBUG_INFO1("bNumDataRatesSupported is 0");
+					}
+					usbDevice[reader_index].ccid.bInterfaceProtocol = usb_interface->altsetting->bInterfaceProtocol;
+					usbDevice[reader_index].ccid.bNumEndpoints = usb_interface->altsetting->bNumEndpoints;
+					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+					usbDevice[reader_index].ccid.bVoltageSupport = device_descriptor[5];
 				}
-				usbDevice[reader_index].ccid.bInterfaceProtocol = usb_interface->altsetting->bInterfaceProtocol;
-				usbDevice[reader_index].ccid.bNumEndpoints = usb_interface->altsetting->bNumEndpoints;
-				usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
-				usbDevice[reader_index].ccid.bVoltageSupport = device_descriptor[5];
+
 				usbDevice[reader_index].ccid.sIFD_serial_number = NULL;
 				usbDevice[reader_index].ccid.gemalto_firmware_features = NULL;
 				usbDevice[reader_index].ccid.zlp = FALSE;
@@ -706,6 +887,86 @@ again:
 				else
 					usbDevice[reader_index].multislot_extension = NULL;
 
+				// Get number of slots
+				numSlots = usbDevice[reader_index].ccid.bMaxSlotIndex + 1;
+
+				// Allocate array of bStatus
+				usbDevice[reader_index].ccid.bStatus = (unsigned char *) calloc(numSlots, sizeof(unsigned char));
+				if (usbDevice[reader_index].ccid.bStatus == NULL)
+				{
+					(void)libusb_close(dev_handle);
+					DEBUG_CRITICAL("Not enough memory");
+					return_value = STATUS_UNSUCCESSFUL;
+					goto end2;
+				}
+
+				// Initialize array of bStatus
+				memset(usbDevice[reader_index].ccid.bStatus, 0xFF, numSlots * sizeof(unsigned char));
+
+				// Initialize firmware fix enabled
+				usbDevice[reader_index].ccid.firmwareFixEnabled = FALSE;
+
+				// Simulate ACR85 as multi-slot reader
+				if (readerID != ACS_ACR85_PINPAD_READER_PICC)
+				{
+					// Initialize PICC enabled
+					usbDevice[reader_index].ccid.piccEnabled = TRUE;
+					usbDevice[reader_index].ccid.pPiccEnabled = &usbDevice[reader_index].ccid.piccEnabled;
+
+					// Initialize PICC reader index
+					usbDevice[reader_index].ccid.piccReaderIndex = -1;
+					usbDevice[reader_index].ccid.pPiccReaderIndex = &usbDevice[reader_index].ccid.piccReaderIndex;
+				}
+
+				// Initialize card voltage (ACR38U, ACR38U-SAM and SCR21U)
+				usbDevice[reader_index].ccid.cardVoltage = 0;
+
+				// Initialize card type (ACR38U, ACR38U-SAM and SCR21U)
+				usbDevice[reader_index].ccid.cardType = 0;
+
+				// Initialize isSamSlot
+				usbDevice[reader_index].ccid.isSamSlot = FALSE;
+
+				// The 2nd interface (composite device) is a SAM slot
+				if ((readerID == ACS_ACR1281_1S_PICC_READER) ||
+					(readerID == ACS_ACR1251_1S_CL_READER) ||
+					(readerID == ACS_ACR1251U_C) ||
+					(readerID == ACS_ACR1252_1S_CL_READER))
+				{
+					if (interface == 1)
+						usbDevice[reader_index].ccid.isSamSlot = TRUE;
+				}
+#ifdef __APPLE__
+				// Initialize terminated flag to false
+				usbDevice[reader_index].terminated = FALSE;
+				usbDevice[reader_index].pTerminated = &usbDevice[reader_index].terminated;
+				usbDevice[reader_index].ccid.pbStatusLock = &usbDevice[reader_index].ccid.bStatusLock;
+
+				// Create bStatus lock
+				r = pthread_mutex_init(usbDevice[reader_index].ccid.pbStatusLock, NULL);
+				if (r != 0)
+				{
+					free(usbDevice[reader_index].ccid.bStatus);
+
+					(void)libusb_close(dev_handle);
+					DEBUG_CRITICAL2("pthread_mutex_init failed with error %d", r);
+					return_value = STATUS_UNSUCCESSFUL;
+					goto end2;
+				}
+
+				// Create thread for card detection
+				r = pthread_create(&usbDevice[reader_index].hThread, NULL, CardDetectionThread, &reader_index);
+				if (r != 0)
+				{
+					pthread_mutex_destroy(usbDevice[reader_index].ccid.pbStatusLock);
+					free(usbDevice[reader_index].ccid.bStatus);
+
+					(void)libusb_close(dev_handle);
+					DEBUG_CRITICAL2("pthread_create failed with error %d", r);
+					return_value = STATUS_UNSUCCESSFUL;
+					goto end2;
+				}
+#endif
 				goto end;
 			}
 		}
