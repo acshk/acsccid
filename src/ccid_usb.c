@@ -229,22 +229,24 @@ status_t OpenUSB(unsigned int reader_index, /*@unused@*/ int Channel)
  ****************************************************************************/
 status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 {
-	static struct usb_bus *busses = NULL;
-	int alias = 0;
-	struct usb_bus *bus;
-	struct usb_dev_handle *dev_handle;
-	char keyValue[TOKEN_MAX_VALUE_SIZE];
-	unsigned int vendorID, productID;
+	unsigned int alias;
+	struct libusb_device_handle *dev_handle;
 	char infofile[FILENAME_MAX];
 #ifndef __APPLE__
 	unsigned int device_vendor, device_product;
+#else
+	/* 100 ms delay */
+	struct timespec sleep_time = { 0, 100 * 1000 * 1000 };
 #endif
-	char *dirname = NULL, *filename = NULL;
 	int interface_number = -1;
+	int i;
 	static int previous_reader_index = -1;
-#ifdef __APPLE__
-	int ret;
-#endif
+	libusb_device **devs, *dev;
+	ssize_t cnt;
+	list_t plist, *values, *ifdVendorID, *ifdProductID, *ifdFriendlyName;
+	int rv;
+	int claim_failed = FALSE;
+	int return_value = STATUS_SUCCESS;
 
 	DEBUG_COMM3("Reader index: %X, Device: %s", reader_index, device);
 
@@ -252,6 +254,8 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 	/* device name specified */
 	if (device)
 	{
+		char *dirname;
+
 		/* format: usb:%04x/%04x, vendor, product */
 		if (strncmp("usb:", device, 4) != 0)
 		{
@@ -266,78 +270,6 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 			return STATUS_UNSUCCESSFUL;
 		}
 
-		/* format usb:%04x/%04x:libusb:%s
-		 * with %s set to %s:%s, dirname, filename */
-		if ((dirname = strstr(device, "libusb:")) != NULL)
-		{
-			/* dirname points to the first char after libusb: */
-			dirname += strlen("libusb:");
-
-			/* search the : (separation) char */
-			filename = strchr(dirname, ':');
-
-			if (filename)
-			{
-				/* end the dirname string */
-				*filename = '\0';
-
-				/* filename points to the first char after : */
-				filename++;
-			}
-			else
-			{
-				/* parse failed */
-				dirname = NULL;
-
-				DEBUG_CRITICAL2("can't parse using libusb scheme: %s", device);
-			}
-		}
-
-		/* format usb:%04x/%04x:libhal:%s
-		 * with %s set to
-		 * /org/freedesktop/Hal/devices/usb_device_VID_PID_SERIAL_ifX
-		 * VID is VendorID
-		 * PID is ProductID
-		 * SERIAL is device serial number
-		 * X is the interface number
-		 */
-		if ((dirname = strstr(device, "libhal:")) != NULL)
-		{
-			const char *p;
-
-#define HAL_HEADER "usb_device_"
-
-			/* parse the hal string */
-			if (
-				/* search the last '/' char */
-				(p = strrchr(dirname, '/'))
-
-				/* if the string starts with "usb_device_" we continue */
-				&& (0 == strncmp(++p, HAL_HEADER, sizeof(HAL_HEADER)-1))
-				/* skip the HAL header */
-				&& (p += sizeof(HAL_HEADER)-1)
-
-				/* search the '_' before PID */
-				&& (p = strchr(++p, '_'))
-
-				/* search the '_' before SERIAL */
-				&& (p = strchr(++p, '_'))
-
-				/* search the '_' before ifX */
-				&& (p = strchr(++p, '_'))
-				&& (0 == strncmp(++p, "if", 2))
-			   )
-			{
-				/* convert the interface number */
-				interface_number = atoi(p+2);
-			}
-			else
-				DEBUG_CRITICAL2("can't parse using libhal scheme: %s", device);
-
-			/* dirname was just a temporary variable */
-			dirname = NULL;
-		}
-
 		/* format usb:%04x/%04x:libudev:%d:%s
 		 * with %d set to
 		 * 01 (or whatever the interface number is)
@@ -349,29 +281,12 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 			/* convert the interface number */
 			interface_number = atoi(dirname + 8 /* "libudev:" */);
 			DEBUG_COMM2("interface_number: %d", interface_number);
-
-			/* dirname was just a temporary variable */
-			dirname = NULL;
 		}
 	}
 #endif
 
-	if (busses == NULL)
-		usb_init();
-
-	(void)usb_find_busses();
-	(void)usb_find_devices();
-
-	busses = usb_get_busses();
-
-	if (busses == NULL)
-	{
-		DEBUG_CRITICAL("No USB busses found");
-		return STATUS_UNSUCCESSFUL;
-	}
-
 	/* is the reader_index already used? */
-	if (usbDevice[reader_index].handle != NULL)
+	if (usbDevice[reader_index].dev_handle != NULL)
 	{
 		DEBUG_CRITICAL2("USB driver with index %X already in use",
 			reader_index);
@@ -381,49 +296,82 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 	/* Info.plist full patch filename */
 	(void)snprintf(infofile, sizeof(infofile), "%s/%s/Contents/Info.plist",
 		PCSCLITE_HP_DROPDIR, BUNDLE);
+	DEBUG_INFO2("Using: %s", infofile);
+
+	rv = bundleParse(infofile, &plist);
+	if (rv)
+		return STATUS_UNSUCCESSFUL;
+
+#define GET_KEY(key, values) \
+	rv = LTPBundleFindValueWithKey(&plist, key, &values); \
+	if (rv) \
+	{ \
+		DEBUG_CRITICAL2("Value/Key not defined for " key " in %s", infofile); \
+		return_value = STATUS_UNSUCCESSFUL; \
+		goto end1; \
+	} \
+	else \
+		DEBUG_INFO2(key ": %s", (char *)list_get_at(values, 0));
 
 	/* general driver info */
-	if (!LTPBundleFindValueWithKey(infofile, "ifdManufacturerString", keyValue, 0))
+	GET_KEY("ifdManufacturerString", values)
+	GET_KEY("ifdProductString", values)
+	GET_KEY("Copyright", values)
+
+	if (NULL == ctx)
 	{
-		DEBUG_INFO2("Manufacturer: %s", keyValue);
+		rv = libusb_init(&ctx);
+		if (rv != 0)
+		{
+			DEBUG_CRITICAL2("libusb_init failed: %d", rv);
+			return_value = STATUS_UNSUCCESSFUL;
+			goto end1;
+		}
 	}
-	else
+
+#ifdef __APPLE__
+	/* give some time to libusb to detect the new USB devices on Mac OS X */
+	nanosleep(&sleep_time, NULL);
+#endif
+	cnt = libusb_get_device_list(ctx, &devs);
+	if (cnt < 0)
 	{
-		DEBUG_INFO2("LTPBundleFindValueWithKey error. Can't find %s?",
-			infofile);
-		return STATUS_UNSUCCESSFUL;
+		DEBUG_CRITICAL("libusb_get_device_list() failed\n");
+		return_value = STATUS_UNSUCCESSFUL;
+		goto end1;
 	}
-	if (!LTPBundleFindValueWithKey(infofile, "ifdProductString", keyValue, 0))
+
+#define GET_KEYS(key, values) \
+	rv = LTPBundleFindValueWithKey(&plist, key, values); \
+	if (rv) \
+	{ \
+		DEBUG_CRITICAL2("Value/Key not defined for " key " in %s", infofile); \
+		return_value = STATUS_UNSUCCESSFUL; \
+		goto end2; \
+	}
+
+	GET_KEYS("ifdVendorID", &ifdVendorID)
+	GET_KEYS("ifdProductID", &ifdProductID);
+	GET_KEYS("ifdFriendlyName", &ifdFriendlyName)
+
+	/* The 3 lists do not have the same size */
+	if ((list_size(ifdVendorID) != list_size(ifdProductID))
+		|| (list_size(ifdVendorID) != list_size(ifdFriendlyName)))
 	{
-		DEBUG_INFO2("ProductString: %s", keyValue);
+		DEBUG_CRITICAL2("Error parsing %s", infofile);
+		return_value = STATUS_UNSUCCESSFUL;
+		goto end1;
 	}
-	else
-		return STATUS_UNSUCCESSFUL;
-	if (!LTPBundleFindValueWithKey(infofile, "Copyright", keyValue, 0))
-	{
-		DEBUG_INFO2("Copyright: %s", keyValue);
-	}
-	else
-		return STATUS_UNSUCCESSFUL;
-	vendorID = strlen(keyValue);
-	alias = 0x1C;
-	for (; vendorID--;)
-		alias ^= keyValue[vendorID];
 
 	/* for any supported reader */
-	while (LTPBundleFindValueWithKey(infofile, PCSCLITE_MANUKEY_NAME, keyValue, alias) == 0)
+	for (alias=0; alias<list_size(ifdVendorID); alias++)
 	{
-		vendorID = strtoul(keyValue, NULL, 0);
+		unsigned int vendorID, productID;
+		char *friendlyName;
 
-		if (LTPBundleFindValueWithKey(infofile, PCSCLITE_PRODKEY_NAME, keyValue, alias))
-			goto end;
-		productID = strtoul(keyValue, NULL, 0);
-
-		if (LTPBundleFindValueWithKey(infofile, PCSCLITE_NAMEKEY_NAME, keyValue, alias))
-			goto end;
-
-		/* go to next supported reader for next round */
-		alias++;
+		vendorID = strtoul(list_get_at(ifdVendorID, alias), NULL, 0);
+		productID = strtoul(list_get_at(ifdProductID, alias), NULL, 0);
+		friendlyName = list_get_at(ifdFriendlyName, alias);
 
 #ifndef __APPLE__
 		/* the device was specified but is not the one we are trying to find */
@@ -432,502 +380,359 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 			continue;
 #else
 		/* Leopard puts the friendlyname in the device argument */
-		if (device && strcmp(device, keyValue))
+		if (device && strcmp(device, friendlyName))
 			continue;
 #endif
 
-		/* on any USB buses */
-		for (bus = busses; bus; bus = bus->next)
+		/* for every device */
+		i = 0;
+		while ((dev = devs[i++]) != NULL)
 		{
-			struct usb_device *dev;
+			struct libusb_device_descriptor desc;
+			struct libusb_config_descriptor *config_desc;
+			uint8_t bus_number = libusb_get_bus_number(dev);
+			uint8_t device_address = libusb_get_device_address(dev);
 
-			/* any device on this bus */
-			for (dev = bus->devices; dev; dev = dev->next)
+			int r = libusb_get_device_descriptor(dev, &desc);
+			if (r < 0)
 			{
-				/* device defined by name? */
-				if (dirname && (strcmp(dirname, bus->dirname)
-					|| strcmp(filename, dev->filename)))
-					continue;
+				DEBUG_INFO3("failed to get device descriptor for %d/%d",
+					bus_number, device_address);
+				continue;
+			}
 
-				if (dev->descriptor.idVendor == vendorID
-					&& dev->descriptor.idProduct == productID)
+			if (desc.idVendor == vendorID && desc.idProduct == productID)
+			{
+				int already_used;
+				const struct libusb_interface *usb_interface = NULL;
+				int interface;
+				int num = 0;
+				const unsigned char *device_descriptor;
+				int readerID = (vendorID << 16) + productID;
+
+#ifdef USE_COMPOSITE_AS_MULTISLOT
+				static int static_interface = 1;
+
+				/* simulate a composite device as when libudev is used */
+				if ((GEMALTOPROXDU == readerID)
+					|| (GEMALTOPROXSU == readerID))
 				{
-					int r, already_used;
-					struct usb_interface *usb_interface = NULL;
-					int interface;
-					int num = 0;
-					int readerID = (vendorID << 16) + productID;
-					int numSlots;
+						/*
+						 * We can't talk to the two CCID interfaces
+						 * at the same time (the reader enters a
+						 * dead lock). So we simulate a multi slot
+						 * reader. By default multi slot readers
+						 * can't use the slots at the same time. See
+						 * TAG_IFD_SLOT_THREAD_SAFE
+						 *
+						 * One side effect is that the two readers
+						 * are seen by pcscd as one reader so the
+						 * interface name is the same for the two.
+						 *
+	* So we have:
+	* 0: Gemalto Prox-DU [Prox-DU Contact_09A00795] (09A00795) 00 00
+	* 1: Gemalto Prox-DU [Prox-DU Contact_09A00795] (09A00795) 00 01
+	* instead of
+	* 0: Gemalto Prox-DU [Prox-DU Contact_09A00795] (09A00795) 00 00
+	* 1: Gemalto Prox-DU [Prox-DU Contactless_09A00795] (09A00795) 01 00
+						 */
 
-#ifdef USE_COMPOSITE_AS_MULTISLOT
-					static int static_interface = 1;
-
-					{
-						/* simulate a composite device as when libhal is
-						 * used */
-						if ((GEMALTOPROXDU == readerID)
-							|| (GEMALTOPROXSU == readerID))
-						{
-							if(interface_number >= 0)
-							{
-								DEBUG_CRITICAL("USE_COMPOSITE_AS_MULTISLOT can't be used with libhal");
-								continue;
-							}
-
-							/* the CCID interfaces are 1 and 2 */
-							interface_number = static_interface;
-						}
-						// Simulate ACR1281 Dual Reader (composite device) as multi-slot reader
-						else if ((ACS_ACR1281_DUAL_READER_QPBOC == readerID) ||
-							(ACS_ACR1281_DUAL_READER_BSI == readerID) ||
-							(ACS_ACR1281_1S_PICC_READER == readerID) ||
-							(ACS_ACR1251_1S_CL_READER == readerID) ||
-							(ACS_ACR1251U_C == readerID) ||
-							(ACS_ACR1251K_DUAL_READER == readerID) ||
-							(ACS_ACR1252_1S_CL_READER == readerID))
-						{
-							// the CCID interfaces are 0 and 1
-							interface_number = static_interface - 1;
-						}
-					}
+					/* the CCID interfaces are 1 and 2 */
+					interface_number = static_interface;
+				}
 #endif
-					/* is it already opened? */
-					already_used = FALSE;
+				/* is it already opened? */
+				already_used = FALSE;
 
-					DEBUG_COMM3("Checking device: %s/%s",
-						bus->dirname, dev->filename);
-					for (r=0; r<CCID_DRIVER_MAX_READERS; r++)
+				DEBUG_COMM3("Checking device: %d/%d",
+					bus_number, device_address);
+				for (r=0; r<CCID_DRIVER_MAX_READERS; r++)
+				{
+					if (usbDevice[r].dev_handle)
 					{
-						if (usbDevice[r].handle)
+						/* same bus, same address */
+						if (usbDevice[r].bus_number == bus_number
+							&& usbDevice[r].device_address == device_address)
+							already_used = TRUE;
+					}
+				}
+
+				/* this reader is already managed by us */
+				if (already_used)
+				{
+					if ((previous_reader_index != -1)
+						&& usbDevice[previous_reader_index].dev_handle
+						&& (usbDevice[previous_reader_index].bus_number == bus_number)
+						&& (usbDevice[previous_reader_index].device_address == device_address)
+						&& usbDevice[previous_reader_index].ccid.bCurrentSlotIndex < usbDevice[previous_reader_index].ccid.bMaxSlotIndex)
+					{
+						/* we reuse the same device
+						 * and the reader is multi-slot */
+						usbDevice[reader_index] = usbDevice[previous_reader_index];
+						/* The other slots of GemCore SIM Pro firmware
+						 * 1.0 do not have the same data rates.
+						 * Firmware 2.0 do not have this limitation */
+						if ((GEMCOREPOSPRO == readerID)
+							|| ((GEMCORESIMPRO == readerID)
+							&& (usbDevice[reader_index].ccid.IFD_bcdDevice < 0x0200)))
 						{
-							/* same busname, same filename */
-							if (strcmp(usbDevice[r].dirname, bus->dirname) == 0 && strcmp(usbDevice[r].filename, dev->filename) == 0)
-								already_used = TRUE;
+							usbDevice[reader_index].ccid.arrayOfSupportedDataRates = SerialCustomDataRates;
+							usbDevice[reader_index].ccid.dwMaxDataRate = 125000;
 						}
-					}
 
-					/* this reader is already managed by us */
-					if (already_used)
-					{
-						if ((previous_reader_index != -1)
-							&& usbDevice[previous_reader_index].handle
-							&& (strcmp(usbDevice[previous_reader_index].dirname, bus->dirname)  == 0)
-							&& (strcmp(usbDevice[previous_reader_index].filename, dev->filename) == 0)
-							&& usbDevice[previous_reader_index].ccid.bCurrentSlotIndex < usbDevice[previous_reader_index].ccid.bMaxSlotIndex)
-						{
-							/* we reuse the same device
-							 * and the reader is multi-slot */
-							usbDevice[reader_index] = usbDevice[previous_reader_index];
-							/* the other slots do not have the same data rates */
-							if ((GEMCOREPOSPRO == usbDevice[reader_index].ccid.readerID)
-								|| (GEMCORESIMPRO == usbDevice[reader_index].ccid.readerID))
-							{
-								usbDevice[reader_index].ccid.arrayOfSupportedDataRates = SerialCustomDataRates;
-								usbDevice[reader_index].ccid.dwMaxDataRate = 125000;
-							}
+						*usbDevice[reader_index].nb_opened_slots += 1;
+						usbDevice[reader_index].ccid.bCurrentSlotIndex++;
+						usbDevice[reader_index].ccid.dwSlotStatus =
+							IFD_ICC_PRESENT;
+						DEBUG_INFO2("Opening slot: %d",
+							usbDevice[reader_index].ccid.bCurrentSlotIndex);
 
-							*usbDevice[reader_index].nb_opened_slots += 1;
-							usbDevice[reader_index].ccid.bCurrentSlotIndex++;
-							usbDevice[reader_index].ccid.dwSlotStatus =
-								IFD_ICC_PRESENT;
-
-							// Get PICC reader index
-							if (((usbDevice[reader_index].ccid.readerID == ACS_ACR1222_DUAL_READER) ||
-								(usbDevice[reader_index].ccid.readerID == ACS_ACR1222_1SAM_DUAL_READER))
-								&& (usbDevice[reader_index].ccid.bCurrentSlotIndex == 1) ||
-								(usbDevice[reader_index].ccid.readerID == ACS_ACR85_PINPAD_READER_ICC))
-							{
-								*usbDevice[reader_index].ccid.pPiccReaderIndex = reader_index;
-							}
-
-							DEBUG_INFO2("Opening slot: %d",
-								usbDevice[reader_index].ccid.bCurrentSlotIndex);
-
-							// Simulate ACR85 as multi-slot reader
-							if (usbDevice[reader_index].ccid.readerID == ACS_ACR85_PINPAD_READER_ICC)
-							{
-								struct usb_device *piccDevice;
-
-								// Reset number of opened slots
-								*usbDevice[reader_index].nb_opened_slots = 1;
-
-								// Find PICC
-								dev = NULL;
-								for (piccDevice = bus->devices; piccDevice; piccDevice = piccDevice->next)
-								{
-									if ((piccDevice->descriptor.idVendor << 16) + piccDevice->descriptor.idProduct == ACS_ACR85_PINPAD_READER_PICC)
-									{
-										dev = piccDevice;
-										break;
-									}
-								}
-
-								if (dev == NULL)
-								{
-									DEBUG_CRITICAL("ACR85 PICC not found.");
-									return STATUS_UNSUCCESSFUL;
-								}
-							}
-							else
-								goto end;
-						}
-						else
-						{
-							/* if an interface number is given by HAL we
-							 * continue with this device. */
-							if (-1 == interface_number)
-							{
-								DEBUG_INFO3("USB device %s/%s already in use."
-									" Checking next one.",
-									bus->dirname, dev->filename);
-								continue;
-							}
-						}
-					}
-
-					DEBUG_COMM3("Trying to open USB bus/device: %s/%s",
-						 bus->dirname, dev->filename);
-
-					dev_handle = usb_open(dev);
-					if (dev_handle == NULL)
-					{
-						DEBUG_CRITICAL4("Can't usb_open(%s/%s): %s",
-							bus->dirname, dev->filename, strerror(errno));
-
-						continue;
-					}
-
-					/* now we found a free reader and we try to use it */
-					if (dev->config == NULL)
-					{
-						(void)usb_close(dev_handle);
-						DEBUG_CRITICAL3("No dev->config found for %s/%s",
-							 bus->dirname, dev->filename);
-						return STATUS_UNSUCCESSFUL;
-					}
-
-again:
-					usb_interface = get_ccid_usb_interface(dev, &num);
-					if (usb_interface == NULL)
-					{
-						(void)usb_close(dev_handle);
-						if (0 == num)
-							DEBUG_CRITICAL3("Can't find a CCID interface on %s/%s",
-								bus->dirname, dev->filename);
-						interface_number = -1;
-						continue;
-					}
-
-					if (usb_interface->altsetting->extralen != 54)
-					{
-						// These readers do not have altsetting
-						if ((readerID != ACS_ACR38U) &&
-							(readerID != ACS_ACR38U_SAM) &&
-							(readerID != IRIS_SCR21U) &&
-							(readerID != ACS_AET65_1SAM_ICC_READER) &&
-							(readerID != ACS_CRYPTOMATE) &&
-							(readerID != ACS_ACR88U) &&
-							(readerID != ACS_ACR128U) &&
-							(readerID != ACS_ACR1281_1S_DUAL_READER) &&
-							(readerID != ACS_ACR1281_2S_CL_READER))
-						{
-							(void)usb_close(dev_handle);
-							DEBUG_CRITICAL4("Extra field for %s/%s has a wrong length: %d", bus->dirname, dev->filename, usb_interface->altsetting->extralen);
-							return STATUS_UNSUCCESSFUL;
-						}
-					}
-
-					interface = usb_interface->altsetting->bInterfaceNumber;
-					if (interface_number >= 0 && interface != interface_number)
-					{
-						/* an interface was specified and it is not the
-						 * current one */
-						DEBUG_INFO3("Wrong interface for USB device %s/%s."
-							" Checking next one.", bus->dirname, dev->filename);
-
-						/* check for another CCID interface on the same device */
-						num++;
-
-						goto again;
-					}
-
-					if (usb_claim_interface(dev_handle, interface) < 0)
-					{
-						(void)usb_close(dev_handle);
-						DEBUG_CRITICAL4("Can't claim interface %s/%s: %s",
-							bus->dirname, dev->filename, strerror(errno));
-						interface_number = -1;
-						continue;
-					}
-
-					DEBUG_INFO4("Found Vendor/Product: %04X/%04X (%s)",
-						dev->descriptor.idVendor,
-						dev->descriptor.idProduct, keyValue);
-					DEBUG_INFO3("Using USB bus/device: %s/%s",
-						 bus->dirname, dev->filename);
-
-					/* check for firmware bugs */
-					if (ccid_check_firmware(dev))
-					{
-						(void)usb_close(dev_handle);
-						return STATUS_UNSUCCESSFUL;
-					}
-
-#ifdef USE_COMPOSITE_AS_MULTISLOT
-					/* use the next interface for the next "slot" */
-					static_interface++;
-
-					/* reset for a next reader */
-					if (static_interface > 2)
-						static_interface = 1;
-#endif
-
-					/* Get Endpoints values*/
-					(void)get_end_points(dev, &usbDevice[reader_index], num);
-
-					/* store device information */
-					usbDevice[reader_index].handle = dev_handle;
-					usbDevice[reader_index].dirname = strdup(bus->dirname);
-					usbDevice[reader_index].filename = strdup(dev->filename);
-					usbDevice[reader_index].interface = interface;
-					usbDevice[reader_index].real_nb_opened_slots = 1;
-					usbDevice[reader_index].nb_opened_slots = &usbDevice[reader_index].real_nb_opened_slots;
-
-					/* CCID common informations */
-					usbDevice[reader_index].ccid.real_bSeq = 0;
-					usbDevice[reader_index].ccid.pbSeq = &usbDevice[reader_index].ccid.real_bSeq;
-					usbDevice[reader_index].ccid.readerID =
-						(dev->descriptor.idVendor << 16) +
-						dev->descriptor.idProduct;
-
-					// Store bcdDevice for firmware version checking
-					usbDevice[reader_index].ccid.bcdDevice = dev->descriptor.bcdDevice;
-
-					// These readers do not have altsetting
-					if ((readerID == ACS_ACR38U) || (readerID == ACS_CRYPTOMATE))
-					{
-						usbDevice[reader_index].ccid.dwFeatures = 0x00010030;
-						usbDevice[reader_index].ccid.wLcdLayout = 0;
-						usbDevice[reader_index].ccid.bPINSupport = 0;
-						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
-						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
-						usbDevice[reader_index].ccid.dwDefaultClock = 4000;
-						usbDevice[reader_index].ccid.dwMaxDataRate = 229390;
-						usbDevice[reader_index].ccid.bMaxSlotIndex = 0;
-						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
-						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
-						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
-						usbDevice[reader_index].ccid.bInterfaceProtocol = PROTOCOL_ACR38;
-						usbDevice[reader_index].ccid.bNumEndpoints = 3;
-						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
-						usbDevice[reader_index].ccid.bVoltageSupport = 0x07;
-					}
-					else if ((readerID == ACS_ACR38U_SAM) || (readerID == IRIS_SCR21U) ||
-						(readerID == ACS_AET65_1SAM_ICC_READER))
-					{
-						usbDevice[reader_index].ccid.dwFeatures = 0x00010030;
-						usbDevice[reader_index].ccid.wLcdLayout = 0;
-						usbDevice[reader_index].ccid.bPINSupport = 0;
-						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
-						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
-						usbDevice[reader_index].ccid.dwDefaultClock = 4000;
-						usbDevice[reader_index].ccid.dwMaxDataRate = 229390;
-						usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
-						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
-						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
-						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
-						usbDevice[reader_index].ccid.bInterfaceProtocol = PROTOCOL_ACR38;
-						usbDevice[reader_index].ccid.bNumEndpoints = 3;
-						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
-						usbDevice[reader_index].ccid.bVoltageSupport = 0x07;
-					}
-					else if (readerID == ACS_ACR88U)
-					{
-						usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
-						usbDevice[reader_index].ccid.wLcdLayout = 0x0815;
-						usbDevice[reader_index].ccid.bPINSupport = 0x03;
-						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
-						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
-						usbDevice[reader_index].ccid.dwDefaultClock = 3600;
-						usbDevice[reader_index].ccid.dwMaxDataRate = 116129;
-						usbDevice[reader_index].ccid.bMaxSlotIndex = 4;
-						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
-						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
-						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
-						usbDevice[reader_index].ccid.bInterfaceProtocol = 0;
-						usbDevice[reader_index].ccid.bNumEndpoints = 3;
-						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
-						usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
-					}
-					else if (readerID == ACS_ACR128U)
-					{
-						usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
-						usbDevice[reader_index].ccid.wLcdLayout = 0;
-						usbDevice[reader_index].ccid.bPINSupport = 0;
-						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
-						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
-						usbDevice[reader_index].ccid.dwDefaultClock = 3600;
-						usbDevice[reader_index].ccid.dwMaxDataRate = 116129;
-						usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
-						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
-						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
-						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
-						usbDevice[reader_index].ccid.bInterfaceProtocol = 0;
-						usbDevice[reader_index].ccid.bNumEndpoints = 3;
-						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
-						usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
-					}
-					else if ((readerID == ACS_ACR1251_1S_DUAL_READER) ||
-						(readerID == ACS_ACR1261_1S_DUAL_READER) ||
-						(readerID == ACS_ACR1281_1S_DUAL_READER) ||
-						(readerID == ACS_ACR1281_2S_CL_READER))
-					{
-						usbDevice[reader_index].ccid.dwFeatures = 0x000204BA;
-						usbDevice[reader_index].ccid.wLcdLayout = 0;
-						usbDevice[reader_index].ccid.bPINSupport = 0;
-						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = 271;
-						usbDevice[reader_index].ccid.dwMaxIFSD = 248;
-						usbDevice[reader_index].ccid.dwDefaultClock = 4000;
-						usbDevice[reader_index].ccid.dwMaxDataRate = 344100;
-						usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
-						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
-						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
-						usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
-						usbDevice[reader_index].ccid.bInterfaceProtocol = 0;
-						usbDevice[reader_index].ccid.bNumEndpoints = 3;
-						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
-						usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+						/* This is a multislot reader
+						 * Init the multislot stuff for this next slot */
+						usbDevice[reader_index].multislot_extension = Multi_CreateNextSlot(previous_reader_index);
+						goto end;
 					}
 					else
 					{
-						usbDevice[reader_index].ccid.dwFeatures = dw2i(usb_interface->altsetting->extra, 40);
-						usbDevice[reader_index].ccid.wLcdLayout =
-							(usb_interface->altsetting->extra[51] << 8) +
-							usb_interface->altsetting->extra[50];
-						usbDevice[reader_index].ccid.bPINSupport = usb_interface->altsetting->extra[52];
-						usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = dw2i(usb_interface->altsetting->extra, 44);
-						usbDevice[reader_index].ccid.dwMaxIFSD = dw2i(usb_interface->altsetting->extra, 28);
-						usbDevice[reader_index].ccid.dwDefaultClock = dw2i(usb_interface->altsetting->extra, 10);
-						usbDevice[reader_index].ccid.dwMaxDataRate = dw2i(usb_interface->altsetting->extra, 23);
+						/* if an interface number is given by HAL we
+						 * continue with this device. */
+						if (-1 == interface_number)
+						{
+							DEBUG_INFO3("USB device %d/%d already in use."
+								" Checking next one.",
+								bus_number, device_address);
+							continue;
+						}
+					}
+				}
 
-						// Fix ACR1222 incorrect max slot index
-						if ((readerID == ACS_ACR1222_1SAM_PICC_READER) ||
-							(readerID == ACS_ACR1222_DUAL_READER))
-							usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
-						else if (readerID == ACS_ACR1222_1SAM_DUAL_READER)
-							usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
-						// Simulate ACR85 as multi-slot reader
-						else if (readerID == ACS_ACR85_PINPAD_READER_ICC)
-							usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
-						// Fix ACR32 incorrect max slot index
-						else if (readerID == ACS_ACR32_ICC_READER)
-							usbDevice[reader_index].ccid.bMaxSlotIndex = 0;
-						else
-							usbDevice[reader_index].ccid.bMaxSlotIndex = usb_interface->altsetting->extra[4];
+				DEBUG_COMM3("Trying to open USB bus/device: %d/%d",
+					bus_number, device_address);
 
-						usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
-						usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+				r = libusb_open(dev, &dev_handle);
+				if (r < 0)
+				{
+					DEBUG_CRITICAL4("Can't libusb_open(%d/%d): %d",
+						bus_number, device_address, r);
 
-						if (usb_interface->altsetting->extra[27] == 0)
-							usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
-						else
-							usbDevice[reader_index].ccid.arrayOfSupportedDataRates = get_data_rates(reader_index, dev, num);
+					continue;
+				}
 
-						usbDevice[reader_index].ccid.bInterfaceProtocol = usb_interface->altsetting->bInterfaceProtocol;
-						usbDevice[reader_index].ccid.bNumEndpoints = usb_interface->altsetting->bNumEndpoints;
-						usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
-						usbDevice[reader_index].ccid.bVoltageSupport = usb_interface->altsetting->extra[5];
+again:
+				r = libusb_get_active_config_descriptor(dev, &config_desc);
+				if (r < 0)
+				{
+#ifdef __APPLE__
+					/* Some early Gemalto Ezio CB+ readers have
+					 * bDeviceClass, bDeviceSubClass and bDeviceProtocol set
+					 * to 0xFF (proprietary) instead of 0x00.
+					 *
+					 * So on Mac OS X the reader configuration is not done
+					 * by the OS/kernel and we do it ourself.
+					 */
+					if ((0xFF == desc.bDeviceClass)
+						&& (0xFF == desc.bDeviceSubClass)
+						&& (0xFF == desc.bDeviceProtocol))
+					{
+						r = libusb_set_configuration(dev_handle, 1);
+						if (r < 0)
+						{
+							(void)libusb_close(dev_handle);
+							DEBUG_CRITICAL4("Can't set configuration on %d/%d: %d",
+									bus_number, device_address, r);
+							continue;
+						}
 					}
 
-					// Get number of slots
-					numSlots = usbDevice[reader_index].ccid.bMaxSlotIndex + 1;
-
-					// Allocate array of bStatus
-					usbDevice[reader_index].ccid.bStatus = (unsigned char *) calloc(numSlots, sizeof(unsigned char));
-					if (usbDevice[reader_index].ccid.bStatus == NULL)
+					/* recall */
+					r = libusb_get_active_config_descriptor(dev, &config_desc);
+					if (r < 0)
 					{
-						usb_close(dev_handle);
-						DEBUG_CRITICAL("Not enough memory");
-						return STATUS_UNSUCCESSFUL;
-					}
-
-					// Initialize array of bStatus
-					memset(usbDevice[reader_index].ccid.bStatus, 0xFF, numSlots * sizeof(unsigned char));
-
-					// Initialize firmware fix enabled
-					usbDevice[reader_index].ccid.firmwareFixEnabled = FALSE;
-
-					// Simulate ACR85 as multi-slot reader
-					if (readerID != ACS_ACR85_PINPAD_READER_PICC)
-					{
-						// Initialize PICC enabled
-						usbDevice[reader_index].ccid.piccEnabled = TRUE;
-						usbDevice[reader_index].ccid.pPiccEnabled = &usbDevice[reader_index].ccid.piccEnabled;
-
-						// Initialize PICC reader index
-						usbDevice[reader_index].ccid.piccReaderIndex = -1;
-						usbDevice[reader_index].ccid.pPiccReaderIndex = &usbDevice[reader_index].ccid.piccReaderIndex;
-					}
-
-					// Initialize card voltage (ACR38U, ACR38U-SAM and SCR21U)
-					usbDevice[reader_index].ccid.cardVoltage = 0;
-
-					// Initialize card type (ACR38U, ACR38U-SAM and SCR21U)
-					usbDevice[reader_index].ccid.cardType = 0;
-
-					// Initialize isSamSlot
-					usbDevice[reader_index].ccid.isSamSlot = FALSE;
-
-					// The 2nd interface (composite device) is a SAM slot
-					if ((readerID == ACS_ACR1281_1S_PICC_READER) ||
-						(readerID == ACS_ACR1251_1S_CL_READER) ||
-						(readerID == ACS_ACR1251U_C) ||
-						(readerID == ACS_ACR1252_1S_CL_READER))
-					{
-						if (interface == 1)
-							usbDevice[reader_index].ccid.isSamSlot = TRUE;
+#endif
+						(void)libusb_close(dev_handle);
+						DEBUG_CRITICAL4("Can't get config descriptor on %d/%d: %d",
+							bus_number, device_address, r);
+						continue;
 					}
 #ifdef __APPLE__
-					// Initialize terminated flag to false
-					usbDevice[reader_index].terminated = FALSE;
-					usbDevice[reader_index].pTerminated = &usbDevice[reader_index].terminated;
-					usbDevice[reader_index].ccid.pbStatusLock = &usbDevice[reader_index].ccid.bStatusLock;
-
-					// Create bStatus lock
-					ret = pthread_mutex_init(usbDevice[reader_index].ccid.pbStatusLock, NULL);
-					if (ret != 0)
-					{
-						free(usbDevice[reader_index].ccid.bStatus);
-						usb_close(dev_handle);
-						DEBUG_CRITICAL2("pthread_mutex_init failed with error %d", ret);
-						return STATUS_UNSUCCESSFUL;
-					}
-
-					// Create thread for card detection
-					ret = pthread_create(&usbDevice[reader_index].hThread, NULL, CardDetectionThread, &reader_index);
-					if (ret != 0)
-					{
-						pthread_mutex_destroy(usbDevice[reader_index].ccid.pbStatusLock);
-						free(usbDevice[reader_index].ccid.bStatus);
-						usb_close(dev_handle);
-						DEBUG_CRITICAL2("pthread_create failed with error %d", ret);
-						return STATUS_UNSUCCESSFUL;
-					}
-#endif
-					goto end;
 				}
+#endif
+
+
+				usb_interface = get_ccid_usb_interface(config_desc, &num);
+				if (usb_interface == NULL)
+				{
+					(void)libusb_close(dev_handle);
+					if (0 == num)
+						DEBUG_CRITICAL3("Can't find a CCID interface on %d/%d",
+							bus_number, device_address);
+					interface_number = -1;
+					continue;
+				}
+
+				device_descriptor = get_ccid_device_descriptor(usb_interface);
+				if (NULL == device_descriptor)
+				{
+					(void)libusb_close(dev_handle);
+					DEBUG_CRITICAL3("Unable to find the device descriptor for %d/%d",
+						bus_number, device_address);
+					return_value = STATUS_UNSUCCESSFUL;
+					goto end2;
+				}
+
+				interface = usb_interface->altsetting->bInterfaceNumber;
+				if (interface_number >= 0 && interface != interface_number)
+				{
+					/* an interface was specified and it is not the
+					 * current one */
+					DEBUG_INFO3("Found interface %d but expecting %d",
+						interface_number, interface);
+					DEBUG_INFO3("Wrong interface for USB device %d/%d."
+						" Checking next one.", bus_number, device_address);
+
+					/* check for another CCID interface on the same device */
+					num++;
+
+					goto again;
+				}
+
+				r = libusb_claim_interface(dev_handle, interface);
+				if (r < 0)
+				{
+					(void)libusb_close(dev_handle);
+					DEBUG_CRITICAL4("Can't claim interface %d/%d: %d",
+						bus_number, device_address, r);
+					claim_failed = TRUE;
+					interface_number = -1;
+					continue;
+				}
+
+				DEBUG_INFO4("Found Vendor/Product: %04X/%04X (%s)",
+					desc.idVendor, desc.idProduct, friendlyName);
+				DEBUG_INFO3("Using USB bus/device: %d/%d",
+					bus_number, device_address);
+
+				/* check for firmware bugs */
+				if (ccid_check_firmware(&desc))
+				{
+					(void)libusb_close(dev_handle);
+					return_value = STATUS_UNSUCCESSFUL;
+					goto end2;
+				}
+
+#ifdef USE_COMPOSITE_AS_MULTISLOT
+				/* use the next interface for the next "slot" */
+				static_interface++;
+
+				/* reset for a next reader */
+				if (static_interface > 2)
+					static_interface = 1;
+#endif
+
+				/* Get Endpoints values*/
+				(void)get_end_points(config_desc, &usbDevice[reader_index], num);
+
+				/* store device information */
+				usbDevice[reader_index].dev_handle = dev_handle;
+				usbDevice[reader_index].bus_number = bus_number;
+				usbDevice[reader_index].device_address = device_address;
+				usbDevice[reader_index].interface = interface;
+				usbDevice[reader_index].real_nb_opened_slots = 1;
+				usbDevice[reader_index].nb_opened_slots = &usbDevice[reader_index].real_nb_opened_slots;
+				usbDevice[reader_index].polling_transfer = NULL;
+
+				/* CCID common informations */
+				usbDevice[reader_index].ccid.real_bSeq = 0;
+				usbDevice[reader_index].ccid.pbSeq = &usbDevice[reader_index].ccid.real_bSeq;
+				usbDevice[reader_index].ccid.readerID =
+					(desc.idVendor << 16) + desc.idProduct;
+				usbDevice[reader_index].ccid.dwFeatures = dw2i(device_descriptor, 40);
+				usbDevice[reader_index].ccid.wLcdLayout =
+					(device_descriptor[51] << 8) + device_descriptor[50];
+				usbDevice[reader_index].ccid.bPINSupport = device_descriptor[52];
+				usbDevice[reader_index].ccid.dwMaxCCIDMessageLength = dw2i(device_descriptor, 44);
+				usbDevice[reader_index].ccid.dwMaxIFSD = dw2i(device_descriptor, 28);
+				usbDevice[reader_index].ccid.dwDefaultClock = dw2i(device_descriptor, 10);
+				usbDevice[reader_index].ccid.dwMaxDataRate = dw2i(device_descriptor, 23);
+				usbDevice[reader_index].ccid.bMaxSlotIndex = device_descriptor[4];
+				usbDevice[reader_index].ccid.bCurrentSlotIndex = 0;
+				usbDevice[reader_index].ccid.readTimeout = DEFAULT_COM_READ_TIMEOUT;
+				if (device_descriptor[27])
+					usbDevice[reader_index].ccid.arrayOfSupportedDataRates = get_data_rates(reader_index, config_desc, num);
+				else
+				{
+					usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
+					DEBUG_INFO1("bNumDataRatesSupported is 0");
+				}
+				usbDevice[reader_index].ccid.bInterfaceProtocol = usb_interface->altsetting->bInterfaceProtocol;
+				usbDevice[reader_index].ccid.bNumEndpoints = usb_interface->altsetting->bNumEndpoints;
+				usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+				usbDevice[reader_index].ccid.bVoltageSupport = device_descriptor[5];
+				usbDevice[reader_index].ccid.sIFD_serial_number = NULL;
+				usbDevice[reader_index].ccid.gemalto_firmware_features = NULL;
+				usbDevice[reader_index].ccid.zlp = FALSE;
+				if (desc.iSerialNumber)
+				{
+					unsigned char serial[128];
+					int ret;
+
+					ret = libusb_get_string_descriptor_ascii(dev_handle,
+							desc.iSerialNumber, serial,
+							sizeof(serial));
+					if (ret > 0)
+						usbDevice[reader_index].ccid.sIFD_serial_number
+							= strdup((char *)serial);
+				}
+
+				usbDevice[reader_index].ccid.sIFD_iManufacturer = NULL;
+				if (desc.iManufacturer)
+				{
+					unsigned char iManufacturer[128];
+					int ret;
+
+					ret = libusb_get_string_descriptor_ascii(dev_handle,
+							desc.iManufacturer, iManufacturer,
+							sizeof(iManufacturer));
+					if (ret > 0)
+						usbDevice[reader_index].ccid.sIFD_iManufacturer
+							= strdup((char *)iManufacturer);
+				}
+
+				usbDevice[reader_index].ccid.IFD_bcdDevice = desc.bcdDevice;
+
+				/* If this is a multislot reader, init the multislot stuff */
+				if (usbDevice[reader_index].ccid.bMaxSlotIndex)
+					usbDevice[reader_index].multislot_extension = Multi_CreateFirstSlot(reader_index);
+				else
+					usbDevice[reader_index].multislot_extension = NULL;
+
+				goto end;
 			}
 		}
 	}
 end:
-	if (usbDevice[reader_index].handle == NULL)
+	if (usbDevice[reader_index].dev_handle == NULL)
+	{
+		close_libusb_if_needed();
+		if (claim_failed)
+			return STATUS_COMM_ERROR;
+		DEBUG_INFO1("Device not found?");
 		return STATUS_NO_SUCH_DEVICE;
+	}
 
 	/* memorise the current reader_index so we can detect
 	 * a new OpenUSBByName on a multi slot reader */
 	previous_reader_index = reader_index;
 
-	return STATUS_SUCCESS;
+end2:
+	/* free the libusb allocated list & devices */
+	libusb_free_device_list(devs, 1);
+
+end1:
+	/* free bundle list */
+	bundleRelease(&plist);
+
+	return return_value;
 } /* OpenUSBByName */
 
 
