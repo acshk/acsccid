@@ -947,6 +947,7 @@ void ccid_error(int error, const char *file, int line, const char *function)
 
 void acr38_error(int error, const char *file, int line, const char *function)
 {
+#ifndef NO_LOG
 	const char *text;
 	char var_text[30];
 
@@ -1008,6 +1009,7 @@ void acr38_error(int error, const char *file, int line, const char *function)
 	}
 
 	log_msg(PCSC_LOG_ERROR, "%s:%d:%s %s", file, line, function, text);
+#endif
 }
 
 // Enable PICC
