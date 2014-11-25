@@ -1,6 +1,6 @@
 /*
     ccid.c: CCID common code
-    Copyright (C) 2003-2005   Ludovic Rousseau
+    Copyright (C) 2003-2010   Ludovic Rousseau
     Copyright (C) 2009-2013   Advanced Card Systems Ltd.
 
     This library is free software; you can redistribute it and/or
@@ -19,7 +19,7 @@
 */
 
 /*
- * $Id: ccid.c 4346 2009-07-28 13:39:37Z rousseau $
+ * $Id: ccid.c 6976 2014-09-04 11:35:46Z rousseau $
  */
 
 #include <stdio.h>
