@@ -2086,6 +2086,18 @@ static struct usbDevice_MultiSlot_Extension *Multi_CreateFirstSlot(int reader_in
 } /* Multi_CreateFirstSlot */
 
 
+/*****************************************************************************
+ *
+ *					Multi_CreateNextSlot
+ *
+ ****************************************************************************/
+static struct usbDevice_MultiSlot_Extension *Multi_CreateNextSlot(int physical_reader_index)
+{
+	/* Take the extension buffer from the main slot */
+	return usbDevice[physical_reader_index].multislot_extension;
+} /* Multi_CreateNextSlot */
+
+
 #ifdef __APPLE__
 // Card detection thread
 static void *CardDetectionThread(void *pParam)
