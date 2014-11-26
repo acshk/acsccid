@@ -1267,7 +1267,7 @@ RESPONSECODE CmdXfrBlock(unsigned int reader_index, unsigned int tx_length,
 				if (protocol == T_1)
 					return_value = CmdXfrBlockTPDU_T1(reader_index, tx_length,
 						tx_buffer, rx_length, rx_buffer);
- 				else
+				else
 					return_value = IFD_PROTOCOL_NOT_SUPPORTED;
 			}
 			break;
