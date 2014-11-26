@@ -1595,37 +1595,73 @@ static void bulk_transfer_cb(struct libusb_transfer *transfer)
  ****************************************************************************/
 int InterruptRead(int reader_index, int timeout /* in ms */)
 {
-	int ret;
-	char buffer[8];
+	int ret, actual_length;
+	int return_value = IFD_SUCCESS;
+	unsigned char buffer[8];
+	struct libusb_transfer *transfer;
+	int completed = 0;
 
-	int bufferIndex;
-	int bitIndex;
-	int i;
+	/* Multislot reader: redirect to Multi_InterrupRead */
+	if (usbDevice[reader_index].multislot_extension != NULL)
+		return Multi_InterruptRead(reader_index, timeout);
 
 	DEBUG_PERIODIC2("before (%d)", reader_index);
-	ret = usb_interrupt_read(usbDevice[reader_index].handle,
-		usbDevice[reader_index].interrupt, buffer, sizeof(buffer), timeout);
-	DEBUG_PERIODIC3("after (%d) (%s)", reader_index, usb_strerror());
 
-	if (ret < 0)
-	{
-		/* if usb_interrupt_read() times out we get EILSEQ or EAGAIN */
-		if ((errno != EILSEQ) && (errno != EAGAIN) && (errno != ENODEV) && (errno != 0))
-			DEBUG_COMM4("usb_interrupt_read(%s/%s): %s",
-					usbDevice[reader_index].dirname,
-					usbDevice[reader_index].filename, strerror(errno));
+	transfer = libusb_alloc_transfer(0);
+	if (NULL == transfer)
+		return LIBUSB_ERROR_NO_MEM;
+
+	libusb_fill_bulk_transfer(transfer,
+		usbDevice[reader_index].dev_handle,
+		usbDevice[reader_index].interrupt, buffer, sizeof(buffer),
+		bulk_transfer_cb, &completed, timeout);
+	transfer->type = LIBUSB_TRANSFER_TYPE_INTERRUPT;
+
+	ret = libusb_submit_transfer(transfer);
+	if (ret < 0) {
+		libusb_free_transfer(transfer);
+		DEBUG_CRITICAL2("libusb_submit_transfer failed: %d", ret);
+		return ret;
 	}
-	else
-	{
-		DEBUG_XXD("NotifySlotChange: ", buffer, ret);
 
-		if (ret > 0)
+	usbDevice[reader_index].polling_transfer = transfer;
+
+	while (!completed)
+	{
+		ret = libusb_handle_events(ctx);
+		if (ret < 0)
 		{
+			if (ret == LIBUSB_ERROR_INTERRUPTED)
+				continue;
+			libusb_cancel_transfer(transfer);
+			while (!completed)
+				if (libusb_handle_events(ctx) < 0)
+					break;
+			libusb_free_transfer(transfer);
+			DEBUG_CRITICAL2("libusb_handle_events failed: %d", ret);
+			return ret;
+		}
+	}
+
+	actual_length = transfer->actual_length;
+	ret = transfer->status;
+
+	usbDevice[reader_index].polling_transfer = NULL;
+	libusb_free_transfer(transfer);
+
+	DEBUG_PERIODIC3("after (%d) (%d)", reader_index, ret);
+
+	switch (ret)
+	{
+		case LIBUSB_TRANSFER_COMPLETED:
+			DEBUG_XXD("NotifySlotChange: ", buffer, actual_length);
+
 			// If RDR_to_PC_NotifySlotChange is received
-			if (buffer[0] == 0x50)
+			if ((actual_length > 0) && (buffer[0] == 0x50))
 			{
-				DEBUG_INFO3("Reader: %s/%s", usbDevice[reader_index].dirname,
-					usbDevice[reader_index].filename);
+				int bufferIndex = 0;
+				int bitIndex = 0;
+				int i = 0;
 #ifdef __APPLE__
 				pthread_mutex_lock(usbDevice[reader_index].ccid.pbStatusLock);
 #endif
@@ -1635,14 +1671,16 @@ int InterruptRead(int reader_index, int timeout /* in ms */)
 					bufferIndex = i / 4;
 					bitIndex = 2 * (i % 4);
 
-					if (bufferIndex + 1 < ret)
+					if (bufferIndex + 1 < actual_length)
 					{
 						if (buffer[bufferIndex + 1] & (1 << bitIndex))
 							usbDevice[reader_index].ccid.bStatus[i] = CCID_ICC_PRESENT_ACTIVE;
 						else
 							usbDevice[reader_index].ccid.bStatus[i] = CCID_ICC_ABSENT;
 
-						DEBUG_INFO3("Slot %d: 0x%02X", i,
+						DEBUG_INFO5("%d/%d: Slot %d: 0x%02X",
+							usbDevice[reader_index].bus_number,
+							usbDevice[reader_index].device_address, i,
 							usbDevice[reader_index].ccid.bStatus[i]);
 					}
 				}
@@ -1650,11 +1688,22 @@ int InterruptRead(int reader_index, int timeout /* in ms */)
 				pthread_mutex_unlock(usbDevice[reader_index].ccid.pbStatusLock);
 #endif
 			}
-		}
+			break;
+
+		case LIBUSB_TRANSFER_TIMED_OUT:
+			break;
+
+		default:
+			/* if libusb_interrupt_transfer() times out we get EILSEQ or EAGAIN */
+			DEBUG_COMM4("InterruptRead (%d/%d): %s",
+				usbDevice[reader_index].bus_number,
+				usbDevice[reader_index].device_address, strerror(errno));
+			return_value = IFD_COMMUNICATION_ERROR;
 	}
 
-	return ret;
+	return return_value;
 } /* InterruptRead */
+
 
 #ifdef __APPLE__
 // Card detection thread
