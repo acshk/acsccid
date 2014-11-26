@@ -1353,12 +1353,14 @@ const unsigned char *get_ccid_device_descriptor(const struct libusb_interface *u
  *					get_end_points
  *
  ****************************************************************************/
-static int get_end_points(struct usb_device *dev, _usbDevice *usbdevice,
-	int num)
+static int get_end_points(struct libusb_config_descriptor *desc,
+	_usbDevice *usbdevice, int num)
 {
 	int i;
 	int bEndpointAddress;
-	struct usb_interface *usb_interface = get_ccid_usb_interface(dev, &num);
+	const struct libusb_interface *usb_interface;
+
+	usb_interface = get_ccid_usb_interface(desc, &num);
 
 	/*
 	 * 3 Endpoints maximum: Interrupt In, Bulk In, Bulk Out
@@ -1366,21 +1368,27 @@ static int get_end_points(struct usb_device *dev, _usbDevice *usbdevice,
 	for (i=0; i<usb_interface->altsetting->bNumEndpoints; i++)
 	{
 		/* interrupt end point (if available) */
-		if (usb_interface->altsetting->endpoint[i].bmAttributes == USB_ENDPOINT_TYPE_INTERRUPT)
+		if (usb_interface->altsetting->endpoint[i].bmAttributes
+			== LIBUSB_TRANSFER_TYPE_INTERRUPT)
 		{
-			usbdevice->interrupt = usb_interface->altsetting->endpoint[i].bEndpointAddress;
+			usbdevice->interrupt =
+				usb_interface->altsetting->endpoint[i].bEndpointAddress;
 			continue;
 		}
 
-		if (usb_interface->altsetting->endpoint[i].bmAttributes != USB_ENDPOINT_TYPE_BULK)
+		if (usb_interface->altsetting->endpoint[i].bmAttributes
+			!= LIBUSB_TRANSFER_TYPE_BULK)
 			continue;
 
-		bEndpointAddress = usb_interface->altsetting->endpoint[i].bEndpointAddress;
+		bEndpointAddress =
+			usb_interface->altsetting->endpoint[i].bEndpointAddress;
 
-		if ((bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_IN)
+		if ((bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK)
+			== LIBUSB_ENDPOINT_IN)
 			usbdevice->bulk_in = bEndpointAddress;
 
-		if ((bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_OUT)
+		if ((bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK)
+			== LIBUSB_ENDPOINT_OUT)
 		{
 			usbdevice->bulk_out = bEndpointAddress;
 			usbdevice->bulkOutMaxPacketSize = usb_interface->altsetting->endpoint[i].wMaxPacketSize;
