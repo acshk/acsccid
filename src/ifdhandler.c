@@ -319,7 +319,8 @@ EXTERNAL RESPONSECODE IFDHCloseChannel(DWORD Lun)
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
 
-	DEBUG_INFO3("%s (lun: %X)", CcidSlots[reader_index].readerName, Lun);
+	DEBUG_INFO3("%s (lun: " DWORD_X ")", CcidSlots[reader_index].readerName,
+		Lun);
 
 	/* Restore the default timeout
 	 * No need to wait too long if the reader disapeared */
