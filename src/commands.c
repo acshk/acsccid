@@ -1294,7 +1294,7 @@ RESPONSECODE CCID_Transmit(unsigned int reader_index, unsigned int tx_length,
 	status_t ret;
 
 #ifndef TWIN_SERIAL
-	if (ICCD_A == ccid_descriptor->bInterfaceProtocol)
+	if (PROTOCOL_ICCD_A == ccid_descriptor->bInterfaceProtocol)
 	{
 		int r;
 
@@ -1312,7 +1312,7 @@ RESPONSECODE CCID_Transmit(unsigned int reader_index, unsigned int tx_length,
 		return IFD_SUCCESS;
 	}
 
-	if (ICCD_B == ccid_descriptor->bInterfaceProtocol)
+	if (PROTOCOL_ICCD_B == ccid_descriptor->bInterfaceProtocol)
 	{
 		int r;
 
@@ -1347,10 +1347,7 @@ RESPONSECODE CCID_Transmit(unsigned int reader_index, unsigned int tx_length,
 	memcpy(cmd+10, tx_buffer, tx_length);
 
 	ret = WritePort(reader_index, 10+tx_length, cmd);
-	if (STATUS_NO_SUCH_DEVICE == ret)
-		return IFD_NO_SUCH_DEVICE;
-	if (ret != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(ret)
 
 	return IFD_SUCCESS;
 } /* CCID_Transmit */
