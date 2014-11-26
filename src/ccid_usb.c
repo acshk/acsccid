@@ -2023,6 +2023,37 @@ again:
 } /* Multi_InterruptRead */
 
 
+/*****************************************************************************
+ *
+ *					Multi_InterruptStop
+ *
+ ****************************************************************************/
+static void Multi_InterruptStop(int reader_index)
+{
+	struct usbDevice_MultiSlot_Extension *msExt;
+	int interrupt_byte, interrupt_mask;
+
+	msExt = usbDevice[reader_index].multislot_extension;
+
+	/* Already stopped ? */
+	if ((NULL == msExt) || msExt->terminated)
+		return;
+
+	DEBUG_PERIODIC2("Stop (%d)", reader_index);
+
+	interrupt_byte = (usbDevice[reader_index].ccid.bCurrentSlotIndex / 4) + 1;
+	interrupt_mask = 0x02 << (2 * (usbDevice[reader_index].ccid.bCurrentSlotIndex % 4));
+
+	pthread_mutex_lock(&msExt->mutex);
+
+	/* Broacast an interrupt to wake-up the slot's thread */
+	msExt->buffer[interrupt_byte] |= interrupt_mask;
+	pthread_cond_broadcast(&msExt->condition);
+
+	pthread_mutex_unlock(&msExt->mutex);
+} /* Multi_InterruptStop */
+
+
 #ifdef __APPLE__
 // Card detection thread
 static void *CardDetectionThread(void *pParam)
