@@ -307,10 +307,13 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 {
 	unsigned char cmd[11+14+TxLength];
 	unsigned int a, b;
+	PIN_VERIFY_STRUCTURE *pvs;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 	int old_read_timeout;
 	RESPONSECODE ret;
+	status_t res;
 
+	pvs = (PIN_VERIFY_STRUCTURE *)TxBuffer;
 	cmd[0] = 0x69;	/* Secure */
 	cmd[5] = ccid_descriptor->bCurrentSlotIndex;	/* slot number */
 	cmd[6] = (*ccid_descriptor->pbSeq)++;
@@ -324,6 +327,20 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 		DEBUG_INFO3("Command too short: %d < %d", TxLength, 19+4);
 		return IFD_NOT_SUPPORTED;
 	}
+
+	/* On little endian machines we are all set. */
+	/* If on big endian machine and caller is using host byte order */
+	if ((pvs->ulDataLength + 19  == TxLength) &&
+		(bei2i((unsigned char*)(&pvs->ulDataLength)) == pvs->ulDataLength))
+	{
+		DEBUG_INFO1("Reversing order from big to little endian");
+		/* If ulDataLength is big endian, assume others are too */
+		/* reverse the byte order for 3 fields */
+		pvs->wPINMaxExtraDigit = BSWAP_16(pvs->wPINMaxExtraDigit);
+		pvs->wLangId = BSWAP_16(pvs->wLangId);
+		pvs->ulDataLength = BSWAP_32(pvs->ulDataLength);
+	}
+	/* At this point we now have the above 3 variables in little endian */
 
 	if (dw2i(TxBuffer, 15) + 19 != TxLength) /* ulDataLength field coherency */
 	{
@@ -342,7 +359,8 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 
 #ifdef BOGUS_PINPAD_FIRMWARE
 	/* bug circumvention for the GemPC Pinpad */
-	if (GEMPCPINPAD == ccid_descriptor->readerID)
+	if ((GEMPCPINPAD == ccid_descriptor->readerID)
+		|| (VEGAALPHA == ccid_descriptor->readerID))
 	{
 		/* the firmware reject the cases: 00h No string and FFh default
 		 * CCID message. The only value supported is 01h (display 1 message) */
@@ -364,7 +382,8 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 
 	}
 
-	if (DELLSCRK == ccid_descriptor->readerID)
+	if ((DELLSCRK == ccid_descriptor->readerID)
+		|| (DELLSK == ccid_descriptor->readerID))
 	{
 		/* the firmware rejects the cases: 01h-FEh and FFh default
 		 * CCID message. The only value supported is 00h (no message) */
@@ -374,6 +393,21 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 				TxBuffer[8]);
 			TxBuffer[8] = 0x00;
 		}
+
+		/* avoid the command rejection because the Enter key is still
+		 * pressed. Wait a bit for the key to be released */
+		(void)usleep(250*1000);
+	}
+
+	if (DELLSK == ccid_descriptor->readerID)
+	{
+		/* the 2 bytes of wPINMaxExtraDigit are reversed */
+		int tmp;
+
+		tmp = TxBuffer[6];
+		TxBuffer[6] = TxBuffer[5];
+		TxBuffer[5] = tmp;
+		DEBUG_INFO1("Correcting wPINMaxExtraDigit for Dell keyboard");
 	}
 #endif
 
@@ -435,7 +469,7 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 
 		/* the SPR532 will append the PIN code without any padding */
 		return_value = CmdEscape(reader_index, cmd_tmp, sizeof(cmd_tmp),
-			res_tmp, &res_length);
+			res_tmp, &res_length, 0);
 		if (return_value != IFD_SUCCESS)
 			return return_value;
 
@@ -448,13 +482,15 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 	i2dw(a - 10, cmd + 1);  /* CCID message length */
 
 	old_read_timeout = ccid_descriptor -> readTimeout;
-	// Change timeout to infinite
-	// ccid_descriptor -> readTimeout = max(30, TxBuffer[0]+10);	/* at least 30 seconds */
 	ccid_descriptor -> readTimeout = 0;	// Infinite
 
-	if (WritePort(reader_index, a, cmd) != STATUS_SUCCESS)
+	res = WritePort(reader_index, a, cmd);
+	if (STATUS_SUCCESS != res)
 	{
-		ret = IFD_COMMUNICATION_ERROR;
+		if (STATUS_NO_SUCH_DEVICE == res)
+			ret = IFD_NO_SUCH_DEVICE;
+		else
+			ret = IFD_COMMUNICATION_ERROR;
 		goto end;
 	}
 
@@ -475,8 +511,72 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 		}
 		else
 		{
-			/* get only the T=1 data */
 			/* FIXME: manage T=1 error blocks */
+
+			/* defines from openct/proto-t1.c */
+			#define PCB 1
+			#define DATA 3
+			#define T1_S_BLOCK		0xC0
+			#define T1_S_RESPONSE		0x20
+			#define T1_S_TYPE(pcb)		((pcb) & 0x0F)
+			#define T1_S_WTX		0x03
+
+			/* WTX S-block */
+			if ((T1_S_BLOCK | T1_S_WTX) == RxBuffer[PCB])
+			{
+/*
+ * The Swiss health care card sends a WTX request before returning the
+ * SW code. If the reader is in TPDU the driver must manage the request
+ * itself.
+ *
+ * received: 00 C3 01 09 CB
+ * openct/proto-t1.c:432:t1_transceive() S-Block request received
+ * openct/proto-t1.c:489:t1_transceive() CT sent S-block with wtx=9
+ * sending: 00 E3 01 09 EB
+ * openct/proto-t1.c:667:t1_xcv() New timeout at WTX request: 23643 sec
+ * received: 00 40 02 90 00 D2
+*/
+				ct_buf_t tbuf;
+				unsigned char sblk[1]; /* we only need 1 byte of data */
+				t1_state_t *t1 = &get_ccid_slot(reader_index)->t1;
+				unsigned int slen;
+				int oldReadTimeout;
+
+				DEBUG_COMM2("CT sent S-block with wtx=%u", RxBuffer[DATA]);
+				t1->wtx = RxBuffer[DATA];
+
+				oldReadTimeout = ccid_descriptor->readTimeout;
+				if (t1->wtx > 1)
+				{
+					/* set the new temporary timeout at WTX card request */
+					ccid_descriptor->readTimeout *= t1->wtx;
+					DEBUG_INFO2("New timeout at WTX request: %d sec",
+							ccid_descriptor->readTimeout);
+				}
+
+				ct_buf_init(&tbuf, sblk, sizeof(sblk));
+				t1->wtx = RxBuffer[DATA];
+				ct_buf_putc(&tbuf, RxBuffer[DATA]);
+
+				slen = t1_build(t1, RxBuffer, 0,
+					T1_S_BLOCK | T1_S_RESPONSE | T1_S_TYPE(RxBuffer[PCB]),
+					&tbuf, NULL);
+
+				ret = CCID_Transmit(t1 -> lun, slen, RxBuffer, 0, t1->wtx);
+				if (ret != IFD_SUCCESS)
+					return ret;
+
+				/* I guess we have at least 6 bytes in RxBuffer */
+				*RxLength = 6;
+				ret = CCID_Receive(reader_index, RxLength, RxBuffer, NULL);
+				if (ret != IFD_SUCCESS)
+					return ret;
+
+				/* Restore initial timeout */
+				ccid_descriptor->readTimeout = oldReadTimeout;
+			}
+
+			/* get only the T=1 data */
 			memmove(RxBuffer, RxBuffer+3, *RxLength -4);
 			*RxLength -= 4;	/* remove NAD, PCB, LEN and CRC */
 		}
