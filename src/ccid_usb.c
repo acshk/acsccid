@@ -1439,33 +1439,31 @@ static int get_end_points(struct libusb_config_descriptor *desc,
  *					ccid_check_firmware
  *
  ****************************************************************************/
-int ccid_check_firmware(struct usb_device *dev)
+int ccid_check_firmware(struct libusb_device_descriptor *desc)
 {
 	unsigned int i;
 
-	for (i=0; i<sizeof(Bogus_firmwares)/sizeof(Bogus_firmwares[0]); i++)
+	for (i=0; i<COUNT_OF(Bogus_firmwares); i++)
 	{
-		if (dev->descriptor.idVendor != Bogus_firmwares[i].vendor)
+		if (desc->idVendor != Bogus_firmwares[i].vendor)
 			continue;
 
-		if (dev->descriptor.idProduct != Bogus_firmwares[i].product)
+		if (desc->idProduct != Bogus_firmwares[i].product)
 			continue;
 
 		/* firmware too old and buggy */
-		if (dev->descriptor.bcdDevice < Bogus_firmwares[i].firmware)
+		if (desc->bcdDevice < Bogus_firmwares[i].firmware)
 		{
 			if (DriverOptions & DRIVER_OPTION_USE_BOGUS_FIRMWARE)
 			{
 				DEBUG_INFO3("Firmware (%X.%02X) is bogus! but you choosed to use it",
-					dev->descriptor.bcdDevice >> 8,
-					dev->descriptor.bcdDevice & 0xFF);
+					desc->bcdDevice >> 8, desc->bcdDevice & 0xFF);
 				return FALSE;
 			}
 			else
 			{
 				DEBUG_CRITICAL3("Firmware (%X.%02X) is bogus! Upgrade the reader firmware or get a new reader.",
-					dev->descriptor.bcdDevice >> 8,
-					dev->descriptor.bcdDevice & 0xFF);
+					desc->bcdDevice >> 8, desc->bcdDevice & 0xFF);
 				return TRUE;
 			}
 		}
