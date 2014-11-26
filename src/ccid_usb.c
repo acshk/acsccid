@@ -1084,55 +1084,50 @@ status_t ReadUSB(unsigned int reader_index, unsigned int * length,
 	unsigned char *buffer)
 {
 	int rv;
+	int actual_length;
 	char debug_header[] = "<- 121234 ";
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 	int duplicate_frame = 0;
-
-	unsigned char epBuffer[64];
-	int responseReceived;
-	int headerReceived;
-	unsigned int bufferLen;
-	unsigned int readLen;
-	unsigned int dataLen;
-	unsigned int tempLen;
 
 	(void)snprintf(debug_header, sizeof(debug_header), "<- %06X ",
 		(int)reader_index);
 
 	if (ccid_descriptor->bInterfaceProtocol == PROTOCOL_ACR38)
 	{
-		responseReceived = FALSE;
-		headerReceived = FALSE;
-		bufferLen = *length;
-		readLen = 0;
-		dataLen = 0;
-		tempLen = 0;
+		unsigned char epBuffer[64];
+		int responseReceived = FALSE;
+		int headerReceived = FALSE;
+		unsigned int bufferLen = *length;
+		unsigned int readLen = 0;
+		unsigned int dataLen = 0;
+		unsigned int tempLen = 0;
 
 		while (!responseReceived)
 		{
 			// Read data from BULK IN endpoint
-			rv = usb_bulk_read(usbDevice[reader_index].handle,
-				usbDevice[reader_index].bulk_in, (char *) epBuffer, sizeof(epBuffer),
-				usbDevice[reader_index].ccid.readTimeout * 1000);
+			rv = libusb_bulk_transfer(usbDevice[reader_index].dev_handle,
+				usbDevice[reader_index].bulk_in, epBuffer, sizeof(epBuffer),
+				&actual_length, usbDevice[reader_index].ccid.readTimeout);
+
 			if (rv < 0)
 			{
 				*length = 0;
-				DEBUG_CRITICAL4("usb_bulk_read(%s/%s): %s",
-					usbDevice[reader_index].dirname, usbDevice[reader_index].filename,
-					strerror(errno));
+				DEBUG_CRITICAL5("read failed (%d/%d): %d %s",
+					usbDevice[reader_index].bus_number,
+					usbDevice[reader_index].device_address, rv, strerror(errno));
 
-				if (ENODEV == errno)
+				if ((ENODEV == errno) || (LIBUSB_ERROR_NO_DEVICE == rv))
 					return STATUS_NO_SUCH_DEVICE;
 
 				return STATUS_UNSUCCESSFUL;
 			}
 
-			DEBUG_XXD(debug_header, epBuffer, rv);
+			DEBUG_XXD(debug_header, epBuffer, actual_length);
 
 			// Copy data to buffer
-			if (readLen + rv <= bufferLen)
-				memcpy(buffer + readLen, epBuffer, rv);
-			readLen += rv;
+			if (readLen + actual_length <= bufferLen)
+				memcpy(buffer + readLen, epBuffer, actual_length);
+			readLen += actual_length;
 
 			if (!headerReceived)
 			{
@@ -1164,44 +1159,44 @@ status_t ReadUSB(unsigned int reader_index, unsigned int * length,
 			DEBUG_CRITICAL("Insufficient buffer");
 			return STATUS_UNSUCCESSFUL;
 		}
+
+		return STATUS_SUCCESS;
 	}
-	else
+
+read_again:
+	rv = libusb_bulk_transfer(usbDevice[reader_index].dev_handle,
+		usbDevice[reader_index].bulk_in, buffer, *length,
+		&actual_length, usbDevice[reader_index].ccid.readTimeout);
+
+	if (rv < 0)
 	{
-	read_again:
-		rv = usb_bulk_read(usbDevice[reader_index].handle,
-			usbDevice[reader_index].bulk_in, (char *)buffer, *length,
-			usbDevice[reader_index].ccid.readTimeout * 1000);
+		*length = 0;
+		DEBUG_CRITICAL5("read failed (%d/%d): %d %s",
+			usbDevice[reader_index].bus_number,
+			usbDevice[reader_index].device_address, rv, strerror(errno));
 
-		if (rv < 0)
-		{
-			*length = 0;
-			DEBUG_CRITICAL4("usb_bulk_read(%s/%s): %s",
-				usbDevice[reader_index].dirname, usbDevice[reader_index].filename,
-				strerror(errno));
+		if ((ENODEV == errno) || (LIBUSB_ERROR_NO_DEVICE == rv))
+			return STATUS_NO_SUCH_DEVICE;
 
-			if (ENODEV == errno)
-				return STATUS_NO_SUCH_DEVICE;
+		return STATUS_UNSUCCESSFUL;
+	}
 
-			return STATUS_UNSUCCESSFUL;
-		}
+	*length = actual_length;
 
-		*length = rv;
-
-		DEBUG_XXD(debug_header, buffer, *length);
+	DEBUG_XXD(debug_header, buffer, *length);
 
 #define BSEQ_OFFSET 6
-		if ((*length >= BSEQ_OFFSET)
-			&& (buffer[BSEQ_OFFSET] < *ccid_descriptor->pbSeq -1))
+	if ((*length >= BSEQ_OFFSET)
+		&& (buffer[BSEQ_OFFSET] < *ccid_descriptor->pbSeq -1))
+	{
+		duplicate_frame++;
+		if (duplicate_frame > 10)
 		{
-			duplicate_frame++;
-			if (duplicate_frame > 10)
-			{
-				DEBUG_CRITICAL("Too many duplicate frame detected");
-				return STATUS_UNSUCCESSFUL;
-			}
-			DEBUG_INFO("Duplicate frame detected");
-			goto read_again;
+			DEBUG_CRITICAL("Too many duplicate frame detected");
+			return STATUS_UNSUCCESSFUL;
 		}
+		DEBUG_INFO1("Duplicate frame detected");
+		goto read_again;
 	}
 
 	return STATUS_SUCCESS;
