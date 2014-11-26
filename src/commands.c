@@ -1012,7 +1012,7 @@ RESPONSECODE CmdPowerOff(unsigned int reader_index)
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
 #ifndef TWIN_SERIAL
-	if (ICCD_A == ccid_descriptor->bInterfaceProtocol)
+	if (PROTOCOL_ICCD_A == ccid_descriptor->bInterfaceProtocol)
 	{
 		int r;
 
@@ -1029,7 +1029,7 @@ RESPONSECODE CmdPowerOff(unsigned int reader_index)
 		return IFD_SUCCESS;
 	}
 
-	if (ICCD_B == ccid_descriptor->bInterfaceProtocol)
+	if (PROTOCOL_ICCD_B == ccid_descriptor->bInterfaceProtocol)
 	{
 		int r;
 		unsigned char buffer[3];
@@ -1065,13 +1065,11 @@ RESPONSECODE CmdPowerOff(unsigned int reader_index)
 	cmd[7] = cmd[8] = cmd[9] = 0; /* RFU */
 
 	res = WritePort(reader_index, sizeof(cmd), cmd);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	length = sizeof(cmd);
 	res = ReadPort(reader_index, &length, cmd);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	if (length < STATUS_OFFSET+1)
 	{
