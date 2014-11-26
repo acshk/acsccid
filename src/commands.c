@@ -64,10 +64,17 @@
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 #endif
 
-// Fix problem using pcsc-lite 1.6.x header files
-#ifndef IFD_ERROR_INSUFFICIENT_BUFFER
-#define IFD_ERROR_INSUFFICIENT_BUFFER 618
+#ifndef BSWAP_16
+#define BSWAP_8(x)  ((x) & 0xff)
+#define BSWAP_16(x) ((BSWAP_8(x) << 8) | BSWAP_8((x) >> 8))
+#define BSWAP_32(x) ((BSWAP_16(x) << 16) | BSWAP_16((x) >> 16))
 #endif
+
+#define CHECK_STATUS(res) \
+	if (STATUS_NO_SUCH_DEVICE == res) \
+		return IFD_NO_SUCH_DEVICE; \
+	if (STATUS_SUCCESS != res) \
+		return IFD_COMMUNICATION_ERROR;
 
 /* internal functions */
 static RESPONSECODE CmdXfrBlockAPDU_extended(unsigned int reader_index,
