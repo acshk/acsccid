@@ -588,6 +588,44 @@ end:
 } /* SecurePINVerify */
 
 
+#ifdef BOGUS_PINPAD_FIRMWARE
+/*****************************************************************************
+ *
+ *					has_gemalto_modify_pin_bug
+ *
+ ****************************************************************************/
+static int has_gemalto_modify_pin_bug(_ccid_descriptor *ccid_descriptor)
+{
+	/* Bug not present by default */
+	int has_bug = 0;
+
+	/* Covadis Véga-Alpha reader */
+	if (VEGAALPHA == ccid_descriptor->readerID)
+	{
+		/* This reader has the bug (uses a Gemalto firmware) */
+		has_bug = 1;
+	}
+	else
+	{
+		/* Gemalto reader */
+		if ((GET_VENDOR(ccid_descriptor->readerID) == VENDOR_GEMALTO))
+		{
+			has_bug = 1; /* assume it has the bug */
+
+			if (ccid_descriptor->gemalto_firmware_features &&
+				ccid_descriptor->gemalto_firmware_features->bNumberMessageFix)
+			{
+				/* A Gemalto reader has the ModifyPIN structure bug */
+				/* unless it explicitly reports it has been fixed */
+				has_bug = 0;
+			}
+		}
+	}
+
+	return has_bug;
+} /* has_gemalto_modify_pin_bug */
+#endif
+
 /*****************************************************************************
  *
  *					SecurePINModify
