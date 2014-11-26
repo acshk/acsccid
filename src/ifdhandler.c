@@ -385,6 +385,20 @@ static RESPONSECODE IFDHSleep(DWORD Lun, int timeout)
 	(void)usleep(timeout);
 	return IFD_SUCCESS;
 }
+
+static RESPONSECODE IFDHStopPolling(DWORD Lun)
+{
+	int reader_index;
+
+	if (-1 == (reader_index = LunToReaderIndex(Lun)))
+		return IFD_COMMUNICATION_ERROR;
+
+	DEBUG_INFO3("%s (lun: " DWORD_X ")",
+		CcidSlots[reader_index].readerName, Lun);
+
+	(void)InterruptStop(reader_index);
+	return IFD_SUCCESS;
+}
 #endif
 
 
