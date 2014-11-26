@@ -1919,6 +1919,33 @@ static void *Multi_PollingProc(void *p_ext)
 } /* Multi_PollingProc */
 
 
+/*****************************************************************************
+ *
+ *					Multi_PollingTerminate
+ *
+ ****************************************************************************/
+static void Multi_PollingTerminate(struct usbDevice_MultiSlot_Extension *msExt)
+{
+	struct libusb_transfer *transfer;
+
+	if (msExt && !msExt->terminated)
+	{
+		msExt->terminated = TRUE;
+
+		transfer = usbDevice[msExt->reader_index].polling_transfer;
+
+		if (transfer)
+		{
+			int ret;
+
+			ret = libusb_cancel_transfer(transfer);
+			if (ret < 0)
+				DEBUG_CRITICAL2("libusb_cancel_transfer failed: %d", ret);
+		}
+	}
+} /* Multi_PollingTerminate */
+
+
 #ifdef __APPLE__
 // Card detection thread
 static void *CardDetectionThread(void *pParam)
