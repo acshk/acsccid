@@ -1578,6 +1578,18 @@ int ControlUSB(int reader_index, int requesttype, int request, int value,
 
 /*****************************************************************************
  *
+ *					Transfer is complete
+ *
+ ****************************************************************************/
+static void bulk_transfer_cb(struct libusb_transfer *transfer)
+{
+	int *completed = transfer->user_data;
+	*completed = 1;
+	/* caller interprets results and frees transfer */
+}
+
+/*****************************************************************************
+ *
  *					InterruptRead
  *
  ****************************************************************************/
