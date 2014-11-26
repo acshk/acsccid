@@ -1734,6 +1734,191 @@ void InterruptStop(int reader_index)
 } /* InterruptStop */
 
 
+/*****************************************************************************
+ *
+ *					Multi_PollingProc
+ *
+ ****************************************************************************/
+static void *Multi_PollingProc(void *p_ext)
+{
+	struct usbDevice_MultiSlot_Extension *msExt = p_ext;
+	int rv, status, actual_length;
+	unsigned char buffer[CCID_INTERRUPT_SIZE];
+	struct libusb_transfer *transfer;
+	int completed;
+
+	DEBUG_COMM3("Multi_PollingProc (%d/%d): thread starting",
+		usbDevice[msExt->reader_index].bus_number,
+		usbDevice[msExt->reader_index].device_address);
+
+	rv = 0;
+	while (!msExt->terminated)
+	{
+		DEBUG_COMM3("Multi_PollingProc (%d/%d): waiting",
+			usbDevice[msExt->reader_index].bus_number,
+			usbDevice[msExt->reader_index].device_address);
+
+		transfer = libusb_alloc_transfer(0);
+		if (NULL == transfer)
+		{
+			rv = LIBUSB_ERROR_NO_MEM;
+			DEBUG_COMM2("libusb_alloc_transfer err %d", rv);
+			break;
+		}
+
+		libusb_fill_bulk_transfer(transfer,
+			usbDevice[msExt->reader_index].dev_handle,
+			usbDevice[msExt->reader_index].interrupt,
+			buffer, CCID_INTERRUPT_SIZE,
+			bulk_transfer_cb, &completed, 0); /* No timeout ! */
+
+		transfer->type = LIBUSB_TRANSFER_TYPE_INTERRUPT;
+
+		rv = libusb_submit_transfer(transfer);
+		if (rv)
+		{
+			DEBUG_COMM2("libusb_submit_transfer err %d", rv);
+			break;
+		}
+
+		usbDevice[msExt->reader_index].polling_transfer = transfer;
+
+		completed = 0;
+		while (!completed && !msExt->terminated)
+		{
+			rv = libusb_handle_events(ctx);
+			if (rv < 0)
+			{
+				DEBUG_COMM2("libusb_handle_events err %d", rv);
+
+				if (rv == LIBUSB_ERROR_INTERRUPTED)
+					continue;
+
+				libusb_cancel_transfer(transfer);
+
+				while (!completed && !msExt->terminated)
+				{
+					if (libusb_handle_events(ctx) < 0)
+						break;
+				}
+
+				break;
+			}
+		}
+
+		usbDevice[msExt->reader_index].polling_transfer = NULL;
+
+		if (rv < 0)
+			libusb_free_transfer(transfer);
+		else
+		{
+			int b, slot;
+
+			actual_length = transfer->actual_length;
+			status = transfer->status;
+
+			libusb_free_transfer(transfer);
+
+			switch (status)
+			{
+				case LIBUSB_TRANSFER_COMPLETED:
+					DEBUG_COMM3("Multi_PollingProc (%d/%d): OK",
+						usbDevice[msExt->reader_index].bus_number,
+						usbDevice[msExt->reader_index].device_address);
+					DEBUG_XXD("NotifySlotChange: ", buffer, actual_length);
+
+					/* log the RDR_to_PC_NotifySlotChange data */
+					slot = 0;
+					for (b=0; b<actual_length-1; b++)
+					{
+						int s;
+
+						/* 4 slots per byte */
+						for (s=0; s<4; s++)
+						{
+							/* 2 bits per slot */
+							int slot_status = ((buffer[1+b] >> (s*2)) & 3);
+							const char *present, *change;
+
+							present = (slot_status & 1) ? "present" : "absent";
+							change = (slot_status & 2) ? "status changed" : "no change";
+
+							DEBUG_COMM3("slot %d status: %d",
+								s + b*4, slot_status);
+							DEBUG_COMM3("ICC %s, %s", present, change);
+						}
+						slot += 4;
+					}
+					break;
+
+				case LIBUSB_TRANSFER_TIMED_OUT:
+					DEBUG_COMM3("Multi_PollingProc (%d/%d): Timeout",
+						usbDevice[msExt->reader_index].bus_number,
+						usbDevice[msExt->reader_index].device_address);
+					break;
+
+				default:
+					/* if libusb_interrupt_transfer() times out
+					 * we get EILSEQ or EAGAIN */
+					DEBUG_COMM4("Multi_PollingProc (%d/%d): %d",
+						usbDevice[msExt->reader_index].bus_number,
+						usbDevice[msExt->reader_index].device_address,
+						status);
+			}
+
+			/* Tell other slots that there's a new interrupt buffer */
+			DEBUG_COMM3("Multi_PollingProc (%d/%d): Broadcast to slot(s)",
+				usbDevice[msExt->reader_index].bus_number,
+				usbDevice[msExt->reader_index].device_address);
+
+			/* Lock the mutex */
+			pthread_mutex_lock(&msExt->mutex);
+
+			/* Set the status and the interrupt buffer */
+			msExt->status = status;
+			memset(msExt->buffer, 0, sizeof msExt->buffer);
+			memcpy(msExt->buffer, buffer, actual_length);
+
+			/* Broadcast the condition and unlock */
+			pthread_cond_broadcast(&msExt->condition);
+			pthread_mutex_unlock(&msExt->mutex);
+		}
+	}
+
+	msExt->terminated = TRUE;
+
+	if (rv < 0)
+	{
+		DEBUG_CRITICAL4("Multi_PollingProc (%d/%d): error %d",
+			usbDevice[msExt->reader_index].bus_number,
+			usbDevice[msExt->reader_index].device_address, rv);
+	}
+
+	/* Wake up the slot threads so they will exit as well */
+
+	/* Lock the mutex */
+	pthread_mutex_lock(&msExt->mutex);
+
+	/* Set the status and fill-in the interrupt buffer */
+	msExt->status = 0;
+	memset(msExt->buffer, 0xFF, sizeof msExt->buffer);
+
+	/* Broadcast the condition */
+	pthread_cond_broadcast(&msExt->condition);
+
+	/* Unlock */
+	pthread_mutex_unlock(&msExt->mutex);
+
+	/* Now exit */
+	DEBUG_COMM3("Multi_PollingProc (%d/%d): Thread terminated",
+		usbDevice[msExt->reader_index].bus_number,
+		usbDevice[msExt->reader_index].device_address);
+
+	pthread_exit(NULL);
+	return NULL;
+} /* Multi_PollingProc */
+
+
 #ifdef __APPLE__
 // Card detection thread
 static void *CardDetectionThread(void *pParam)
