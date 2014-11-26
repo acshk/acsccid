@@ -1,6 +1,6 @@
 /*
     ifdhandler.c: IFDH API
-    Copyright (C) 2003-2009   Ludovic Rousseau
+    Copyright (C) 2003-2010   Ludovic Rousseau
     Copyright (C) 2009-2014   Advanced Card Systems Ltd.
 
     This library is free software; you can redistribute it and/or
@@ -18,7 +18,7 @@
 	Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-/* $Id: ifdhandler.c 4346 2009-07-28 13:39:37Z rousseau $ */
+/* $Id: ifdhandler.c 6977 2014-09-04 11:36:54Z rousseau $ */
 
 #include <stdio.h>
 #include <string.h>
