@@ -2054,6 +2054,38 @@ static void Multi_InterruptStop(int reader_index)
 } /* Multi_InterruptStop */
 
 
+/*****************************************************************************
+ *
+ *					Multi_CreateFirstSlot
+ *
+ ****************************************************************************/
+static struct usbDevice_MultiSlot_Extension *Multi_CreateFirstSlot(int reader_index)
+{
+	struct usbDevice_MultiSlot_Extension *msExt;
+
+	/* Allocate a new extension buffer */
+	msExt = malloc(sizeof(struct usbDevice_MultiSlot_Extension));
+	if (NULL == msExt)
+		return NULL;
+
+	/* Remember the index */
+	msExt->reader_index = reader_index;
+
+	msExt->terminated = FALSE;
+	msExt->status = 0;
+	msExt->transfer = NULL;
+
+	/* Create mutex and condition object for the interrupt polling */
+	pthread_mutex_init(&msExt->mutex, NULL);
+	pthread_cond_init(&msExt->condition, NULL);
+
+	/* create the thread in charge of the interrupt polling */
+	pthread_create(&msExt->thread_proc, NULL, Multi_PollingProc, msExt);
+
+	return msExt;
+} /* Multi_CreateFirstSlot */
+
+
 #ifdef __APPLE__
 // Card detection thread
 static void *CardDetectionThread(void *pParam)
