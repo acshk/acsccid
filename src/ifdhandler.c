@@ -428,7 +428,7 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
 
-	DEBUG_INFO4("tag: 0x%X, %s (lun: %X)", Tag,
+	DEBUG_INFO4("tag: 0x" DWORD_X ", %s (lun: " DWORD_X ")", Tag,
 		CcidSlots[reader_index].readerName, Lun);
 
 	switch (Tag)
@@ -543,19 +543,33 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 			break;
 
 		case SCARD_ATTR_VENDOR_IFD_VERSION:
-			/* Vendor-supplied interface device version (DWORD in the form
-			 * 0xMMmmbbbb where MM = major version, mm = minor version, and
-			 * bbbb = build number). */
-			*Length = sizeof(DWORD);
-			if (Value)
-				*(DWORD *)Value = CCID_VERSION;
+			{
+				int IFD_bcdDevice = get_ccid_descriptor(reader_index)->IFD_bcdDevice;
+
+				/* Vendor-supplied interface device version (DWORD in the form
+				 * 0xMMmmbbbb where MM = major version, mm = minor version, and
+				 * bbbb = build number). */
+				*Length = 4;
+				if (Value)
+					*(uint32_t *)Value = IFD_bcdDevice << 16;
+			}
 			break;
 
 		case SCARD_ATTR_VENDOR_NAME:
-#define VENDOR_NAME "Ludovic Rousseau"
-			*Length = sizeof(VENDOR_NAME);
-			if (Value)
-				memcpy(Value, VENDOR_NAME, sizeof(VENDOR_NAME));
+			{
+				const char *sIFD_iManufacturer = get_ccid_descriptor(reader_index) -> sIFD_iManufacturer;
+
+				if (sIFD_iManufacturer)
+				{
+					strlcpy((char *)Value, sIFD_iManufacturer, *Length);
+					*Length = strlen((char *)Value) +1;
+				}
+				else
+				{
+					/* not supported */
+					*Length = 0;
+				}
+			}
 			break;
 
 		case SCARD_ATTR_MAXINPUT:
@@ -564,8 +578,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				*(uint32_t *)Value = get_ccid_descriptor(reader_index) -> dwMaxCCIDMessageLength -10;
 			break;
 
-#if HAVE_DECL_TAG_IFD_POLLING_THREAD && !defined(TWIN_SERIAL) && defined(USE_USB_INTERRUPT)
-		case TAG_IFD_POLLING_THREAD:
+#if !defined(TWIN_SERIAL)
+		case TAG_IFD_POLLING_THREAD_WITH_TIMEOUT:
 			{
 				_ccid_descriptor *ccid_desc;
 
@@ -573,8 +587,9 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				*Length = 0;
 
 				ccid_desc = get_ccid_descriptor(reader_index);
+
 				/* CCID and not ICCD */
-				if ((0 == ccid_desc -> bInterfaceProtocol)
+				if ((PROTOCOL_CCID == ccid_desc -> bInterfaceProtocol)
 					/* 3 end points */
 					&& (3 == ccid_desc -> bNumEndpoints))
 				{
@@ -583,8 +598,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 						*(void **)Value = IFDHPolling;
 				}
 
-				if ((ICCD_A == ccid_desc->bInterfaceProtocol)
-					|| (ICCD_B == ccid_desc->bInterfaceProtocol))
+				if ((PROTOCOL_ICCD_A == ccid_desc->bInterfaceProtocol)
+					|| (PROTOCOL_ICCD_B == ccid_desc->bInterfaceProtocol))
 				{
 					*Length = sizeof(void *);
 					if (Value)
@@ -601,8 +616,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				*Length = 0;
 
 				ccid_desc = get_ccid_descriptor(reader_index);
-				if ((ICCD_A == ccid_desc->bInterfaceProtocol)
-					|| (ICCD_B == ccid_desc->bInterfaceProtocol))
+				if ((PROTOCOL_ICCD_A == ccid_desc->bInterfaceProtocol)
+					|| (PROTOCOL_ICCD_B == ccid_desc->bInterfaceProtocol))
 				{
 					*Length = 1;	/* 1 char */
 					if (Value)
@@ -610,7 +625,45 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				}
 			}
 			break;
+
+		case TAG_IFD_STOP_POLLING_THREAD:
+			{
+				_ccid_descriptor *ccid_desc;
+
+				/* default value: not supported */
+				*Length = 0;
+
+				ccid_desc = get_ccid_descriptor(reader_index);
+				/* CCID and not ICCD */
+				if ((PROTOCOL_CCID == ccid_desc -> bInterfaceProtocol)
+					/* 3 end points */
+					&& (3 == ccid_desc -> bNumEndpoints))
+				{
+					*Length = sizeof(void *);
+					if (Value)
+						*(void **)Value = IFDHStopPolling;
+				}
+			}
+			break;
 #endif
+
+		case SCARD_ATTR_VENDOR_IFD_SERIAL_NO:
+			{
+				_ccid_descriptor *ccid_desc;
+
+				ccid_desc = get_ccid_descriptor(reader_index);
+				if (ccid_desc->sIFD_serial_number)
+				{
+					strlcpy((char *)Value, ccid_desc->sIFD_serial_number, *Length);
+					*Length = strlen((char *)Value);
+				}
+				else
+				{
+					/* not supported */
+					*Length = 0;
+				}
+			}
+			break;
 
 		default:
 			return_value = IFD_ERROR_TAG;
