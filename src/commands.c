@@ -883,17 +883,21 @@ end:
  ****************************************************************************/
 RESPONSECODE CmdEscape(unsigned int reader_index,
 	const unsigned char TxBuffer[], unsigned int TxLength,
-	unsigned char RxBuffer[], unsigned int *RxLength)
+	unsigned char RxBuffer[], unsigned int *RxLength, unsigned int timeout)
 {
 	unsigned char *cmd_in, *cmd_out;
 	status_t res;
 	unsigned int length_in, length_out;
 	RESPONSECODE return_value = IFD_SUCCESS;
-	//int old_read_timeout;
+	int old_read_timeout;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
-	//old_read_timeout = ccid_descriptor -> readTimeout;
-	//ccid_descriptor -> readTimeout = 30;	/* 30 seconds */
+	/* a value of 0 do not change the default read timeout */
+	if (timeout > 0)
+	{
+		old_read_timeout = ccid_descriptor -> readTimeout;
+		ccid_descriptor -> readTimeout = timeout;
+	}
 
 again:
 	/* allocate buffers */
@@ -926,10 +930,15 @@ again:
 	if (res != STATUS_SUCCESS)
 	{
 		free(cmd_out);
-		return_value = IFD_COMMUNICATION_ERROR;
+		if (STATUS_NO_SUCH_DEVICE == res)
+			return_value = IFD_NO_SUCH_DEVICE;
+		else
+			return_value = IFD_COMMUNICATION_ERROR;
 		goto end;
 	}
 
+time_request:
+	length_out = 10 + *RxLength;
 	res = ReadPort(reader_index, &length_out, cmd_out);
 
 	/* replay the command if NAK
@@ -945,7 +954,10 @@ again:
 	if (res != STATUS_SUCCESS)
 	{
 		free(cmd_out);
-		return_value = IFD_COMMUNICATION_ERROR;
+		if (STATUS_NO_SUCH_DEVICE == res)
+			return_value = IFD_NO_SUCH_DEVICE;
+		else
+			return_value = IFD_COMMUNICATION_ERROR;
 		goto end;
 	}
 
@@ -955,6 +967,12 @@ again:
 		DEBUG_CRITICAL2("Not enough data received: %d bytes", length_out);
 		return_value = IFD_COMMUNICATION_ERROR;
 		goto end;
+	}
+
+	if (cmd_out[STATUS_OFFSET] & CCID_TIME_EXTENSION)
+	{
+		DEBUG_COMM2("Time extension requested: 0x%02X", cmd_out[ERROR_OFFSET]);
+		goto time_request;
 	}
 
 	if (cmd_out[STATUS_OFFSET] & CCID_COMMAND_FAILED)
@@ -973,7 +991,9 @@ again:
 	free(cmd_out);
 
 end:
-	//ccid_descriptor -> readTimeout = old_read_timeout;
+	if (timeout > 0)
+		ccid_descriptor -> readTimeout = old_read_timeout;
+
 	return return_value;
 } /* Escape */
 
