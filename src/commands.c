@@ -2310,3 +2310,13 @@ static void i2dw(int value, unsigned char buffer[])
 	buffer[3] = (value >> 24) & 0xFF;
 } /* i2dw */
 
+/*****************************************************************************
+*
+*                  bei2i (big endian integer to host order interger)
+*
+****************************************************************************/
+
+static unsigned int bei2i(unsigned char buffer[])
+{
+	return (buffer[0]<<24) + (buffer[1]<<16) + (buffer[2]<<8) + buffer[3];
+}
