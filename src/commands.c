@@ -94,6 +94,7 @@ static RESPONSECODE CmdXfrBlockTPDU_T1(unsigned int reader_index,
 	unsigned char rx_buffer[]);
 
 static void i2dw(int value, unsigned char *buffer);
+static unsigned int bei2i(unsigned char *buffer);
 
 
 /*****************************************************************************
