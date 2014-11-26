@@ -1476,15 +1476,15 @@ int ccid_check_firmware(struct libusb_device_descriptor *desc)
 
 /*****************************************************************************
  *
- *                                      get_data_rates
+ *					get_data_rates
  *
  ****************************************************************************/
 static unsigned int *get_data_rates(unsigned int reader_index,
-	struct usb_device *dev, int num)
+	struct libusb_config_descriptor *desc, int num)
 {
 	int n, i, len;
 	unsigned char buffer[256*sizeof(int)];	/* maximum is 256 records */
-	unsigned int *int_array;
+	unsigned int *uint_array;
 
 	/* See CCID 3.7.3 page 25 */
 	n = ControlUSB(reader_index,
@@ -1496,8 +1496,7 @@ static unsigned int *get_data_rates(unsigned int reader_index,
 	/* we got an error? */
 	if (n <= 0)
 	{
-		DEBUG_INFO2("IFD does not support GET_DATA_RATES request: %s",
-			strerror(errno));
+		DEBUG_INFO2("IFD does not support GET_DATA_RATES request: %d", n);
 		return NULL;
 	}
 
@@ -1512,7 +1511,7 @@ static unsigned int *get_data_rates(unsigned int reader_index,
 	n /= sizeof(int);
 
 	/* we do not get the expected number of data rates */
-	len = get_ccid_usb_interface(dev, &num)->altsetting->extra[27]; /* bNumDataRatesSupported */
+	len = get_ccid_device_descriptor(get_ccid_usb_interface(desc, &num))[27]; /* bNumDataRatesSupported */
 	if ((n != len) && len)
 	{
 		DEBUG_INFO3("Got %d data rates but was expecting %d", n, len);
@@ -1522,8 +1521,8 @@ static unsigned int *get_data_rates(unsigned int reader_index,
 			n = len;
 	}
 
-	int_array = calloc(n+1, sizeof(int));
-	if (NULL == int_array)
+	uint_array = calloc(n+1, sizeof(uint_array[0]));
+	if (NULL == uint_array)
 	{
 		DEBUG_CRITICAL("Memory allocation failed");
 		return NULL;
@@ -1532,14 +1531,14 @@ static unsigned int *get_data_rates(unsigned int reader_index,
 	/* convert in correct endianess */
 	for (i=0; i<n; i++)
 	{
-		int_array[i] = dw2i(buffer, i*4);
-		DEBUG_INFO2("declared: %d bps", int_array[i]);
+		uint_array[i] = dw2i(buffer, i*4);
+		DEBUG_INFO2("declared: %d bps", uint_array[i]);
 	}
 
 	/* end of array marker */
-	int_array[i] = 0;
+	uint_array[i] = 0;
 
-	return int_array;
+	return uint_array;
 } /* get_data_rates */
 
 
