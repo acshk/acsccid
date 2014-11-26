@@ -1606,7 +1606,7 @@ static RESPONSECODE CmdXfrBlockAPDU_extended(unsigned int reader_index,
 	unsigned int local_rx_length = 0, received_length;
 	int buffer_overflow = 0;
 
-	if (ICCD_B == ccid_descriptor->bInterfaceProtocol)
+	if (PROTOCOL_ICCD_B == ccid_descriptor->bInterfaceProtocol)
 	{
 		/* length is on 16-bits only
 		 * if a size > 0x1000 is used then usb_control_msg() fails with
