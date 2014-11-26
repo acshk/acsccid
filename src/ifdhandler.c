@@ -59,10 +59,6 @@
 #include <pthread.h>
 #endif
 
-#ifndef IFD_ERROR_INSUFFICIENT_BUFFER
-#define IFD_ERROR_INSUFFICIENT_BUFFER 618
-#endif
-
 /* Array of structures to hold the ATR and other state value of each slot */
 static CcidDesc CcidSlots[CCID_DRIVER_MAX_READERS];
 
