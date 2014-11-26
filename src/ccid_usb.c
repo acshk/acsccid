@@ -1404,60 +1404,31 @@ static int get_end_points(struct libusb_config_descriptor *desc,
  *					get_ccid_usb_interface
  *
  ****************************************************************************/
-/*@null@*/ EXTERNAL struct usb_interface * get_ccid_usb_interface(
-	struct usb_device *dev, int *num)
+/*@null@*/ EXTERNAL const struct libusb_interface * get_ccid_usb_interface(
+	struct libusb_config_descriptor *desc, int *num)
 {
-	struct usb_interface *usb_interface = NULL;
+	const struct libusb_interface *usb_interface = NULL;
 	int i;
-#ifdef O2MICRO_OZ776_PATCH
-	int readerID;
-#endif
 
 	/* if multiple interfaces use the first one with CCID class type */
-	for (i = *num; dev->config && i<dev->config->bNumInterfaces; i++)
+	for (i = *num; i < desc->bNumInterfaces; i++)
 	{
 		/* CCID Class? */
-		if (dev->config->interface[i].altsetting->bInterfaceClass == 0xb
+		if (desc->interface[i].altsetting->bInterfaceClass == 0xb
 #ifdef ALLOW_PROPRIETARY_CLASS
-			|| dev->config->interface[i].altsetting->bInterfaceClass == 0xff
+			|| desc->interface[i].altsetting->bInterfaceClass == 0xff
 
 			// bInterfaceClass is 0x00 in ACR83U, ACR88U and ACR128U
-			|| dev->config->interface[i].altsetting->bInterfaceClass == 0x00
+			|| desc->interface[i].altsetting->bInterfaceClass == 0x00
 #endif
 			)
 		{
-			usb_interface = &dev->config->interface[i];
+			usb_interface = &desc->interface[i];
 			/* store the interface number for further reference */
 			*num = i;
 			break;
 		}
 	}
-
-#ifdef O2MICRO_OZ776_PATCH
-	readerID = (dev->descriptor.idVendor << 16) + dev->descriptor.idProduct;
-	if (usb_interface != NULL
-		&& ((OZ776 == readerID) || (OZ776_7772 == readerID)
-		|| (REINER_SCT == readerID) || (BLUDRIVEII_CCID == readerID))
-		&& (0 == usb_interface->altsetting->extralen)) /* this is the bug */
-	{
-		int j;
-		for (j=0; j<usb_interface->altsetting->bNumEndpoints; j++)
-		{
-			/* find the extra[] array */
-			if (54 == usb_interface->altsetting->endpoint[j].extralen)
-			{
-				/* get the extra[] from the endpoint */
-				usb_interface->altsetting->extralen = 54;
-				usb_interface->altsetting->extra =
-					usb_interface->altsetting->endpoint[j].extra;
-				/* avoid double free on close */
-				usb_interface->altsetting->endpoint[j].extra = NULL;
-				usb_interface->altsetting->endpoint[j].extralen = 0;
-				break;
-			}
-		}
-	}
-#endif
 
 	return usb_interface;
 } /* get_ccid_usb_interface */
