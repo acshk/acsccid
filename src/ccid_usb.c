@@ -1946,6 +1946,83 @@ static void Multi_PollingTerminate(struct usbDevice_MultiSlot_Extension *msExt)
 } /* Multi_PollingTerminate */
 
 
+/*****************************************************************************
+ *
+ *					Multi_InterruptRead
+ *
+ ****************************************************************************/
+static int Multi_InterruptRead(int reader_index, int timeout /* in ms */)
+{
+	struct usbDevice_MultiSlot_Extension *msExt;
+	unsigned char buffer[CCID_INTERRUPT_SIZE];
+	struct timespec cond_wait_until;
+	struct timeval local_time;
+	int rv, status, interrupt_byte, interrupt_mask;
+
+	msExt = usbDevice[reader_index].multislot_extension;
+
+	/* When stopped, return 0 so IFDHPolling will return IFD_NO_SUCH_DEVICE */
+	if ((msExt == NULL) || msExt->terminated)
+		return 0;
+
+	DEBUG_PERIODIC3("Multi_InterruptRead (%d), timeout: %d ms",
+		reader_index, timeout);
+
+	/* Select the relevant bit in the interrupt buffer */
+	interrupt_byte = (usbDevice[reader_index].ccid.bCurrentSlotIndex / 4) + 1;
+	interrupt_mask = 0x02 << (2 * (usbDevice[reader_index].ccid.bCurrentSlotIndex % 4));
+
+	/* Wait until the condition is signaled or a timeout occurs */
+	pthread_mutex_lock(&msExt->mutex);
+	gettimeofday(&local_time, NULL);
+	cond_wait_until.tv_sec = local_time.tv_sec;
+	cond_wait_until.tv_nsec = local_time.tv_usec * 1000;
+
+	cond_wait_until.tv_sec += timeout / 1000;
+	cond_wait_until.tv_nsec += 1000000 * (timeout % 1000);
+
+again:
+	rv = pthread_cond_timedwait(&msExt->condition, &msExt->mutex,
+		&cond_wait_until);
+
+	if (0 == rv)
+	{
+		/* Retrieve interrupt buffer and request result */
+		memcpy(buffer, msExt->buffer, sizeof buffer);
+		status = msExt->status;
+	}
+	else
+		if (rv == ETIMEDOUT)
+			status = LIBUSB_TRANSFER_TIMED_OUT;
+		else
+			status = -1;
+
+	/* Don't forget to unlock the mutex */
+	pthread_mutex_unlock(&msExt->mutex);
+
+	/* When stopped, return 0 so IFDHPolling will return IFD_NO_SUCH_DEVICE */
+	if (msExt->terminated)
+		return 0;
+
+	/* Not stopped */
+	if (status == LIBUSB_TRANSFER_COMPLETED)
+	{
+		if (0 == (buffer[interrupt_byte] & interrupt_mask))
+		{
+			DEBUG_PERIODIC2("Multi_InterruptRead (%d) -- skipped", reader_index);
+			goto again;
+		}
+		DEBUG_PERIODIC2("Multi_InterruptRead (%d), got an interrupt", reader_index);
+	}
+	else
+	{
+		DEBUG_PERIODIC3("Multi_InterruptRead (%d), status=%d", reader_index, status);
+	}
+
+	return status;
+} /* Multi_InterruptRead */
+
+
 #ifdef __APPLE__
 // Card detection thread
 static void *CardDetectionThread(void *pParam)
