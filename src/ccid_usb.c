@@ -1006,6 +1006,7 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 	unsigned char *buffer)
 {
 	int rv;
+	int actual_length;
 	char debug_header[] = "-> 121234 ";
 	int pos;
 	int len;
@@ -1014,7 +1015,15 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 	(void)snprintf(debug_header, sizeof(debug_header), "-> %06X ",
 		(int)reader_index);
 
-	DEBUG_XXD(debug_header, buffer, length);
+	if (usbDevice[reader_index].ccid.zlp)
+	{ /* Zero Length Packet */
+		int dummy_length;
+
+		/* try to read a ZLP so transfer length = 0
+		 * timeout of 1 ms */
+		(void)libusb_bulk_transfer(usbDevice[reader_index].dev_handle,
+			usbDevice[reader_index].bulk_in, NULL, 0, &dummy_length, 1);
+	}
 
 	// Fix APG8201 and ACR85 ICC cannot receive command properly
 	// Add delay for APG8201 and ACR85 ICC
@@ -1033,17 +1042,19 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 		else
 			len = length;
 
-		rv = usb_bulk_write(usbDevice[reader_index].handle,
-			usbDevice[reader_index].bulk_out, (char *)buffer + pos, len,
-			USB_WRITE_TIMEOUT);
+		DEBUG_XXD(debug_header, buffer + pos, len);
+
+		rv = libusb_bulk_transfer(usbDevice[reader_index].dev_handle,
+			usbDevice[reader_index].bulk_out, buffer + pos, len,
+			&actual_length, USB_WRITE_TIMEOUT);
 
 		if (rv < 0)
 		{
-			DEBUG_CRITICAL4("usb_bulk_write(%s/%s): %s",
-				usbDevice[reader_index].dirname, usbDevice[reader_index].filename,
-				strerror(errno));
+			DEBUG_CRITICAL5("write failed (%d/%d): %d %s",
+				usbDevice[reader_index].bus_number,
+				usbDevice[reader_index].device_address, rv, strerror(errno));
 
-			if (ENODEV == errno)
+			if ((ENODEV == errno) || (LIBUSB_ERROR_NO_DEVICE == rv))
 				return STATUS_NO_SUCH_DEVICE;
 
 			return STATUS_UNSUCCESSFUL;
