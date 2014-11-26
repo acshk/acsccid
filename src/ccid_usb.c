@@ -1308,6 +1308,48 @@ _ccid_descriptor *get_ccid_descriptor(unsigned int reader_index)
 
 /*****************************************************************************
  *
+ *					get_ccid_device_descriptor
+ *
+ ****************************************************************************/
+const unsigned char *get_ccid_device_descriptor(const struct libusb_interface *usb_interface)
+{
+#ifdef O2MICRO_OZ776_PATCH
+	uint8_t last_endpoint;
+#endif
+
+	if (54 == usb_interface->altsetting->extra_length)
+		return usb_interface->altsetting->extra;
+
+	if (0 != usb_interface->altsetting->extra_length)
+	{
+		/* If extra_length is zero, the descriptor might be at
+		 * the end, but if it's not zero, we have a
+		 * problem. */
+		DEBUG_CRITICAL2("Extra field has a wrong length: %d",
+			usb_interface->altsetting->extra_length);
+		return NULL;
+	}
+
+#ifdef O2MICRO_OZ776_PATCH
+	/* Some devices, such as the Oz776, Reiner SCT and bludrive II
+	 * report the device descriptor at the end of the endpoint
+	 * descriptors; to support those, look for it at the end as well.
+	 */
+	last_endpoint = usb_interface->altsetting->bNumEndpoints-1;
+	if (usb_interface->altsetting->endpoint
+		&& usb_interface->altsetting->endpoint[last_endpoint].extra_length == 54)
+		return usb_interface->altsetting->endpoint[last_endpoint].extra;
+#else
+	DEBUG_CRITICAL2("Extra field has a wrong length: %d",
+		usb_interface->altsetting->extra_length);
+#endif
+
+	return NULL;
+} /* get_ccid_device_descriptor */
+
+
+/*****************************************************************************
+ *
  *					get_end_points
  *
  ****************************************************************************/
