@@ -637,13 +637,17 @@ RESPONSECODE SecurePINModify(unsigned int reader_index,
 {
 	unsigned char cmd[11+19+TxLength];
 	unsigned int a, b;
+	PIN_MODIFY_STRUCTURE *pms;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 	int old_read_timeout;
 	RESPONSECODE ret;
+	status_t res;
 #ifdef BOGUS_PINPAD_FIRMWARE
-	int bNumberMessages = 0; /* for GemPC Pinpad */
+	int bNumberMessage = 0; /* for GemPC Pinpad */
+	int gemalto_modify_pin_bug;
 #endif
 
+	pms = (PIN_MODIFY_STRUCTURE *)TxBuffer;
 	cmd[0] = 0x69;	/* Secure */
 	cmd[5] = ccid_descriptor->bCurrentSlotIndex;	/* slot number */
 	cmd[6] = (*ccid_descriptor->pbSeq)++;
@@ -657,6 +661,21 @@ RESPONSECODE SecurePINModify(unsigned int reader_index,
 		DEBUG_INFO3("Command too short: %d < %d", TxLength, 24+4);
 		return IFD_NOT_SUPPORTED;
 	}
+
+	/* On little endian machines we are all set. */
+	/* If on big endian machine and caller is using host byte order */
+	if ((pms->ulDataLength + 24  == TxLength) &&
+		(bei2i((unsigned char*)(&pms->ulDataLength)) == pms->ulDataLength))
+	{
+		DEBUG_INFO1("Reversing order from big to little endian");
+		/* If ulDataLength is big endian, assume others are too */
+		/* reverse the byte order for 3 fields */
+		pms->wPINMaxExtraDigit = BSWAP_16(pms->wPINMaxExtraDigit);
+		pms->wLangId = BSWAP_16(pms->wLangId);
+		pms->ulDataLength = BSWAP_32(pms->ulDataLength);
+	}
+	/* At this point we now have the above 3 variables in little endian */
+
 
 	if (dw2i(TxBuffer, 20) + 24 != TxLength) /* ulDataLength field coherency */
 	{
@@ -690,22 +709,23 @@ RESPONSECODE SecurePINModify(unsigned int reader_index,
 	if ((SPR532 == ccid_descriptor->readerID)
 		|| (CHERRYST2000 == ccid_descriptor->readerID))
 	{
-		TxBuffer[11] = 0x03; /* set bNumberMessages to 3 so that
+		TxBuffer[11] = 0x03; /* set bNumberMessage to 3 so that
 								all bMsgIndex123 are filled */
 		TxBuffer[14] = TxBuffer[15] = TxBuffer[16] = 0;	/* bMsgIndex123 */
 	}
 
 	/* the bug is a bit different than for the Cherry ST 2000C
-	 * with bNumberMessages < 3 the command seems to be accepted
+	 * with bNumberMessage < 3 the command seems to be accepted
 	 * and the card sends 6B 80 */
 	if (CHERRYXX44 == ccid_descriptor->readerID)
 	{
-		TxBuffer[11] = 0x03; /* set bNumberMessages to 3 so that
+		TxBuffer[11] = 0x03; /* set bNumberMessage to 3 so that
 								all bMsgIndex123 are filled */
 	}
 
 	/* bug circumvention for the GemPC Pinpad */
-	if (GEMPCPINPAD == ccid_descriptor->readerID)
+	if ((GEMPCPINPAD == ccid_descriptor->readerID)
+		|| (VEGAALPHA == ccid_descriptor->readerID))
 	{
 		/* The reader does not support, and actively reject, "max size reached"
 		 * and "timeout occured" validation conditions */
@@ -715,13 +735,21 @@ RESPONSECODE SecurePINModify(unsigned int reader_index,
 				TxBuffer[10]);
 			TxBuffer[10] = 0x02;	/* validation key pressed */
 		}
+	}
 
-		/* the reader does not support any other value than 3 for the number
-		 * of messages */
-		bNumberMessages = TxBuffer[11];
+	gemalto_modify_pin_bug = has_gemalto_modify_pin_bug(ccid_descriptor);
+	if (gemalto_modify_pin_bug)
+	{
+		DEBUG_INFO1("Gemalto CCID Modify Pin Bug");
+
+		/* The reader requests a value for bMsgIndex2 and bMsgIndex3
+		 * even if they should not be present. So we fake
+		 * bNumberMessage=3.  The real number of messages will be
+		 * corrected later in the code */
+		bNumberMessage = TxBuffer[11];
 		if (0x03 != TxBuffer[11])
 		{
-			DEBUG_INFO2("Correct bNumberMessages for GemPC Pinpad (was %d)",
+			DEBUG_INFO2("Correct bNumberMessage for GemPC Pinpad (was %d)",
 				TxBuffer[11]);
 			TxBuffer[11] = 0x03; /* 3 messages */
 		}
@@ -795,24 +823,26 @@ RESPONSECODE SecurePINModify(unsigned int reader_index,
 	if ((SPR532 == ccid_descriptor->readerID)
 		|| (CHERRYST2000 == ccid_descriptor->readerID))
 	{
-		cmd[21] = 0x00; /* set bNumberMessages to 0 */
+		cmd[21] = 0x00; /* set bNumberMessage to 0 */
 	}
 
-	if (GEMPCPINPAD == ccid_descriptor->readerID)
-		cmd[21] = bNumberMessages;	/* restore the real value */
+	if (gemalto_modify_pin_bug)
+		cmd[21] = bNumberMessage;	/* restore the real value */
 #endif
 
 	/* We know the size of the CCID message now */
 	i2dw(a - 10, cmd + 1);	/* command length (includes bPINOperation) */
 
 	old_read_timeout = ccid_descriptor -> readTimeout;
-	// Change timeout to infinite
-	// ccid_descriptor -> readTimeout = max(30, TxBuffer[0]+10);	/* at least 30 seconds */
 	ccid_descriptor -> readTimeout = 0;	// Infinite
 
-	if (WritePort(reader_index, a, cmd) != STATUS_SUCCESS)
+	res = WritePort(reader_index, a, cmd);
+	if (STATUS_SUCCESS != res)
 	{
-		ret = IFD_COMMUNICATION_ERROR;
+		if (STATUS_NO_SUCH_DEVICE == res)
+			ret = IFD_NO_SUCH_DEVICE;
+		else
+			ret = IFD_COMMUNICATION_ERROR;
 		goto end;
 	}
 
