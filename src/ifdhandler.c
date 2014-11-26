@@ -347,25 +347,20 @@ EXTERNAL RESPONSECODE IFDHCloseChannel(DWORD Lun)
 } /* IFDHCloseChannel */
 
 
-#if HAVE_DECL_TAG_IFD_POLLING_THREAD && !defined(TWIN_SERIAL) && defined(USE_USB_INTERRUPT)
-static RESPONSECODE IFDHPolling(DWORD Lun)
+#if !defined(TWIN_SERIAL)
+static RESPONSECODE IFDHPolling(DWORD Lun, int timeout)
 {
 	int reader_index;
-	int ret;
 
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
 
 	/* log only if DEBUG_LEVEL_PERIODIC is set */
 	if (LogLevel & DEBUG_LEVEL_PERIODIC)
-		DEBUG_INFO3("%s (lun: %X)", CcidSlots[reader_index].readerName, Lun);
+		DEBUG_INFO4("%s (lun: " DWORD_X ") %d ms",
+			CcidSlots[reader_index].readerName, Lun, timeout);
 
-	ret = InterruptRead(reader_index, 2*1000);	/* 2 seconds */
-	if (ret > 0)
-		return IFD_SUCCESS;
-	if (0 == ret)
-		return IFD_NO_SUCH_DEVICE;
-	return IFD_COMMUNICATION_ERROR;
+	return InterruptRead(reader_index, timeout);
 }
 
 /* on an ICCD device the card is always inserted
