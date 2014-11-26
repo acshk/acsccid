@@ -113,7 +113,7 @@ RESPONSECODE CmdPowerOn(unsigned int reader_index, unsigned int * nlength,
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
 #ifndef TWIN_SERIAL
-	if (ICCD_A == ccid_descriptor->bInterfaceProtocol)
+	if (PROTOCOL_ICCD_A == ccid_descriptor->bInterfaceProtocol)
 	{
 		int r;
 		unsigned char pcbuffer[SIZE_GET_SLOT_STATUS];
@@ -143,7 +143,7 @@ RESPONSECODE CmdPowerOn(unsigned int reader_index, unsigned int * nlength,
 		return IFD_SUCCESS;
 	}
 
-	if (ICCD_B == ccid_descriptor->bInterfaceProtocol)
+	if (PROTOCOL_ICCD_B == ccid_descriptor->bInterfaceProtocol)
 	{
 		int r;
 		unsigned char tmp[MAX_ATR_SIZE+1];
@@ -203,19 +203,19 @@ RESPONSECODE CmdPowerOn(unsigned int reader_index, unsigned int * nlength,
 
 		if ((1 == voltage) && !(bVoltageSupport & 1))
 		{
-			DEBUG_INFO("5V requested but not support by reader");
+			DEBUG_INFO1("5V requested but not support by reader");
 			voltage = 2;	/* 3V */
 		}
 
 		if ((2 == voltage) && !(bVoltageSupport & 2))
 		{
-			DEBUG_INFO("3V requested but not support by reader");
+			DEBUG_INFO1("3V requested but not support by reader");
 			voltage = 3;	/* 1.8V */
 		}
 
 		if ((3 == voltage) && !(bVoltageSupport & 4))
 		{
-			DEBUG_INFO("1.8V requested but not support by reader");
+			DEBUG_INFO1("1.8V requested but not support by reader");
 			voltage = 0;	/* auto */
 		}
 	}
@@ -229,16 +229,14 @@ again:
 	cmd[8] = cmd[9] = 0; /* RFU */
 
 	res = WritePort(reader_index, sizeof(cmd), cmd);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	/* reset available buffer size */
 	/* needed if we go back after a switch to ISO mode */
 	*nlength = length;
 
 	res = ReadPort(reader_index, nlength, buffer);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	if (*nlength < STATUS_OFFSET+1)
 	{
@@ -259,7 +257,7 @@ again:
 			unsigned int res_length = sizeof(res_tmp);
 
 			if ((return_value = CmdEscape(reader_index, cmd_tmp,
-				sizeof(cmd_tmp), res_tmp, &res_length)) != IFD_SUCCESS)
+				sizeof(cmd_tmp), res_tmp, &res_length, 0)) != IFD_SUCCESS)
 				return return_value;
 
 			/* avoid looping if we can't switch mode */
@@ -272,7 +270,9 @@ again:
 		/* continue with 3 volts and 5 volts */
 		if (voltage > 1)
 		{
+#ifndef NO_LOG
 			const char *voltage_code[] = { "auto", "5V", "3V", "1.8V" };
+#endif
 
 			DEBUG_INFO3("Power up with %s failed. Try with %s.",
 				voltage_code[voltage], voltage_code[voltage-1]);
