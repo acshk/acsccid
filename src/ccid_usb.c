@@ -1544,7 +1544,7 @@ static unsigned int *get_data_rates(unsigned int reader_index,
 
 /*****************************************************************************
  *
- *                                      ControlUSB
+ *					ControlUSB
  *
  ****************************************************************************/
 int ControlUSB(int reader_index, int requesttype, int request, int value,
@@ -1557,15 +1557,15 @@ int ControlUSB(int reader_index, int requesttype, int request, int value,
 	if (0 == (requesttype & 0x80))
 		DEBUG_XXD("send: ", bytes, size);
 
-	ret = usb_control_msg(usbDevice[reader_index].handle, requesttype,
-		request, value, usbDevice[reader_index].interface, (char *)bytes, size,
-		usbDevice[reader_index].ccid.readTimeout * 1000);
+	ret = libusb_control_transfer(usbDevice[reader_index].dev_handle,
+		requesttype, request, value, usbDevice[reader_index].interface,
+		bytes, size, usbDevice[reader_index].ccid.readTimeout);
 
 	if (ret < 0)
 	{
-		DEBUG_CRITICAL4("control failed (%s/%s): %s",
-			usbDevice[reader_index].dirname, usbDevice[reader_index].filename,
-			strerror(errno));
+		DEBUG_CRITICAL5("control failed (%d/%d): %d %s",
+			usbDevice[reader_index].bus_number,
+			usbDevice[reader_index].device_address, ret, strerror(errno));
 
 		return ret;
 	}
