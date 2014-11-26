@@ -1211,19 +1211,12 @@ read_again:
 status_t CloseUSB(unsigned int reader_index)
 {
 	/* device not opened */
-	if (usbDevice[reader_index].handle == NULL)
+	if (usbDevice[reader_index].dev_handle == NULL)
 		return STATUS_UNSUCCESSFUL;
 
-	DEBUG_COMM3("Closing USB device: %s/%s",
-		usbDevice[reader_index].dirname,
-		usbDevice[reader_index].filename);
-
-	if (usbDevice[reader_index].ccid.arrayOfSupportedDataRates
-		&& (usbDevice[reader_index].ccid.bCurrentSlotIndex == 0))
-	{
-		free(usbDevice[reader_index].ccid.arrayOfSupportedDataRates);
-		usbDevice[reader_index].ccid.arrayOfSupportedDataRates = NULL;
-	}
+	DEBUG_COMM3("Closing USB device: %d/%d",
+		usbDevice[reader_index].bus_number,
+		usbDevice[reader_index].device_address);
 
 	/* one slot closed */
 	(*usbDevice[reader_index].nb_opened_slots)--;
@@ -1231,18 +1224,14 @@ status_t CloseUSB(unsigned int reader_index)
 	/* release the allocated ressources for the last slot only */
 	if (0 == *usbDevice[reader_index].nb_opened_slots)
 	{
+		struct usbDevice_MultiSlot_Extension *msExt;
+
 		DEBUG_COMM("Last slot closed. Release resources");
 
-		/* reset so that bSeq starts at 0 again */
-		if (DriverOptions & DRIVER_OPTION_RESET_ON_CLOSE)
-			(void)usb_reset(usbDevice[reader_index].handle);
-
-		(void)usb_release_interface(usbDevice[reader_index].handle,
-			usbDevice[reader_index].interface);
-		(void)usb_close(usbDevice[reader_index].handle);
 #ifdef __APPLE__
-		DEBUG_INFO3("Terminating thread: %s/%s",
-			usbDevice[reader_index].dirname, usbDevice[reader_index].filename);
+		DEBUG_INFO3("Terminating thread: %d/%d",
+			usbDevice[reader_index].bus_number,
+			usbDevice[reader_index].device_address);
 
 		// Terminate thread
 		*usbDevice[reader_index].pTerminated = TRUE;
@@ -1254,16 +1243,53 @@ status_t CloseUSB(unsigned int reader_index)
 		// Free array of bStatus
 		free(usbDevice[reader_index].ccid.bStatus);
 
-		free(usbDevice[reader_index].dirname);
-		free(usbDevice[reader_index].filename);
+		msExt = usbDevice[reader_index].multislot_extension;
+		/* If this is a multislot reader, close using the multislot stuff */
+		if (msExt)
+		{
+			/* terminate the interrupt waiter thread */
+			Multi_PollingTerminate(msExt);
+
+			/* wait for the thread to actually terminate */
+			pthread_join(msExt->thread_proc, NULL);
+
+			/* release the shared objects */
+			pthread_cond_destroy(&msExt->condition);
+			pthread_mutex_destroy(&msExt->mutex);
+
+			/* Deallocate the extension itself */
+			free(msExt);
+
+			/* Stop the slot */
+			usbDevice[reader_index].multislot_extension = NULL;
+		}
+
+		if (usbDevice[reader_index].ccid.gemalto_firmware_features)
+			free(usbDevice[reader_index].ccid.gemalto_firmware_features);
+
+		if (usbDevice[reader_index].ccid.sIFD_serial_number)
+			free(usbDevice[reader_index].ccid.sIFD_serial_number);
+
+		if (usbDevice[reader_index].ccid.sIFD_iManufacturer)
+			free(usbDevice[reader_index].ccid.sIFD_iManufacturer);
+
+		/* reset so that bSeq starts at 0 again */
+		if (DriverOptions & DRIVER_OPTION_RESET_ON_CLOSE)
+			(void)libusb_reset_device(usbDevice[reader_index].dev_handle);
+
+		if (usbDevice[reader_index].ccid.arrayOfSupportedDataRates)
+			free(usbDevice[reader_index].ccid.arrayOfSupportedDataRates);
+
+		(void)libusb_release_interface(usbDevice[reader_index].dev_handle,
+			usbDevice[reader_index].interface);
+		(void)libusb_close(usbDevice[reader_index].dev_handle);
 	}
 
 	/* mark the resource unused */
-	usbDevice[reader_index].handle = NULL;
-	usbDevice[reader_index].dirname = NULL;
-	usbDevice[reader_index].filename = NULL;
+	usbDevice[reader_index].dev_handle = NULL;
 	usbDevice[reader_index].interface = 0;
 	usbDevice[reader_index].ccid.bStatus = NULL;	// Array of bStatus
+	close_libusb_if_needed();
 
 	return STATUS_SUCCESS;
 } /* CloseUSB */
