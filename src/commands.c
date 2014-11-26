@@ -2243,6 +2243,7 @@ RESPONSECODE SetParameters(unsigned int reader_index, char protocol,
 {
 	unsigned char cmd[10+length];	/* CCID + APDU buffer */
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
+	status_t res;
 
 	DEBUG_COMM2("length: %d bytes", length);
 
@@ -2255,12 +2256,12 @@ RESPONSECODE SetParameters(unsigned int reader_index, char protocol,
 
 	memcpy(cmd+10, buffer, length);
 
-	if (WritePort(reader_index, 10+length, cmd) != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	res = WritePort(reader_index, 10+length, cmd);
+	CHECK_STATUS(res)
 
 	length = sizeof(cmd);
-	if (ReadPort(reader_index, &length, cmd) != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	res = ReadPort(reader_index, &length, cmd);
+	CHECK_STATUS(res)
 
 	if (length < STATUS_OFFSET+1)
 	{
