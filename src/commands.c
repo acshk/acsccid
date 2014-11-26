@@ -1,6 +1,7 @@
 /*
     commands.c: Commands sent to the card
-    Copyright (C) 2003-2004   Ludovic Rousseau
+    Copyright (C) 2003-2010   Ludovic Rousseau
+    Copyright (C) 2005 Martin Paljak
     Copyright (C) 2010-2012   Advanced Card Systems Ltd.
 
     This library is free software; you can redistribute it and/or
@@ -19,7 +20,7 @@
 */
 
 /*
- * $Id: commands.c 4235 2009-05-29 11:42:46Z rousseau $
+ * $Id: commands.c 6975 2014-09-04 11:33:05Z rousseau $
  */
 
 #include <string.h>
