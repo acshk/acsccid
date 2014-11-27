@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>MAGIC_BUNDLE</string>
+	<string>MAGIC_TARGET</string>
 	<key>CFBundleIdentifier</key>
 	<string>hk.com.acs.ccid</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -20,7 +20,7 @@
 	<key>CFBundleVersion</key>
 	<string>0.0.1d1</string>
 	<key>ifdCapabilities</key>
-	<string>MAGIC_IFDCAPABILITIES</string>
+	<string>0x00000000</string>
 
 	<!-- Possible values for ifdCapabilities bits
 	1: IFD_GENERATE_HOTPLUG
@@ -85,9 +85,14 @@
 
 	bits 4 & 5: (values 0, 16, 32, 48)
 	  0: power on the card at 5V (default value)
-	 16: power on the card at 3V and then, it 3V fails use 5V
+	 16: power on the card at 3V and then, if 3V fails use 5V
 	 32: power on the card at 1.8V, then 3V and then 5V
 	 48: let the reader decide
+
+	0x40: DRIVER_OPTION_DISABLE_PIN_RETRIES
+		The Gemalto pinpad reader sends a VERIFY command with no PIN
+		value in order to retreive the remaining retries from the card.
+		Some cards (like the OpenPGP card) do not support this.
 
 	0x40: DRIVER_OPTION_REMOVE_PUPI_FROM_ATR
 		Remove PUPI from ATR if ISO 14443-B card is detected (ACR85/ACR1222).
@@ -153,9 +158,6 @@
 
 	Default value: 0
 	-->
-
-	<key>CFBundleExecutable</key>
-	<string>MAGIC_TARGET</string>
 
 	<key>ifdManufacturerString</key>
 	<string>Advanced Card Systems Ltd.</string>
