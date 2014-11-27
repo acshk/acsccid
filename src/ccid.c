@@ -1096,7 +1096,7 @@ static int ACR83_DisplayLcdMessage(unsigned int reader_index, const char *messag
 	// Copy message to command
 	memcpy(command + 5, message, messageLen);
 
-	if (CmdEscape(reader_index, command, commandLen, response, &responseLen) == IFD_SUCCESS)
+	if (CmdEscape(reader_index, command, commandLen, response, &responseLen, 0) == IFD_SUCCESS)
 	{
 		if ((responseLen >= 5) && (response[0] == 0x85) &&
 			(response[3] == 0) && (response[4] == 0))
