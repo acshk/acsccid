@@ -735,6 +735,7 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 	unsigned int len;
 	int convention;
 	int reader_index;
+	int atr_ret;
 
 	BYTE Fl;
 	BYTE Dl;
@@ -754,8 +755,8 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
 
-	DEBUG_INFO4("protocol T=%d, %s (lun: %X)", Protocol-SCARD_PROTOCOL_T0,
-		CcidSlots[reader_index].readerName, Lun);
+	DEBUG_INFO4("protocol T=" DWORD_D ", %s (lun: " DWORD_X ")",
+		Protocol-SCARD_PROTOCOL_T0, CcidSlots[reader_index].readerName, Lun);
 
 	/* Set to zero buffer */
 	memset(pps, 0, sizeof(pps));
@@ -768,11 +769,16 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 	/* Do not send CCID command SetParameters or PPS to the CCID
 	 * The CCID will do this himself */
 	if (ccid_desc->dwFeatures & CCID_CLASS_AUTO_PPS_PROP)
+	{
+		DEBUG_COMM2("Timeout: %d ms", ccid_desc->readTimeout);
 		goto end;
+	}
 
 	/* Get ATR of the card */
-	(void)ATR_InitFromArray(&atr, ccid_slot->pcATRBuffer,
+	atr_ret = ATR_InitFromArray(&atr, ccid_slot->pcATRBuffer,
 		ccid_slot->nATRLength);
+	if (ATR_MALFORMED == atr_ret)
+		return IFD_PROTOCOL_NOT_SUPPORTED;
 
 	/* Apply Extra EGT patch for bogus cards */
 	extra_egt(&atr, ccid_desc, Protocol);
@@ -983,8 +989,7 @@ again:
 	{
 		int default_protocol;
 
-		if (ATR_MALFORMED == ATR_GetDefaultProtocol(&atr, &default_protocol))
-			return IFD_PROTOCOL_NOT_SUPPORTED;
+		ATR_GetDefaultProtocol(&atr, &default_protocol, NULL);
 
 		/* if the requested protocol is not the default one
 		 * or a TA1/PPS1 is present */
@@ -997,15 +1002,15 @@ again:
 			{
 				/* convert from ATR_PROTOCOL_TYPE_T? to SCARD_PROTOCOL_T? */
 				Protocol = default_protocol +
-				   	(SCARD_PROTOCOL_T0 - ATR_PROTOCOL_TYPE_T0);
-				DEBUG_INFO2("PPS not supported on O2Micro readers. Using T=%d",
+					(SCARD_PROTOCOL_T0 - ATR_PROTOCOL_TYPE_T0);
+				DEBUG_INFO2("PPS not supported on O2Micro readers. Using T=" DWORD_D,
 					Protocol - SCARD_PROTOCOL_T0);
 			}
 			else
 #endif
 			if (PPS_Exchange(reader_index, pps, &len, &pps1) != PPS_OK)
 			{
-				DEBUG_INFO("PPS_Exchange Failed");
+				DEBUG_INFO1("PPS_Exchange Failed");
 
 				if (pps[2] != 0x11)
 				{
@@ -1115,12 +1120,12 @@ again:
 			param[5] = ifsc;
 		}
 
-		DEBUG_COMM2("Timeout: %d seconds", ccid_desc->readTimeout);
+		DEBUG_COMM2("Timeout: %d ms", ccid_desc->readTimeout);
 
 		ret = ccid_slot->pSetParameters(reader_index, 1, sizeof(param), param);
 		if (IFD_SUCCESS != ret)
 		{
-			DEBUG_INFO("SetParameters (T1) Failed");
+			DEBUG_INFO1("SetParameters (T1) Failed");
 
 			if (param[0] != 0x11)
 			{
@@ -1176,13 +1181,12 @@ again:
 		ccid_desc->readTimeout = T0_card_timeout(f, d, param[2] /* TC1 */,
 			param[3] /* TC2 */, ccid_desc->dwDefaultClock);
 
-		DEBUG_COMM2("Communication timeout: %d seconds",
-			ccid_desc->readTimeout);
+		DEBUG_COMM2("Communication timeout: %d ms", ccid_desc->readTimeout);
 
 		ret = ccid_slot->pSetParameters(reader_index, 0, sizeof(param), param);
 		if (IFD_SUCCESS != ret)
 		{
-			DEBUG_INFO("SetParameters (T0) Failed");
+			DEBUG_INFO1("SetParameters (T0) Failed");
 
 			if (param[0] != 0x11)
 			{
