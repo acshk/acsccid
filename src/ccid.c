@@ -1028,7 +1028,7 @@ void EnablePicc(unsigned int reader_index, int enabled)
 	{
 		// Turn ON polling
 		responseLen = sizeof(response);
-		if (CmdEscape(reader_index, pollingOn, sizeof(pollingOn), response, &responseLen) != IFD_SUCCESS)
+		if (CmdEscape(reader_index, pollingOn, sizeof(pollingOn), response, &responseLen, 0) != IFD_SUCCESS)
 		{
 			DEBUG_CRITICAL("Polling ON failed");
 		}
@@ -1044,7 +1044,7 @@ void EnablePicc(unsigned int reader_index, int enabled)
 	{
 		// Turn OFF polling
 		responseLen = sizeof(response);
-		if (CmdEscape(reader_index, pollingOff, sizeof(pollingOff), response, &responseLen) != IFD_SUCCESS)
+		if (CmdEscape(reader_index, pollingOff, sizeof(pollingOff), response, &responseLen, 0) != IFD_SUCCESS)
 		{
 			DEBUG_CRITICAL("Polling OFF failed");
 		}
