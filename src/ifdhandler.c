@@ -2667,7 +2667,6 @@ void extra_egt(ATR_t *atr, _ccid_descriptor *ccid_desc, DWORD Protocol)
 	unsigned int card_baudrate;
 	unsigned int default_baudrate;
 	double f, d;
-	int i;
 
 	/* if TA1 not present */
 	if (! atr->ib[0][ATR_INTERFACE_BYTE_TA].present)
@@ -2700,11 +2699,13 @@ void extra_egt(ATR_t *atr, _ccid_descriptor *ccid_desc, DWORD Protocol)
 			/* Init TC1 */
 			atr->ib[0][ATR_INTERFACE_BYTE_TC].present = TRUE;
 			atr->ib[0][ATR_INTERFACE_BYTE_TC].value = 2;
-			DEBUG_INFO("Extra EGT patch applied");
+			DEBUG_INFO1("Extra EGT patch applied");
 		}
 
 		if (SCARD_PROTOCOL_T1 == Protocol)
 		{
+			int i;
+
 			/* TBi (i>2) present? BWI/CWI */
 			for (i=2; i<ATR_MAX_PROTOCOLS; i++)
 			{
@@ -2715,7 +2716,7 @@ void extra_egt(ATR_t *atr, _ccid_descriptor *ccid_desc, DWORD Protocol)
 					/* Init TC1 */
 					atr->ib[0][ATR_INTERFACE_BYTE_TC].present = TRUE;
 					atr->ib[0][ATR_INTERFACE_BYTE_TC].value = 2;
-					DEBUG_INFO("Extra EGT patch applied");
+					DEBUG_INFO1("Extra EGT patch applied");
 
 					/* only the first TBi (i>2) must be used */
 					break;
