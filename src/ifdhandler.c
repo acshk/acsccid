@@ -1288,7 +1288,9 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 	RESPONSECODE return_value = IFD_SUCCESS;
 	unsigned char pcbuffer[10+MAX_ATR_SIZE];
 	int reader_index;
+#ifndef NO_LOG
 	const char *actions[] = { "PowerUp", "PowerDown", "Reset" };
+#endif
 	unsigned int oldReadTimeout;
 	_ccid_descriptor *ccid_descriptor;
 
@@ -1298,8 +1300,8 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
 
-	DEBUG_INFO4("action: %s, %s (lun: %X)", actions[Action-IFD_POWER_UP],
-		CcidSlots[reader_index].readerName, Lun);
+	DEBUG_INFO4("action: %s, %s (lun: " DWORD_X ")",
+		actions[Action-IFD_POWER_UP], CcidSlots[reader_index].readerName, Lun);
 
 	switch (Action)
 	{
@@ -1329,6 +1331,19 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			ccid_descriptor = get_ccid_descriptor(reader_index);
 			oldReadTimeout = ccid_descriptor->readTimeout;
 
+			/* The German eID card is bogus and need to be powered off
+			 * before a power on */
+			if (KOBIL_IDTOKEN == ccid_descriptor -> readerID)
+			{
+				/* send the command */
+				if (IFD_SUCCESS != CmdPowerOff(reader_index))
+				{
+					DEBUG_CRITICAL("PowerDown failed");
+					return_value = IFD_ERROR_POWER_ACTION;
+					goto end;
+				}
+			}
+
 			/* use a very long timeout since the card can use up to
 			 * (9600+12)*33 ETU in total
 			 * 12 ETU per byte
@@ -1337,7 +1352,7 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			 * 1 ETU = 372 cycles during ATR
 			 * with a 4 MHz clock => 29 seconds
 			 */
-			ccid_descriptor->readTimeout = 10;	// 60 seconds is too long
+			ccid_descriptor->readTimeout = 10*1000;	// 60 seconds is too long
 
 			nlength = sizeof(pcbuffer);
 			return_value = CcidSlots[reader_index].pPowerOn(reader_index, &nlength, pcbuffer,
@@ -1384,8 +1399,9 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			if ((return_value != IFD_SUCCESS) || (nlength == 0))	// ACR1222: No ATR is returned
 			{
 				/* used by GemCore SIM PRO: no card is present */
-				get_ccid_descriptor(reader_index)->dwSlotStatus
-					= IFD_ICC_NOT_PRESENT;;
+				if (GEMCORESIMPRO == ccid_descriptor -> readerID)
+					get_ccid_descriptor(reader_index)->dwSlotStatus
+						= IFD_ICC_NOT_PRESENT;
 
 				DEBUG_CRITICAL("PowerUp failed");
 				return_value = IFD_ERROR_POWER_ACTION;
