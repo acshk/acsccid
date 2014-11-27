@@ -2328,7 +2328,7 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
 
-	DEBUG_PERIODIC3("%s (lun: %X)", CcidSlots[reader_index].readerName, Lun);
+	DEBUG_PERIODIC3("%s (lun: " DWORD_X ")", CcidSlots[reader_index].readerName, Lun);
 
 	ccid_descriptor = get_ccid_descriptor(reader_index);
 
@@ -2336,9 +2336,12 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	slot_index = ccid_descriptor->bCurrentSlotIndex;
 
 	// Return dwSlotstatus if it is a SAM slot or reader is GEMCORESIMPRO
-	if ((ccid_descriptor->isSamSlot) ||
-		(GEMCORESIMPRO == ccid_descriptor->readerID))
+	if ((ccid_descriptor->isSamSlot)
+		|| ((GEMCORESIMPRO == ccid_descriptor->readerID)
+		&& (ccid_descriptor->IFD_bcdDevice < 0x0200)))
 	{
+		/* GemCore SIM Pro firmware 2.00 and up features
+		 * a full independant second slot */
 		return_value = ccid_descriptor->dwSlotStatus;
 		goto end;
 	}
@@ -2357,8 +2360,8 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	// ACR122U v2.00 - v2.04
 	// Simulate bStatus by reading bmSlotIccState from interrupt endpoint
 	if ((ccid_descriptor->readerID == ACS_ACR122U) &&
-		(ccid_descriptor->bcdDevice >= 0x0200) &&
-		(ccid_descriptor->bcdDevice <= 0x0204))
+		(ccid_descriptor->IFD_bcdDevice >= 0x0200) &&
+		(ccid_descriptor->IFD_bcdDevice <= 0x0204))
 	{
 #ifndef __APPLE__
 		InterruptRead(reader_index, 100);
@@ -2474,14 +2477,14 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 		if (! (LogLevel & DEBUG_LEVEL_PERIODIC))
 			LogLevel &= ~DEBUG_LEVEL_COMM;
 
-		ret = CmdEscape(reader_index, cmd, sizeof(cmd), res, &length_res);
+		ret = CmdEscape(reader_index, cmd, sizeof(cmd), res, &length_res, 0);
 
 		/* set back the old LogLevel */
 		LogLevel = oldLogLevel;
 
 		if (ret != IFD_SUCCESS)
 		{
-			DEBUG_INFO("CmdEscape failed");
+			DEBUG_INFO1("CmdEscape failed");
 			/* simulate a card absent */
 			res[0] = 0;
 		}
