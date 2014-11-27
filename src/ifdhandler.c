@@ -2768,13 +2768,13 @@ static unsigned int T0_card_timeout(double f, double d, int TC1, int TC2,
 	 * 5 bytes header cmd  ->
 	 *                    <-		Procedure byte
 	 * 256 data bytes	   ->
-	 * 					  <-		SW1-SW2
+	 *					  <-		SW1-SW2
 	 * = 261 EGT       + 3 WWT     + 3 WWT
 	 *
 	 * ISO_OUT Timeout is the sum of:
 	 * Terminal:                    Smart card:
 	 * 5 bytes header cmd  ->
-	 * 					  <-        Procedure byte + 256 data bytes + SW1-SW2
+	 *					  <-        Procedure byte + 256 data bytes + SW1-SW2
 	 * = 5 EGT          + 1 WWT     + 259 WWT
 	 */
 
@@ -2783,7 +2783,7 @@ static unsigned int T0_card_timeout(double f, double d, int TC1, int TC2,
 
 	/* may happen with non ISO cards */
 	if ((0 == f) || (0 == d) || (0 == clock_frequency))
-		return 60;	/* 60 seconds */
+		return 60 * 1000;	/* 60 seconds */
 
 	/* EGT */
 	/* see ch. 6.5.3 Extra Guard Time, page 12 of ISO 7816-3 */
@@ -2795,16 +2795,11 @@ static unsigned int T0_card_timeout(double f, double d, int TC1, int TC2,
 
 	/* ISO in */
 	t  = 261 * EGT + (3 + 3) * WWT;
-	/* Convert from milliseonds to seconds rouned to the upper value
-	 * use +1 instead of ceil() to round up to the nearest integer
-	 * so we can avoid a dependency on the math library */
-	t = t/1000 +1;
 	if (timeout < t)
 		timeout = t;
 
 	/* ISO out */
 	t = 5 * EGT + (1 + 259) * WWT;
-	t = t/1000 +1;
 	if (timeout < t)
 		timeout = t;
 
