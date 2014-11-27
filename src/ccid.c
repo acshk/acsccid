@@ -1066,7 +1066,7 @@ static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFi
 	unsigned char response[3 + 6];
 	unsigned int responseLen = sizeof(response);
 
-	if (CmdEscape(reader_index, command, commandLen, response, &responseLen) == IFD_SUCCESS)
+	if (CmdEscape(reader_index, command, commandLen, response, &responseLen, 0) == IFD_SUCCESS)
 	{
 		if ((responseLen >= 7) && (response[0] == 0x84))
 		{
