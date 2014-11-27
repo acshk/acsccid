@@ -2828,7 +2828,7 @@ static unsigned int T1_card_timeout(double f, double d, int TC1,
 
 	/* may happen with non ISO cards */
 	if ((0 == f) || (0 == d) || (0 == clock_frequency))
-		return 60;	/* 60 seconds */
+		return 60 * 1000;	/* 60 seconds */
 
 	/* see ch. 6.5.2 Transmission factors F and D, page 12 of ISO 7816-3 */
 	etu = f / d / clock_frequency;
@@ -2847,10 +2847,9 @@ static unsigned int T1_card_timeout(double f, double d, int TC1,
 
 	timeout = 260*EGT + BWT + 260*CWT;
 
-	/* Convert from milliseonds to seconds rounded to the upper value
-	 * we use +1 instead of ceil() to round up to the nearest greater integer
-	 * so we can avoid a dependency on the math library */
-	timeout = timeout/1000 +1;
+	/* This is the card/reader timeout.  Add 1 second for the libusb
+	 * timeout so we get the error from the reader. */
+	timeout += 1000;
 
 	return timeout;
 } /* T1_card_timeout  */
