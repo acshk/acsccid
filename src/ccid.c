@@ -1115,7 +1115,7 @@ static int ACR1222_GetFirmwareVersion(unsigned int reader_index, char *firmwareV
 	unsigned char response[300];
 	unsigned int responseLen = sizeof(response);
 
-	if (CmdEscape(reader_index, command, sizeof(command), response, &responseLen) == IFD_SUCCESS)
+	if (CmdEscape(reader_index, command, sizeof(command), response, &responseLen, 0) == IFD_SUCCESS)
 	{
 		if (*pFirmwareVersionLen >= responseLen - 5 + 1)
 		{
