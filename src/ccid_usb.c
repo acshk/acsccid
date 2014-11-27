@@ -1705,6 +1705,35 @@ int InterruptRead(int reader_index, int timeout /* in ms */)
 } /* InterruptRead */
 
 
+/*****************************************************************************
+ *
+ *					Stop the async loop
+ *
+ ****************************************************************************/
+void InterruptStop(int reader_index)
+{
+	struct libusb_transfer *transfer;
+
+	/* Multislot reader: redirect to Multi_InterrupStop */
+	if (usbDevice[reader_index].multislot_extension != NULL)
+	{
+		Multi_InterruptStop(reader_index);
+		return;
+	}
+
+	transfer = usbDevice[reader_index].polling_transfer;
+	usbDevice[reader_index].polling_transfer = NULL;
+	if (transfer)
+	{
+		int ret;
+
+		ret = libusb_cancel_transfer(transfer);
+		if (ret < 0)
+			DEBUG_CRITICAL2("libusb_cancel_transfer failed: %d", ret);
+	}
+} /* InterruptStop */
+
+
 #ifdef __APPLE__
 // Card detection thread
 static void *CardDetectionThread(void *pParam)
