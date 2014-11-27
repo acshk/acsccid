@@ -2558,24 +2558,59 @@ CcidDesc *get_ccid_slot(unsigned int reader_index)
 
 void init_driver(void)
 {
-	char keyValue[TOKEN_MAX_VALUE_SIZE];
 	char infofile[FILENAME_MAX];
 	char *e;
+	int rv;
+	list_t plist, *values;
 
-	DEBUG_INFO("Driver version: " VERSION);
+	DEBUG_INFO1("Driver version: " VERSION);
 
 	/* Info.plist full patch filename */
 	(void)snprintf(infofile, sizeof(infofile), "%s/%s/Contents/Info.plist",
 		PCSCLITE_HP_DROPDIR, BUNDLE);
 
-	/* Log level */
-	if (0 == LTPBundleFindValueWithKey(infofile, "ifdLogLevel", keyValue, 0))
+	rv = bundleParse(infofile, &plist);
+	if (0 == rv)
 	{
-		/* convert from hex or dec or octal */
-		LogLevel = strtoul(keyValue, NULL, 0);
+		/* Log level */
+		rv = LTPBundleFindValueWithKey(&plist, "ifdLogLevel", &values);
+		if (0 == rv)
+		{
+			/* convert from hex or dec or octal */
+			LogLevel = strtoul(list_get_at(values, 0), NULL, 0);
 
-		/* print the log level used */
-		DEBUG_INFO2("LogLevel: 0x%.4X", LogLevel);
+			/* print the log level used */
+			DEBUG_INFO2("LogLevel: 0x%.4X", LogLevel);
+		}
+
+		/* Driver options */
+		rv = LTPBundleFindValueWithKey(&plist, "ifdDriverOptions", &values);
+		if (0 == rv)
+		{
+			/* convert from hex or dec or octal */
+			DriverOptions = strtoul(list_get_at(values, 0), NULL, 0);
+
+			/* print the log level used */
+			DEBUG_INFO2("DriverOptions: 0x%.4X", DriverOptions);
+		}
+
+		// Card voltage selection for ACR38U, ACR38U-SAM and SCR21U
+		rv = LTPBundleFindValueWithKey(&plist, "ifdACR38CardVoltage", &values);
+		if (0 == rv)
+		{
+			ACR38CardVoltage = strtoul(list_get_at(values, 0), NULL, 0);
+			DEBUG_INFO2("ACR38CardVoltage: %d", ACR38CardVoltage);
+		}
+
+		// Card type selection for ACR38U, ACR38U-SAM and SCR21U
+		rv = LTPBundleFindValueWithKey(&plist, "ifdACR38CardType", &values);
+		if (0 == rv)
+		{
+			ACR38CardType = strtoul(list_get_at(values, 0), NULL, 0);
+			DEBUG_INFO2("ACR38CardType: %d", ACR38CardType);
+		}
+
+		bundleRelease(&plist);
 	}
 
 	e = getenv("LIBCCID_ifdLogLevel");
@@ -2586,16 +2621,6 @@ void init_driver(void)
 
 		/* print the log level used */
 		DEBUG_INFO2("LogLevel from LIBCCID_ifdLogLevel: 0x%.4X", LogLevel);
-	}
-
-	/* Driver options */
-	if (0 == LTPBundleFindValueWithKey(infofile, "ifdDriverOptions", keyValue, 0))
-	{
-		/* convert from hex or dec or octal */
-		DriverOptions = strtoul(keyValue, NULL, 0);
-
-		/* print the log level used */
-		DEBUG_INFO2("DriverOptions: 0x%.4X", DriverOptions);
 	}
 
 	/* get the voltage parameter */
@@ -2616,20 +2641,6 @@ void init_driver(void)
 		case 3:
 			PowerOnVoltage = VOLTAGE_AUTO;
 			break;
-	}
-
-	// Card voltage selection for ACR38U, ACR38U-SAM and SCR21U
-	if (0 == LTPBundleFindValueWithKey(infofile, "ifdACR38CardVoltage", keyValue, 0))
-	{
-		ACR38CardVoltage = strtoul(keyValue, NULL, 0);
-		DEBUG_INFO2("ACR38CardVoltage: %d", ACR38CardVoltage);
-	}
-
-	// Card type selection for ACR38U, ACR38U-SAM and SCR21U
-	if (0 == LTPBundleFindValueWithKey(infofile, "ifdACR38CardType", keyValue, 0))
-	{
-		ACR38CardType = strtoul(keyValue, NULL, 0);
-		DEBUG_INFO2("ACR38CardType: %d", ACR38CardType);
 	}
 
 	/* initialise the Lun to reader_index mapping */
