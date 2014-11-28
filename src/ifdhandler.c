@@ -71,6 +71,7 @@ int LogLevel = DEBUG_LEVEL_CRITICAL | DEBUG_LEVEL_INFO;
 int DriverOptions = 0;
 int PowerOnVoltage = VOLTAGE_5V;
 static int DebugInitialized = FALSE;
+int ACSDriverOptions = 0;
 
 // Card voltage and card type selection for ACR38U, ACR38U-SAM and SCR21U
 BYTE ACR38CardVoltage = 0;
@@ -1367,7 +1368,7 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			}
 
 			// Enable/Disable PICC
-			if (DriverOptions & DRIVER_OPTION_DISABLE_PICC)
+			if (ACSDriverOptions & ACS_DRIVER_OPTION_DISABLE_PICC)
 			{
 				if ((ccid_descriptor->firmwareFixEnabled) &&
 					(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
@@ -1409,7 +1410,7 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			}
 
 			// Remove PUPI from ATR
-			if (DriverOptions & DRIVER_OPTION_REMOVE_PUPI_FROM_ATR)
+			if (ACSDriverOptions & ACS_DRIVER_OPTION_REMOVE_PUPI_FROM_ATR)
 			{
 				if ((ccid_descriptor->firmwareFixEnabled) &&
 					(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
@@ -2506,7 +2507,7 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 #endif
 
 	// Enable/disable PICC
-	if (DriverOptions & DRIVER_OPTION_DISABLE_PICC)
+	if (ACSDriverOptions & ACS_DRIVER_OPTION_DISABLE_PICC)
 	{
 		if ((ccid_descriptor->firmwareFixEnabled) &&
 			(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
@@ -2592,6 +2593,14 @@ void init_driver(void)
 
 			/* print the log level used */
 			DEBUG_INFO2("DriverOptions: 0x%.4X", DriverOptions);
+		}
+
+		// ACS driver options
+		rv = LTPBundleFindValueWithKey(&plist, "ifdACSDriverOptions", &values);
+		if (0 == rv)
+		{
+			ACSDriverOptions = strtoul(list_get_at(values, 0), NULL, 0);
+			DEBUG_INFO2("ACSDriverOptions: 0x%.4X", ACSDriverOptions);
 		}
 
 		// Card voltage selection for ACR38U, ACR38U-SAM and SCR21U

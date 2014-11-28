@@ -51,7 +51,7 @@
 	-->
 
 	<key>ifdDriverOptions</key>
-	<string>0x00C0</string>
+	<string>0x0000</string>
 
 	<!-- Possible values for ifdDriverOptions
 	1: DRIVER_OPTION_CCID_EXCHANGE_AUTHORIZED
@@ -94,13 +94,20 @@
 		value in order to retreive the remaining retries from the card.
 		Some cards (like the OpenPGP card) do not support this.
 
-	0x40: DRIVER_OPTION_REMOVE_PUPI_FROM_ATR
+	Default value: 0
+	-->
+
+	<key>ifdACSDriverOptions</key>
+	<string>0x0003</string>
+
+	<!-- Possible values for ifdACSDriverOptions
+	1: ACS_DRIVER_OPTION_REMOVE_PUPI_FROM_ATR
 		Remove PUPI from ATR if ISO 14443-B card is detected (ACR85/ACR1222).
 
-	0x80: DRIVER_OPTION_DISABLE_PICC
+	2: ACS_DRIVER_OPTION_DISABLE_PICC
 		Disable PICC if ICC is inserted (ACR85/ACR1222).
 
-	Default value: 0
+	Default value: 3
 	-->
 
 	<key>ifdACR38CardVoltage</key>
