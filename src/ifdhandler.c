@@ -2053,6 +2053,27 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			RxBuffer[p++] = features -> bEntryValidationCondition;	/* validation key pressed */
 		}
 
+		/* ACR83, APG8201 and APG8201Z */
+		if ((ACS_ACR83U == ccid_descriptor -> readerID)
+			|| (ACS_APG8201 == ccid_descriptor -> readerID)
+			|| (ACS_APG8201Z == ccid_descriptor -> readerID))
+		{
+			/* bMinPINSize */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bMinPINSize;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = 1;	/* min PIN size */
+
+			/* bMaxPINSize */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bMaxPINSize;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = 16;	/* max PIN size */
+
+			/* bEntryValidationCondition */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bEntryValidationCondition;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = 0x07;	/* default */
+		}
+
 		/* bPPDUSupport */
 		RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bPPDUSupport;
 		RxBuffer[p++] = 1;	/* length */
