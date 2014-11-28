@@ -896,7 +896,10 @@ RESPONSECODE CmdEscape(unsigned int reader_index,
 	if (timeout > 0)
 	{
 		old_read_timeout = ccid_descriptor -> readTimeout;
-		ccid_descriptor -> readTimeout = timeout;
+
+		// Set infinite timeout
+		ccid_descriptor -> readTimeout = (timeout == (unsigned int) -1) ?
+			0 : timeout;
 	}
 
 again:
