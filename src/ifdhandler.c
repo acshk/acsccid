@@ -2380,9 +2380,6 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 		(ccid_descriptor->IFD_bcdDevice >= 0x0200) &&
 		(ccid_descriptor->IFD_bcdDevice <= 0x0204))
 	{
-#ifndef __APPLE__
-		InterruptRead(reader_index, 100);
-#endif
 #ifdef __APPLE__
 		pthread_mutex_lock(ccid_descriptor->pbStatusLock);
 #endif
@@ -2423,9 +2420,6 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	}
 	else
 	{
-#ifndef __APPLE__
-		InterruptRead(reader_index, 10);
-#endif
 		return_value = CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer);
 	}
 
