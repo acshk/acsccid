@@ -1877,16 +1877,12 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		pcsc_tlv++;
 		iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 
-		/* IOCTL_SMARTCARD_VENDOR_IFD_EXCHANGE */
-		if (DriverOptions & DRIVER_OPTION_CCID_EXCHANGE_AUTHORIZED)
-		{
-			pcsc_tlv -> tag = FEATURE_CCID_ESC_COMMAND;
-			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_SMARTCARD_VENDOR_IFD_EXCHANGE);
-
-			pcsc_tlv++;
-			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
-		}
+		/* IOCTL_CCID_ESCAPE */
+		pcsc_tlv -> tag = FEATURE_CCID_ESC_COMMAND;
+		pcsc_tlv -> length = 0x04; /* always 0x04 */
+		pcsc_tlv -> value = htonl(IOCTL_CCID_ESCAPE);
+		pcsc_tlv++;
+		iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 
 		// APG8201Z supports vendor specific feature
 		if (ACS_APG8201Z == ccid_descriptor -> readerID)
