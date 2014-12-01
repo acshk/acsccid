@@ -22,20 +22,35 @@
  * $Id: ccid.c 6976 2014-09-04 11:35:46Z rousseau $
  */
 
+#include <config.h>
+
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include <pcsclite.h>
 #include <ifdhandler.h>
 
-#include "config.h"
 #include "debug.h"
 #include "ccid.h"
 #include "defs.h"
 #include "ccid_ifdhandler.h"
 #include "commands.h"
+#include "utils.h"
 #include "acr38cmd.h"
-#include "ccid_usb.h"
+
+#ifdef __APPLE__
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 
 static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFirmwareVersion);
 static int ACR83_DisplayLcdMessage(unsigned int reader_index, const char *message);
