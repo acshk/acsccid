@@ -20,11 +20,24 @@
 
 /* $Id: ifdhandler.c 6977 2014-09-04 11:36:54Z rousseau $ */
 
+#include <config.h>
+
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
-#include "config.h"
+#endif
+
 #include "misc.h"
 #include <pcsclite.h>
 #include <ifdhandler.h>
@@ -40,6 +53,7 @@
 #include "towitoko/atr.h"
 #include "towitoko/pps.h"
 #include "parser.h"
+#include "strlcpycat.h"
 
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
