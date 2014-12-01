@@ -30,21 +30,20 @@
 # ifdef S_SPLINT_S
 # include <sys/types.h>
 # endif
-#include <usb.h>
+#include <libusb.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <sys/time.h>
 #include <ifdhandler.h>
 
+#include <config.h>
 #include "misc.h"
 #include "ccid.h"
-#include "config.h"
 #include "debug.h"
 #include "defs.h"
 #include "utils.h"
 #include "parser.h"
 #include "ccid_ifdhandler.h"
-
-#ifdef __APPLE__
-#include <pthread.h>
-#endif
 
 
 /* write timeout
