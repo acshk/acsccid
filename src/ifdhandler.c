@@ -590,7 +590,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				ccid_desc = get_ccid_descriptor(reader_index);
 
 				/* CCID and not ICCD */
-				if ((PROTOCOL_CCID == ccid_desc -> bInterfaceProtocol)
+				if (((PROTOCOL_CCID == ccid_desc -> bInterfaceProtocol)
+					|| (PROTOCOL_ACR38 == ccid_desc -> bInterfaceProtocol))
 					/* 3 end points */
 					&& (3 == ccid_desc -> bNumEndpoints))
 				{
@@ -636,7 +637,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 
 				ccid_desc = get_ccid_descriptor(reader_index);
 				/* CCID and not ICCD */
-				if ((PROTOCOL_CCID == ccid_desc -> bInterfaceProtocol)
+				if (((PROTOCOL_CCID == ccid_desc -> bInterfaceProtocol)
+					|| (PROTOCOL_ACR38 == ccid_desc -> bInterfaceProtocol))
 					/* 3 end points */
 					&& (3 == ccid_desc -> bNumEndpoints))
 				{
