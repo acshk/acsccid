@@ -2163,11 +2163,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		unsigned int iBytesReturned;
 
 		iBytesReturned = RxLength;
-		old_read_timeout = ccid_descriptor -> readTimeout;
-		ccid_descriptor -> readTimeout = 0;	// Infinite
-		return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
-			&iBytesReturned);
-		ccid_descriptor -> readTimeout = old_read_timeout;
+		return_value = CmdEscape(reader_index, TxBuffer, TxLength,
+			RxBuffer, &iBytesReturned, -1);	// Infinite
 		*pdwBytesReturned = iBytesReturned;
 	}
 
@@ -2185,7 +2182,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			unsigned char response[3 + 6];
 			unsigned int responseLen = sizeof(response);
 
-			return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
+			return_value = CmdEscape(reader_index, command, commandLen,
+				response, &responseLen, 0);
 			if (return_value == IFD_SUCCESS)
 			{
 				if ((responseLen > 3) && (response[0] == 0x84))
@@ -2217,7 +2215,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 				// Copy message to command
 				memcpy(command + 5, TxBuffer, TxLength);
 
-				return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
+				return_value = CmdEscape(reader_index, command, commandLen,
+					response, &responseLen, 0);
 				if (return_value == IFD_SUCCESS)
 				{
 					if ((responseLen > 3) && (response[0] == 0x85))
@@ -2247,10 +2246,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 				// Copy message to command
 				memcpy(command + 5, TxBuffer, TxLength);
 
-				old_read_timeout = ccid_descriptor -> readTimeout;
-				ccid_descriptor -> readTimeout = 0;	// Infinite
-				return_value = CmdEscape(reader_index, command, commandLen, response, &responseLen);
-				ccid_descriptor -> readTimeout = old_read_timeout;
+				return_value = CmdEscape(reader_index, command, commandLen,
+					response, &responseLen, -1);	// Infinite
 				if (return_value == IFD_SUCCESS)
 				{
 					if ((responseLen > 3) && (response[0] == 0x86))
@@ -2291,11 +2288,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 				memcpy(command + 3, TxBuffer, TxLength);
 
 				iBytesReturned = RxLength;
-				old_read_timeout = ccid_descriptor -> readTimeout;
-				ccid_descriptor -> readTimeout = 0;	// Infinite
-				return_value = CmdEscape(reader_index, command, commandLen, RxBuffer,
-					&iBytesReturned);
-				ccid_descriptor -> readTimeout = old_read_timeout;
+				return_value = CmdEscape(reader_index, command, commandLen,
+					RxBuffer, &iBytesReturned, -1);	// Infinite
 				*pdwBytesReturned = iBytesReturned;
 
 				// Free command
