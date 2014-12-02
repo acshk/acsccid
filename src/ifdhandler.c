@@ -1724,7 +1724,6 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	 */
 	RESPONSECODE return_value = IFD_ERROR_NOT_SUPPORTED;
 	int reader_index;
-	int old_read_timeout;
 	_ccid_descriptor *ccid_descriptor;
 
 	reader_index = LunToReaderIndex(Lun);
@@ -1733,8 +1732,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 
 	ccid_descriptor = get_ccid_descriptor(reader_index);
 
-	DEBUG_INFO4("ControlCode: 0x%X, %s (lun: %X)", dwControlCode,
-		CcidSlots[reader_index].readerName, Lun);
+	DEBUG_INFO4("ControlCode: 0x" DWORD_X ", %s (lun: " DWORD_X ")",
+		dwControlCode, CcidSlots[reader_index].readerName, Lun);
 	DEBUG_INFO_XXD("Control TxBuffer: ", TxBuffer, TxLength);
 
 	/* Set the return length to 0 to avoid problems */
@@ -1773,9 +1772,31 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 
 	if (IOCTL_SMARTCARD_VENDOR_IFD_EXCHANGE == dwControlCode)
 	{
-		if (FALSE == (DriverOptions & DRIVER_OPTION_CCID_EXCHANGE_AUTHORIZED))
+		int allowed = (DriverOptions & DRIVER_OPTION_CCID_EXCHANGE_AUTHORIZED);
+		int readerID = ccid_descriptor -> readerID;
+
+		if (VENDOR_GEMALTO == GET_VENDOR(readerID))
 		{
-			DEBUG_INFO("ifd exchange (Escape command) not allowed");
+			unsigned char switch_interface[] = { 0x52, 0xF8, 0x04, 0x01, 0x00 };
+
+			/* get firmware version escape command */
+			if ((1 == TxLength) && (0x02 == TxBuffer[0]))
+				allowed = TRUE;
+
+			/* switch interface escape command on the GemProx DU
+			 * the next byte in the command is the interface:
+			 * 0x01 switch to contactless interface
+			 * 0x02 switch to contact interface
+			 */
+			if ((GEMALTOPROXDU == readerID)
+				&& (6 == TxLength)
+				&& (0 == memcmp(TxBuffer, switch_interface, sizeof(switch_interface))))
+				allowed = TRUE;
+		}
+
+		if (!allowed)
+		{
+			DEBUG_INFO1("ifd exchange (Escape command) not allowed");
 			return_value = IFD_COMMUNICATION_ERROR;
 		}
 		else
@@ -1783,26 +1804,28 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			unsigned int iBytesReturned;
 
 			iBytesReturned = RxLength;
-			old_read_timeout = ccid_descriptor -> readTimeout;
-			ccid_descriptor -> readTimeout = 0;	// Infinite
-			return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
-				&iBytesReturned);
-			ccid_descriptor -> readTimeout = old_read_timeout;
+			/* 30 seconds timeout for long commands */
+			return_value = CmdEscape(reader_index, TxBuffer, TxLength,
+				RxBuffer, &iBytesReturned, 30*1000);
 			*pdwBytesReturned = iBytesReturned;
 		}
 	}
 
-	/* Implement the PC/SC v2.02.05 Part 10 IOCTL mechanism */
+	/* Implement the PC/SC v2.02.07 Part 10 IOCTL mechanism */
 
 	/* Query for features */
-	if (CM_IOCTL_GET_FEATURE_REQUEST == dwControlCode)
+	/* 0x313520 is the Windows value for SCARD_CTL_CODE(3400)
+	 * This hack is needed for RDP applications */
+	if ((CM_IOCTL_GET_FEATURE_REQUEST == dwControlCode)
+		|| (0x313520 == dwControlCode))
 	{
 		unsigned int iBytesReturned = 0;
 		PCSC_TLV_STRUCTURE *pcsc_tlv = (PCSC_TLV_STRUCTURE *)RxBuffer;
+		int readerID = ccid_descriptor -> readerID;
 
-		/* we need room for up to for records */
-		if (RxLength < 4 * sizeof(PCSC_TLV_STRUCTURE))
-			return IFD_COMMUNICATION_ERROR;
+		/* we need room for up to five records */
+		if (RxLength < 6 * sizeof(PCSC_TLV_STRUCTURE))
+			return IFD_ERROR_INSUFFICIENT_BUFFER;
 
 		/* We can only support direct verify and/or modify currently */
 		if (ccid_descriptor -> bPINSupport & CCID_CLASS_PIN_VERIFY)
@@ -1825,21 +1848,40 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 		}
 
-#ifdef FEATURE_IFD_PIN_PROPERTIES
-		/* We can always forward wLcdLayout */
-		pcsc_tlv -> tag = FEATURE_IFD_PIN_PROPERTIES;
-		pcsc_tlv -> length = 0x04; /* always 0x04 */
-		pcsc_tlv -> value = htonl(IOCTL_FEATURE_IFD_PIN_PROPERTIES);
+		/* Provide IFD_PIN_PROPERTIES only for pinpad readers */
+		if (ccid_descriptor -> bPINSupport)
+		{
+			pcsc_tlv -> tag = FEATURE_IFD_PIN_PROPERTIES;
+			pcsc_tlv -> length = 0x04; /* always 0x04 */
+			pcsc_tlv -> value = htonl(IOCTL_FEATURE_IFD_PIN_PROPERTIES);
 
+			pcsc_tlv++;
+			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
+		}
+
+		if ((KOBIL_TRIBANK == readerID)
+			|| (KOBIL_MIDENTITY_VISUAL == readerID))
+		{
+			pcsc_tlv -> tag = FEATURE_MCT_READER_DIRECT;
+			pcsc_tlv -> length = 0x04; /* always 0x04 */
+			pcsc_tlv -> value = htonl(IOCTL_FEATURE_MCT_READER_DIRECT);
+
+			pcsc_tlv++;
+			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
+		}
+
+		pcsc_tlv -> tag = FEATURE_GET_TLV_PROPERTIES;
+		pcsc_tlv -> length = 0x04; /* always 0x04 */
+		pcsc_tlv -> value = htonl(IOCTL_FEATURE_GET_TLV_PROPERTIES);
 		pcsc_tlv++;
 		iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
-#endif
 
-		if (KOBIL_TRIBANK == ccid_descriptor -> readerID)
+		/* IOCTL_SMARTCARD_VENDOR_IFD_EXCHANGE */
+		if (DriverOptions & DRIVER_OPTION_CCID_EXCHANGE_AUTHORIZED)
 		{
-			pcsc_tlv -> tag = FEATURE_MCT_READERDIRECT;
+			pcsc_tlv -> tag = FEATURE_CCID_ESC_COMMAND;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_FEATURE_MCT_READERDIRECT);
+			pcsc_tlv -> value = htonl(IOCTL_SMARTCARD_VENDOR_IFD_EXCHANGE);
 
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
@@ -1860,26 +1902,206 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		return_value = IFD_SUCCESS;
 	}
 
-#ifdef FEATURE_IFD_PIN_PROPERTIES
 	/* Get PIN handling capabilities */
 	if (IOCTL_FEATURE_IFD_PIN_PROPERTIES == dwControlCode)
 	{
-		// pcsc-lite 1.4.x header files: missing PIN_PROPERTIES_STRUCTURE
-		// pcsc-lite 1.5.x header files: incorrect PIN_PROPERTIES_STRUCTURE
-		unsigned int wLcdLayout = ccid_descriptor -> wLcdLayout;
+		PIN_PROPERTIES_STRUCTURE *caps = (PIN_PROPERTIES_STRUCTURE *)RxBuffer;
+		int validation;
 
-		if (RxLength >= 4)
+		if (RxLength < sizeof(PIN_PROPERTIES_STRUCTURE))
+			return IFD_ERROR_INSUFFICIENT_BUFFER;
+
+		/* Only give the LCD size for now */
+		caps -> wLcdLayout = ccid_descriptor -> wLcdLayout;
+
+		/* Hardcoded special reader cases */
+		switch (ccid_descriptor->readerID)
 		{
-			RxBuffer[0] = wLcdLayout & 0xFF;
-			RxBuffer[1] = (wLcdLayout >> 8) & 0xFF;
-			RxBuffer[2] = 0x07;
-			RxBuffer[3] = 0;
-
-			*pdwBytesReturned = 4;
-			return_value = IFD_SUCCESS;
+			case GEMPCPINPAD:
+			case VEGAALPHA:
+			case CHERRYST2000:
+				validation = 0x02; /* Validation key pressed */
+				break;
+			default:
+				validation = 0x07; /* Default */
 		}
+
+		/* Gemalto readers providing firmware features */
+		if (ccid_descriptor -> gemalto_firmware_features)
+			validation = ccid_descriptor -> gemalto_firmware_features -> bEntryValidationCondition;
+
+		caps -> bEntryValidationCondition = validation;
+		caps -> bTimeOut2 = 0x00; /* We do not distinguish bTimeOut from TimeOut2 */
+
+		*pdwBytesReturned = sizeof(*caps);
+		return_value = IFD_SUCCESS;
 	}
-#endif
+
+	/* Reader features */
+	if (IOCTL_FEATURE_GET_TLV_PROPERTIES == dwControlCode)
+	{
+		int p = 0;
+		int tmp;
+
+		/* wLcdLayout */
+		RxBuffer[p++] = PCSCv2_PART10_PROPERTY_wLcdLayout;	/* tag */
+		RxBuffer[p++] = 2;	/* length */
+		tmp = ccid_descriptor -> wLcdLayout;
+		RxBuffer[p++] = tmp & 0xFF;	/* value in little endian order */
+		RxBuffer[p++] = (tmp >> 8) & 0xFF;
+
+		/* only if the reader has a display */
+		if (ccid_descriptor -> wLcdLayout)
+		{
+			/* wLcdMaxCharacters */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_wLcdMaxCharacters;	/* tag */
+			RxBuffer[p++] = 2;	/* length */
+			tmp = ccid_descriptor -> wLcdLayout & 0xFF;
+			RxBuffer[p++] = tmp & 0xFF;	/* value in little endian order */
+			RxBuffer[p++] = (tmp >> 8) & 0xFF;
+
+			/* wLcdMaxLines */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_wLcdMaxLines;	/* tag */
+			RxBuffer[p++] = 2;	/* length */
+			tmp = ccid_descriptor -> wLcdLayout >> 8;
+			RxBuffer[p++] = tmp & 0xFF;	/* value in little endian order */
+			RxBuffer[p++] = (tmp >> 8) & 0xFF;
+		}
+
+		/* bTimeOut2 */
+		RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bTimeOut2;
+		RxBuffer[p++] = 1;	/* length */
+		/* IFD does not distinguish bTimeOut from bTimeOut2 */
+		RxBuffer[p++] = 0x00;
+
+		/* sFirmwareID */
+		if (VENDOR_GEMALTO == GET_VENDOR(ccid_descriptor -> readerID))
+		{
+			unsigned char firmware[256];
+			const unsigned char cmd[] = { 0x02 };
+			RESPONSECODE ret;
+			unsigned int len;
+
+			len = sizeof(firmware);
+			ret = CmdEscape(reader_index, cmd, sizeof(cmd), firmware, &len, 0);
+
+			if (IFD_SUCCESS == ret)
+			{
+				RxBuffer[p++] = PCSCv2_PART10_PROPERTY_sFirmwareID;
+				RxBuffer[p++] = len;
+				memcpy(&RxBuffer[p], firmware, len);
+				p += len;
+			}
+		}
+
+		/* Gemalto PC Pinpad V1 */
+		if (((GEMPCPINPAD == ccid_descriptor -> readerID)
+			&& (0x0100 == ccid_descriptor -> IFD_bcdDevice))
+			/* Covadis Véga-Alpha */
+			|| (VEGAALPHA == ccid_descriptor->readerID))
+		{
+			/* bMinPINSize */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bMinPINSize;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = 4;	/* min PIN size */
+
+			/* bMaxPINSize */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bMaxPINSize;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = 8;	/* max PIN size */
+
+			/* bEntryValidationCondition */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bEntryValidationCondition;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = 0x02;	/* validation key pressed */
+		}
+
+		/* Cherry GmbH SmartTerminal ST-2xxx */
+		if (CHERRYST2000 == ccid_descriptor -> readerID)
+		{
+			/* bMinPINSize */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bMinPINSize;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = 0;	/* min PIN size */
+
+			/* bMaxPINSize */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bMaxPINSize;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = 25;	/* max PIN size */
+
+			/* bEntryValidationCondition */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bEntryValidationCondition;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = 0x02;	/* validation key pressed */
+		}
+
+		/* Gemalto readers providing firmware features */
+		if (ccid_descriptor -> gemalto_firmware_features)
+		{
+			struct GEMALTO_FIRMWARE_FEATURES *features = ccid_descriptor -> gemalto_firmware_features;
+
+			/* bMinPINSize */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bMinPINSize;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = features -> MinimumPINSize;	/* min PIN size */
+
+			/* bMaxPINSize */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bMaxPINSize;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = features -> MaximumPINSize;	/* max PIN size */
+
+			/* bEntryValidationCondition */
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bEntryValidationCondition;
+			RxBuffer[p++] = 1;	/* length */
+			RxBuffer[p++] = features -> bEntryValidationCondition;	/* validation key pressed */
+		}
+
+		/* bPPDUSupport */
+		RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bPPDUSupport;
+		RxBuffer[p++] = 1;	/* length */
+		RxBuffer[p++] =
+			(DriverOptions & DRIVER_OPTION_CCID_EXCHANGE_AUTHORIZED) ? 1 : 0;
+			/* bit0: PPDU is supported over SCardControl using
+			 * FEATURE_CCID_ESC_COMMAND */
+
+		/* wIdVendor */
+		{
+			int idVendor = ccid_descriptor -> readerID >> 16;
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_wIdVendor;
+			RxBuffer[p++] = 2;	/* length */
+			RxBuffer[p++] = idVendor & 0xFF;
+			RxBuffer[p++] = idVendor >> 8;
+		}
+
+		/* wIdProduct */
+		{
+			int idProduct = ccid_descriptor -> readerID & 0xFFFF;
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_wIdProduct;
+			RxBuffer[p++] = 2;	/* length */
+			RxBuffer[p++] = idProduct & 0xFF;
+			RxBuffer[p++] = idProduct >> 8;
+		}
+
+		/* dwMaxAPDUDataSize */
+		{
+			int MaxAPDUDataSize = 0; /* short APDU only by default */
+
+			/* reader is TPDU or extended APDU */
+			if ((ccid_descriptor -> dwFeatures & CCID_CLASS_EXTENDED_APDU)
+				|| (ccid_descriptor -> dwFeatures & CCID_CLASS_TPDU))
+				MaxAPDUDataSize = 0x10000;
+
+			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_dwMaxAPDUDataSize;
+			RxBuffer[p++] = 4;	/* length */
+			RxBuffer[p++] = MaxAPDUDataSize & 0xFF;
+			RxBuffer[p++] = (MaxAPDUDataSize >> 8) & 0xFF;
+			RxBuffer[p++] = (MaxAPDUDataSize >> 16) & 0xFF;
+			RxBuffer[p++] = (MaxAPDUDataSize >> 24) & 0xFF;
+		}
+
+		*pdwBytesReturned = p;
+		return_value = IFD_SUCCESS;
+	}
 
 	/* Verify a PIN, plain CCID */
 	if (IOCTL_FEATURE_VERIFY_PIN_DIRECT == dwControlCode)
@@ -1904,7 +2126,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	}
 
 	/* MCT: Multifunctional Card Terminal */
-	if (IOCTL_FEATURE_MCT_READERDIRECT == dwControlCode)
+	if (IOCTL_FEATURE_MCT_READER_DIRECT == dwControlCode)
 	{
 		if ( (TxBuffer[0] != 0x20)	/* CLA */
 			|| ((TxBuffer[1] & 0xF0) != 0x70)	/* INS */
@@ -1920,7 +2142,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			|| (TxBuffer[4] != 0x00)	/* Lind */
 		   )
 		{
-			DEBUG_INFO("MCT Command refused by driver");
+			DEBUG_INFO1("MCT Command refused by driver");
 			return_value = IFD_COMMUNICATION_ERROR;
 		}
 		else
@@ -1929,11 +2151,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 
 			/* we just transmit the buffer as a CCID Escape command */
 			iBytesReturned = RxLength;
-			old_read_timeout = ccid_descriptor -> readTimeout;
-			ccid_descriptor -> readTimeout = 0;	// Infinite
-			return_value = CmdEscape(reader_index, TxBuffer, TxLength, RxBuffer,
-				&iBytesReturned);
-			ccid_descriptor -> readTimeout = old_read_timeout;
+			return_value = CmdEscape(reader_index, TxBuffer, TxLength,
+				RxBuffer, &iBytesReturned, 0);
 			*pdwBytesReturned = iBytesReturned;
 		}
 	}
