@@ -1824,7 +1824,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		int readerID = ccid_descriptor -> readerID;
 
 		/* we need room for up to five records */
-		if (RxLength < 6 * sizeof(PCSC_TLV_STRUCTURE))
+		if (RxLength < 7 * sizeof(PCSC_TLV_STRUCTURE))
 			return IFD_ERROR_INSUFFICIENT_BUFFER;
 
 		/* We can only support direct verify and/or modify currently */
