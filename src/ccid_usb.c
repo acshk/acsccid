@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 # ifdef S_SPLINT_S
 # include <sys/types.h>
 # endif
