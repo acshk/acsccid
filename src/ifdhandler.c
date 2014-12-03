@@ -2536,7 +2536,7 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 					// Disable PICC
 					if (*(ccid_descriptor->pPiccEnabled))
 					{
-						DEBUG_INFO("Disabling PICC...");
+						DEBUG_INFO1("Disabling PICC...");
 						EnablePicc(piccReaderIndex, FALSE);
 						*(ccid_descriptor->pPiccEnabled) = FALSE;
 					}
@@ -2546,7 +2546,7 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 					if (!*(ccid_descriptor->pPiccEnabled))
 					{
 						// Enable PICC
-						DEBUG_INFO("Enabling PICC...");
+						DEBUG_INFO1("Enabling PICC...");
 						EnablePicc(piccReaderIndex, TRUE);
 						*(ccid_descriptor->pPiccEnabled) = TRUE;
 					}
