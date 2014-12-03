@@ -17,10 +17,21 @@
 	Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include "config.h"
+#include <config.h>
+
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include <pcsclite.h>
 #include <ifdhandler.h>
 #include <reader.h>
@@ -32,7 +43,6 @@
 #include "defs.h"
 #include "ccid_ifdhandler.h"
 #include "debug.h"
-#include "ccid_usb.h"
 
 #define ACR38_HEADER_SIZE		4
 #define ACR38_STATUS_OFFSET		1
