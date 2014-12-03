@@ -2626,7 +2626,7 @@ void init_driver(void)
 		if (0 == rv)
 		{
 			ACR38CardType = strtoul(list_get_at(values, 0), NULL, 0);
-			DEBUG_INFO2("ACR38CardType: %d", ACR38CardType);
+			DEBUG_INFO2("ACR38CardType: " DWORD_D "", ACR38CardType);
 		}
 
 		bundleRelease(&plist);
