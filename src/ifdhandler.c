@@ -1373,9 +1373,9 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			if (ACSDriverOptions & ACS_DRIVER_OPTION_DISABLE_PICC)
 			{
 				if ((ccid_descriptor->firmwareFixEnabled) &&
-					(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+					((((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
 					(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER)) &&
-					(ccid_descriptor->bCurrentSlotIndex == 0) ||
+					(ccid_descriptor->bCurrentSlotIndex == 0)) ||
 					(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_ICC)))
 				{
 					int i = 0;
@@ -1415,9 +1415,9 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			if (ACSDriverOptions & ACS_DRIVER_OPTION_REMOVE_PUPI_FROM_ATR)
 			{
 				if ((ccid_descriptor->firmwareFixEnabled) &&
-					(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+					((((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
 					(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER)) &&
-					(ccid_descriptor->bCurrentSlotIndex == 1) ||
+					(ccid_descriptor->bCurrentSlotIndex == 1)) ||
 					(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC)))
 				{
 					// ATR: 3B 8N 80 01 50 XX XX XX XX ... TCK
