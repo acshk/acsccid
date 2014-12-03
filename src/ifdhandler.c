@@ -838,7 +838,7 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 	// Check if card supports this protocol (Mac OS X)
 	if (!(protocolTypes & Protocol))
 	{
-		DEBUG_COMM2("T=%d not supported", Protocol-SCARD_PROTOCOL_T0);
+		DEBUG_COMM2("T=" DWORD_D " not supported", Protocol-SCARD_PROTOCOL_T0);
 		return IFD_ERROR_PTS_FAILURE;
 	}
 
