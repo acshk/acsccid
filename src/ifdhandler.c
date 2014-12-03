@@ -2402,9 +2402,9 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	}
 	// Enable/disable PICC
 	else if ((ccid_descriptor->firmwareFixEnabled) &&
-		(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+		((((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
 		(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER)) &&
-		(ccid_descriptor->bCurrentSlotIndex == 1) ||
+		(ccid_descriptor->bCurrentSlotIndex == 1)) ||
 		(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC)))
 	{
 		if (*(ccid_descriptor->pPiccEnabled))
@@ -2520,9 +2520,9 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	if (ACSDriverOptions & ACS_DRIVER_OPTION_DISABLE_PICC)
 	{
 		if ((ccid_descriptor->firmwareFixEnabled) &&
-			(((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
+			((((ccid_descriptor->readerID == ACS_ACR1222_DUAL_READER) ||
 			(ccid_descriptor->readerID == ACS_ACR1222_1SAM_DUAL_READER)) &&
-			(ccid_descriptor->bCurrentSlotIndex == 0) ||
+			(ccid_descriptor->bCurrentSlotIndex == 0)) ||
 			(ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_ICC)))
 		{
 			int piccReaderIndex = *(ccid_descriptor->pPiccReaderIndex);
