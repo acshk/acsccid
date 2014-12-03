@@ -1100,7 +1100,6 @@ status_t ReadUSB(unsigned int reader_index, unsigned int * length,
 		unsigned int bufferLen = *length;
 		unsigned int readLen = 0;
 		unsigned int dataLen = 0;
-		unsigned int tempLen = 0;
 
 		while (!responseReceived)
 		{
