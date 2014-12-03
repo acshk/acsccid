@@ -592,7 +592,7 @@ RESPONSECODE ACR38_SetCardType(unsigned int reader_index,
 				break;
 
 			default:
-				DEBUG_CRITICAL2("Card type %d is not supported", cardType);
+				DEBUG_CRITICAL2("Card type " DWORD_D " is not supported", cardType);
 				ccid_descriptor->cardType = ACR38_CARD_TYPE_MCU_AUTO;
 				return_value = IFD_COMMUNICATION_ERROR;
 				break;
