@@ -945,12 +945,12 @@ EXTERNAL RESPONSECODE IFDHSetProtocolParameters(DWORD Lun, DWORD Protocol,
 						ccid_desc->dwDefaultClock * d / f);
 
 					/* the reader has no baud rates table */
-					if ((ccid_desc->arrayOfSupportedDataRates == NULL) &&
-						(card_baudrate <= ccid_desc->dwMaxDataRate)
+					if (((ccid_desc->arrayOfSupportedDataRates == NULL)
+						&& (card_baudrate <= ccid_desc->dwMaxDataRate))
 						/* or explicitely support it */
-						|| (ccid_desc->arrayOfSupportedDataRates != NULL) &&
-						find_baud_rate(card_baudrate,
-							ccid_desc->arrayOfSupportedDataRates))
+						|| ((ccid_desc->arrayOfSupportedDataRates != NULL)
+						&& find_baud_rate(card_baudrate,
+							ccid_desc->arrayOfSupportedDataRates)))
 					{
 						pps[1] |= 0x10; /* PTS1 presence */
 						pps[2] = atr.ib[0][ATR_INTERFACE_BYTE_TA].value;
