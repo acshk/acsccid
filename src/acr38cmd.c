@@ -91,11 +91,6 @@
 #define ACR38_OPTION_EMV_MODE		0x10	// EMV mode
 #define ACR38_OPTION_MEMCARD_MODE	0x20	// Memory card mode
 
-// Fix problem using pcsc-lite 1.6.x header files
-#ifndef IFD_ERROR_INSUFFICIENT_BUFFER
-#define IFD_ERROR_INSUFFICIENT_BUFFER 618
-#endif
-
 static RESPONSECODE ACR38_CmdXfrBlockTPDU_T0(unsigned int reader_index,
 	unsigned int tx_length, unsigned char tx_buffer[], unsigned int *rx_length,
 	unsigned char rx_buffer[]);
