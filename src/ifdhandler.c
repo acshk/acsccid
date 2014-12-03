@@ -1524,7 +1524,6 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 	RESPONSECODE return_value;
 	unsigned int rx_length;
 	int reader_index;
-	int slot_index;
 	_ccid_descriptor *ccid_descriptor;
 	unsigned char pcbuffer[SIZE_GET_SLOT_STATUS];
 
@@ -1588,7 +1587,6 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 	}
 
 	ccid_descriptor = get_ccid_descriptor(reader_index);
-	slot_index = ccid_descriptor->bCurrentSlotIndex;
 
 	// Fix reader hang problem by checking card status of ACR85 PICC before exchanging APDU
 	if ((ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC) &&
