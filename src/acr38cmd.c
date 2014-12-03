@@ -614,7 +614,6 @@ RESPONSECODE ACR38_GetFirmwareVersion(unsigned int reader_index,
 	unsigned int length;
 	RESPONSECODE return_value = IFD_SUCCESS;
 	unsigned char buffer_tmp[20];
-	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
 	// GET_ACR_STAT
 	cmd[0] = 0x01;
