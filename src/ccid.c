@@ -1022,7 +1022,7 @@ void EnablePicc(unsigned int reader_index, int enabled)
 	unsigned char antennaOn[]  = { 0xFF, 0x00, 0x00, 0x00, 0x04, 0xD4, 0x32, 0x01, 0x03 };
 
 	unsigned char response[300];
-	int responseLen;
+	unsigned int responseLen;
 
 	if (enabled)
 	{
