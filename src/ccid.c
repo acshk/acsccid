@@ -550,7 +550,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 
 				ccid_descriptor->wLcdLayout = 0x0210;
 
-				DEBUG_INFO("Getting ACR83U firmware version...");
+				DEBUG_INFO1("Getting ACR83U firmware version...");
 				if (ACR83_GetFirmwareVersion(reader_index, &firmwareVersion))
 				{
 					DEBUG_INFO2("ACR83U firmware version: 0x%04X", firmwareVersion);
@@ -589,7 +589,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 				ccid_descriptor->dwFeatures &= ~CCID_CLASS_EXCHANGE_MASK;
 				ccid_descriptor->dwFeatures |= CCID_CLASS_SHORT_APDU;
 
-				DEBUG_INFO("Getting ACR85 ICC firmware version...");
+				DEBUG_INFO1("Getting ACR85 ICC firmware version...");
 				if (ACR83_GetFirmwareVersion(reader_index, &firmwareVersion))
 				{
 					DEBUG_INFO2("ACR85 ICC firmware version: 0x%04X", firmwareVersion);
@@ -612,7 +612,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 				char firmwareVersion[30];
 				unsigned int firmwareVersionLen = sizeof(firmwareVersion);
 
-				DEBUG_INFO("Getting ACR1222 firmware version...");
+				DEBUG_INFO1("Getting ACR1222 firmware version...");
 				if (ACR1222_GetFirmwareVersion(reader_index, firmwareVersion, &firmwareVersionLen))
 				{
 					DEBUG_INFO2("ACR1222 firmware version: %s", firmwareVersion);
@@ -623,7 +623,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 					if ((ccid_descriptor->firmwareFixEnabled) &&
 						(ccid_descriptor->bCurrentSlotIndex == 1))
 					{
-						DEBUG_INFO("Enabling PICC...");
+						DEBUG_INFO1("Enabling PICC...");
 						EnablePicc(reader_index, 1);
 					}
 				}
@@ -643,7 +643,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 				char firmwareVersion[30];
 				unsigned int firmwareVersionLen = sizeof(firmwareVersion);
 
-				DEBUG_INFO("Getting ACR85 PICC firmware version...");
+				DEBUG_INFO1("Getting ACR85 PICC firmware version...");
 				if (ACR1222_GetFirmwareVersion(reader_index, firmwareVersion, &firmwareVersionLen))
 				{
 					DEBUG_INFO2("ACR85 PICC firmware version: %s", firmwareVersion);
@@ -653,7 +653,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 
 					if (ccid_descriptor->firmwareFixEnabled)
 					{
-						DEBUG_INFO("Enabling PICC...");
+						DEBUG_INFO1("Enabling PICC...");
 						EnablePicc(reader_index, 1);
 					}
 				}
