@@ -1777,6 +1777,7 @@ static void *Multi_PollingProc(void *p_ext)
 		rv = libusb_submit_transfer(transfer);
 		if (rv)
 		{
+			libusb_free_transfer(transfer);
 			DEBUG_COMM2("libusb_submit_transfer err %d", rv);
 			break;
 		}
