@@ -541,9 +541,11 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 						}
 						else
 						{
+#ifndef __APPLE__
 							/* This is a multislot reader
 							 * Init the multislot stuff for this next slot */
 							usbDevice[reader_index].multislot_extension = Multi_CreateNextSlot(previous_reader_index);
+#endif
 							goto end;
 						}
 					}
@@ -881,11 +883,12 @@ again:
 				}
 
 				usbDevice[reader_index].ccid.IFD_bcdDevice = desc.bcdDevice;
-
+#ifndef __APPLE__
 				/* If this is a multislot reader, init the multislot stuff */
 				if (usbDevice[reader_index].ccid.bMaxSlotIndex)
 					usbDevice[reader_index].multislot_extension = Multi_CreateFirstSlot(reader_index);
 				else
+#endif
 					usbDevice[reader_index].multislot_extension = NULL;
 
 				// Get number of slots
