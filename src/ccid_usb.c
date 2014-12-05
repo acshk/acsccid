@@ -951,12 +951,24 @@ again:
 				// Initialize terminated flag to false
 				usbDevice[reader_index].terminated = FALSE;
 				usbDevice[reader_index].pTerminated = &usbDevice[reader_index].terminated;
+				usbDevice[reader_index].pTransferLock = &usbDevice[reader_index].transferLock;
 				usbDevice[reader_index].ccid.pbStatusLock = &usbDevice[reader_index].ccid.bStatusLock;
+
+				// Create transfer lock
+				r = pthread_mutex_init(usbDevice[reader_index].pTransferLock, NULL);
+				if (r != 0)
+				{
+					(void)libusb_close(dev_handle);
+					DEBUG_CRITICAL2("pthread_mutex_init failed with error %d", r);
+					return_value = STATUS_UNSUCCESSFUL;
+					goto end2;
+				}
 
 				// Create bStatus lock
 				r = pthread_mutex_init(usbDevice[reader_index].ccid.pbStatusLock, NULL);
 				if (r != 0)
 				{
+					pthread_mutex_destroy(usbDevice[reader_index].pTransferLock);
 					free(usbDevice[reader_index].ccid.bStatus);
 
 					(void)libusb_close(dev_handle);
@@ -969,6 +981,7 @@ again:
 				r = pthread_create(&usbDevice[reader_index].hThread, NULL, CardDetectionThread, &reader_index);
 				if (r != 0)
 				{
+					pthread_mutex_destroy(usbDevice[reader_index].pTransferLock);
 					pthread_mutex_destroy(usbDevice[reader_index].ccid.pbStatusLock);
 					free(usbDevice[reader_index].ccid.bStatus);
 
