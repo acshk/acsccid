@@ -1259,10 +1259,28 @@ status_t CloseUSB(unsigned int reader_index)
 
 		// Terminate thread
 		*usbDevice[reader_index].pTerminated = TRUE;
+
+		// Lock transfer
+		pthread_mutex_lock(usbDevice[reader_index].pTransferLock);
+
+		// Cancel transfer
+		if (*usbDevice[reader_index].pTransfer != NULL)
+		{
+			libusb_cancel_transfer(*usbDevice[reader_index].pTransfer);
+			*usbDevice[reader_index].pTransfer = NULL;
+		}
+
+		// Unlock transfer
+		pthread_mutex_unlock(usbDevice[reader_index].pTransferLock);
+
+		// Wait thread
 		pthread_join(usbDevice[reader_index].hThread, NULL);
 
 		// Free bStatus lock
 		pthread_mutex_destroy(usbDevice[reader_index].ccid.pbStatusLock);
+
+		// Free transfer lock
+		pthread_mutex_destroy(usbDevice[reader_index].pTransferLock);
 #endif
 		// Free array of bStatus
 		free(usbDevice[reader_index].ccid.bStatus);
