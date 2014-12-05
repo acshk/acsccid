@@ -2141,12 +2141,166 @@ static struct usbDevice_MultiSlot_Extension *Multi_CreateNextSlot(int physical_r
 static void *CardDetectionThread(void *pParam)
 {
 	int reader_index = *((int *) pParam);
+	int rv = 0;
+	int status = 0;
+	int actual_length = 0;
+	unsigned char buffer[CCID_INTERRUPT_SIZE];
+	struct libusb_transfer *transfer = NULL;
+	int completed = 0;
 
-	DEBUG_INFO2("Enter: Reader: %d", reader_index);
+	DEBUG_COMM3("%d/%d: Enter",
+		usbDevice[reader_index].bus_number,
+		usbDevice[reader_index].device_address);
+
 	while (!usbDevice[reader_index].terminated)
-		InterruptRead(reader_index, 100);
+	{
+		DEBUG_COMM3("%d/%d: Waiting...",
+			usbDevice[reader_index].bus_number,
+			usbDevice[reader_index].device_address);
 
-	DEBUG_INFO2("Exit: Reader: %d", reader_index);
+		transfer = libusb_alloc_transfer(0);
+		if (NULL == transfer)
+		{
+			rv = LIBUSB_ERROR_NO_MEM;
+			DEBUG_COMM2("libusb_alloc_transfer err %d", rv);
+			break;
+		}
+
+		libusb_fill_bulk_transfer(transfer,
+			usbDevice[reader_index].dev_handle,
+			usbDevice[reader_index].interrupt,
+			buffer, CCID_INTERRUPT_SIZE,
+			bulk_transfer_cb, &completed, 0);	// Infinite timeout
+
+		transfer->type = LIBUSB_TRANSFER_TYPE_INTERRUPT;
+
+		rv = libusb_submit_transfer(transfer);
+		if (rv < 0)
+		{
+			libusb_free_transfer(transfer);
+			DEBUG_COMM2("libusb_submit_transfer err %d", rv);
+			break;
+		}
+
+		// Lock transfer
+		pthread_mutex_lock(usbDevice[reader_index].pTransferLock);
+
+		*usbDevice[reader_index].pTransfer = transfer;
+
+		// Unlock transfer
+		pthread_mutex_unlock(usbDevice[reader_index].pTransferLock);
+
+		completed = 0;
+		while (!completed && !usbDevice[reader_index].terminated)
+		{
+			rv = libusb_handle_events(ctx);
+			if (rv < 0)
+			{
+				DEBUG_COMM2("libusb_handle_events err %d", rv);
+
+				if (rv == LIBUSB_ERROR_INTERRUPTED)
+					continue;
+
+				libusb_cancel_transfer(transfer);
+
+				while (!completed && !usbDevice[reader_index].terminated)
+				{
+					if (libusb_handle_events(ctx) < 0)
+						break;
+				}
+
+				break;
+			}
+		}
+
+		// Lock transfer
+		pthread_mutex_lock(usbDevice[reader_index].pTransferLock);
+
+		*usbDevice[reader_index].pTransfer = NULL;
+
+		// Unlock transfer
+		pthread_mutex_unlock(usbDevice[reader_index].pTransferLock);
+
+		if (rv < 0)
+			libusb_free_transfer(transfer);
+		else
+		{
+			actual_length = transfer->actual_length;
+			status = transfer->status;
+
+			libusb_free_transfer(transfer);
+
+			switch (status)
+			{
+				case LIBUSB_TRANSFER_COMPLETED:
+					DEBUG_COMM3("%d/%d: OK",
+						usbDevice[reader_index].bus_number,
+						usbDevice[reader_index].device_address);
+					DEBUG_XXD("NotifySlotChange: ", buffer, actual_length);
+
+					// If RDR_to_PC_NotifySlotChange is received
+					if ((actual_length > 0) && (buffer[0] == 0x50))
+					{
+						int bufferIndex = 0;
+						int bitIndex = 0;
+						int i = 0;
+
+						// Lock bStatus
+						pthread_mutex_lock(usbDevice[reader_index].ccid.pbStatusLock);
+
+						// For each slot
+						for (i = 0; i <= usbDevice[reader_index].ccid.bMaxSlotIndex; i++)
+						{
+							bufferIndex = i / 4;
+							bitIndex = 2 * (i % 4);
+
+							if (bufferIndex + 1 < actual_length)
+							{
+								if (buffer[bufferIndex + 1] & (1 << bitIndex))
+									usbDevice[reader_index].ccid.bStatus[i] = CCID_ICC_PRESENT_ACTIVE;
+								else
+									usbDevice[reader_index].ccid.bStatus[i] = CCID_ICC_ABSENT;
+
+								DEBUG_INFO5("%d/%d: Slot %d: 0x%02X",
+									usbDevice[reader_index].bus_number,
+									usbDevice[reader_index].device_address, i,
+									usbDevice[reader_index].ccid.bStatus[i]);
+							}
+						}
+
+						// Unlock bStatus
+						pthread_mutex_unlock(usbDevice[reader_index].ccid.pbStatusLock);
+					}
+					break;
+
+				case LIBUSB_TRANSFER_TIMED_OUT:
+					DEBUG_COMM3("%d/%d: Timeout",
+						usbDevice[reader_index].bus_number,
+						usbDevice[reader_index].device_address);
+					break;
+
+				default:
+					DEBUG_COMM4("%d/%d: Status: %d",
+						usbDevice[reader_index].bus_number,
+						usbDevice[reader_index].device_address,
+						status);
+			}
+		}
+	}
+
+	usbDevice[reader_index].terminated = TRUE;
+
+	if (rv < 0)
+	{
+		DEBUG_CRITICAL4("%d/%d: Error: %d",
+			usbDevice[reader_index].bus_number,
+			usbDevice[reader_index].device_address, rv);
+	}
+
+	DEBUG_COMM3("%d/%d: Exit",
+		usbDevice[reader_index].bus_number,
+		usbDevice[reader_index].device_address);
+
 	return ((void *) 0);
 }
 #endif
