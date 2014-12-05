@@ -1662,9 +1662,7 @@ int InterruptRead(int reader_index, int timeout /* in ms */)
 				int bufferIndex = 0;
 				int bitIndex = 0;
 				int i = 0;
-#ifdef __APPLE__
-				pthread_mutex_lock(usbDevice[reader_index].ccid.pbStatusLock);
-#endif
+
 				// For each slot
 				for (i = 0; i <= usbDevice[reader_index].ccid.bMaxSlotIndex; i++)
 				{
@@ -1684,9 +1682,6 @@ int InterruptRead(int reader_index, int timeout /* in ms */)
 							usbDevice[reader_index].ccid.bStatus[i]);
 					}
 				}
-#ifdef __APPLE__
-				pthread_mutex_unlock(usbDevice[reader_index].ccid.pbStatusLock);
-#endif
 			}
 			break;
 
