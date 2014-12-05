@@ -118,6 +118,10 @@ typedef struct
 	// Flag to terminate thread
 	int terminated;
 	int *pTerminated;
+
+	// Lock for libusb transfer
+	pthread_mutex_t transferLock;
+	pthread_mutex_t *pTransferLock;
 #endif
 
 	// Max packet size of bulk out endpoint
