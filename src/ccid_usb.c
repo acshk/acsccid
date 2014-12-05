@@ -835,9 +835,6 @@ again:
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
 					else if (readerID == ACS_ACR1222_1SAM_DUAL_READER)
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
-					// Simulate ACR85 as multi-slot reader
-					else if (readerID == ACS_ACR85_PINPAD_READER_ICC)
-						usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
 					// Fix ACR32 incorrect max slot index
 					else if (readerID == ACS_ACR32_ICC_READER)
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 0;
@@ -916,6 +913,10 @@ again:
 
 				// Initialize firmware fix enabled
 				usbDevice[reader_index].ccid.firmwareFixEnabled = FALSE;
+
+				// Simulate ACR85 as multi-slot reader
+				if (readerID == ACS_ACR85_PINPAD_READER_ICC)
+					usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
 
 				// Simulate ACR85 as multi-slot reader
 				if (readerID != ACS_ACR85_PINPAD_READER_PICC)
