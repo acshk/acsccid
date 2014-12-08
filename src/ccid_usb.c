@@ -119,6 +119,9 @@ typedef struct
 	int terminated;
 	int *pTerminated;
 
+	// Pointer to libusb transfer
+	struct libusb_transfer **pTransfer;
+
 	// Lock for libusb transfer
 	pthread_mutex_t transferLock;
 	pthread_mutex_t *pTransferLock;
