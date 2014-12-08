@@ -47,8 +47,7 @@ libacsccid_la_LDFLAGS = -avoid-version
 
 EXTRA_DIST = Info.plist.src create_Info_plist.pl supported_readers.txt \
 	towitoko/COPYING towitoko/README openct/LICENSE \
-	convert_version.pl pcscd_acsccid.rules 92_pcscd_acsccid.rules \
-	92_pcscd_acsccid_group.rules
+	convert_version.pl 92_pcscd_acsccid.rules
 
 INSTALL_UDEV_RULE_FILE=@/bin/echo -e "\n\33[01;31m***************\n" ; echo "copy the src/92_pcscd_acsccid.rules file in udev directory (/etc/udev/rules.d/)" ; /bin/echo -e "\n***************\n\33[0m"
 
