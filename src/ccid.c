@@ -113,6 +113,7 @@ int ccid_open_hack_pre(unsigned int reader_index)
 			break;
 	}
 
+#ifndef __APPLE__
 	/* CCID */
 	if (((PROTOCOL_CCID == ccid_descriptor->bInterfaceProtocol)
 		|| (PROTOCOL_ACR38 == ccid_descriptor->bInterfaceProtocol))
@@ -123,6 +124,7 @@ int ccid_open_hack_pre(unsigned int reader_index)
 		(void)InterruptRead(reader_index, 100);
 #endif
 	}
+#endif
 
 	/* ICCD type A */
 	if (PROTOCOL_ICCD_A == ccid_descriptor->bInterfaceProtocol)
