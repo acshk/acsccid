@@ -15,7 +15,7 @@ Installation
 # make install
 
 4. To build the driver in Mac OS X, please install development tools from
-   Apple and install libusb-0.1. Enter the following commands to install the
+   Apple and install libusb. Enter the following commands to install the
    driver.
 
 # ./MacOSX/configure
