@@ -951,6 +951,7 @@ again:
 				// Initialize terminated flag to false
 				usbDevice[reader_index].terminated = FALSE;
 				usbDevice[reader_index].pTerminated = &usbDevice[reader_index].terminated;
+				usbDevice[reader_index].pTransfer = &usbDevice[reader_index].polling_transfer;
 				usbDevice[reader_index].pTransferLock = &usbDevice[reader_index].transferLock;
 				usbDevice[reader_index].ccid.pbStatusLock = &usbDevice[reader_index].ccid.bStatusLock;
 
