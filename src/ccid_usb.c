@@ -1866,6 +1866,15 @@ static void *Multi_PollingProc(void *p_ext)
 						usbDevice[msExt->reader_index].device_address);
 					DEBUG_XXD("NotifySlotChange: ", buffer, actual_length);
 
+					// If ACR38 card status message is received, then convert it
+					// to RDR_to_PC_NotifySlotChange.
+					if ((actual_length > 1) && (buffer[0] == 0x01))
+					{
+						buffer[0] = 0x50;
+						buffer[1] = (buffer[1] == 0xC0) ? 0x02 : 0x03;
+						actual_length = 2;
+					}
+
 					/* log the RDR_to_PC_NotifySlotChange data */
 					slot = 0;
 					for (b=0; b<actual_length-1; b++)
