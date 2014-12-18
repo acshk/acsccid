@@ -2021,7 +2021,6 @@ static int Multi_InterruptRead(int reader_index, int timeout /* in ms */)
 	interrupt_mask = 0x02 << (2 * (usbDevice[reader_index].ccid.bCurrentSlotIndex % 4));
 
 	/* Wait until the condition is signaled or a timeout occurs */
-	pthread_mutex_lock(&msExt->mutex);
 	gettimeofday(&local_time, NULL);
 	cond_wait_until.tv_sec = local_time.tv_sec;
 	cond_wait_until.tv_nsec = local_time.tv_usec * 1000;
@@ -2030,6 +2029,8 @@ static int Multi_InterruptRead(int reader_index, int timeout /* in ms */)
 	cond_wait_until.tv_nsec += 1000000 * (timeout % 1000);
 
 again:
+	pthread_mutex_lock(&msExt->mutex);
+
 	rv = pthread_cond_timedwait(&msExt->condition, &msExt->mutex,
 		&cond_wait_until);
 
