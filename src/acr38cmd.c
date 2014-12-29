@@ -112,7 +112,7 @@ RESPONSECODE ACR38_CmdPowerOn(unsigned int reader_index, unsigned int *nlength,
 	unsigned int length;
 	RESPONSECODE return_value = IFD_SUCCESS;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
-	unsigned char option;
+	unsigned char option = ACR38_OPTION_NONE;
 
 	/* store length of buffer[] */
 	length = *nlength;
