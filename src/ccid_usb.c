@@ -129,6 +129,8 @@ typedef struct
 
 	// Max packet size of bulk out endpoint
 	int bulkOutMaxPacketSize;
+	// For a workaround for ACR122U
+	int last_write_size;
 } _usbDevice;
 
 /* The _usbDevice structure must be defined before including ccid_usb.h */
@@ -1059,6 +1061,8 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 		delayed = TRUE;
 	}
 
+	usbDevice[reader_index].last_write_size = length;
+
 	// Send command by dividing number of packets
 	pos = 0;
 	while (length > 0)
@@ -1214,6 +1218,12 @@ read_again:
 	if ((*length >= BSEQ_OFFSET)
 		&& (buffer[BSEQ_OFFSET] < *ccid_descriptor->pbSeq -1))
 	{
+		/* Workaround for ACR122U reader */
+		if ((ccid_descriptor->readerID == 0x072f2200) &&
+		    (usbDevice[reader_index].last_write_size > 64) &&
+		    (buffer[BSEQ_OFFSET] == *ccid_descriptor->pbSeq -2))
+			return STATUS_SUCCESS;
+
 		duplicate_frame++;
 		if (duplicate_frame > 10)
 		{
