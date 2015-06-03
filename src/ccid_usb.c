@@ -19,7 +19,7 @@
 */
 
 /*
- * $Id: ccid_usb.c 6975 2014-09-04 11:33:05Z rousseau $
+ * $Id$
  */
 
 #define __CCID_USB__
