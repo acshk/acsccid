@@ -205,6 +205,15 @@ if test "${pcsclite}" != no ; then
 fi
 AM_CONDITIONAL(WITHOUT_PCSC, test "${pcsclite}" != "yes")
 
+# --enable-syslog
+AC_ARG_ENABLE(syslog,
+	AS_HELP_STRING([--enable-syslog],[use syslog instead of printf for debug (Yosemite)]),
+	[ use_syslog="${enableval}" ], [ use_syslog=no ] )
+
+if test x$use_syslog = xyes; then
+  AC_DEFINE(USE_SYSLOG, 1, [Use syslog(3) for debug])
+fi
+
 # class driver is disabled
 class=no
 NOCLASS="--no-class"
@@ -255,6 +264,7 @@ multi threading:         ${multithread}
 bundle directory name:   ${bundle}
 USB drop directory:      ${usbdropdir}
 compiled for pcsc-lite:  ${pcsclite}
+syslog debug:            ${use_syslog}
 class driver:            ${class}
 
 EOF
