@@ -19,7 +19,7 @@
 */
 
 /*
- * $Id: ccid.h 6922 2014-06-16 13:55:33Z rousseau $
+ * $Id$
  */
 
 #ifdef __APPLE__
