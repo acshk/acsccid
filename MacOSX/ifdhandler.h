@@ -20,9 +20,6 @@ are met:
 3. The name of the author may not be used to endorse or promote products
    derived from this software without specific prior written permission.
 
-Changes to this license can be made only by the copyright author with
-explicit written consent.
-
 THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -34,7 +31,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: ifdhandler.h 6851 2014-02-14 15:43:32Z rousseau $
+ * $Id$
  */
 
 /**
@@ -51,7 +48,7 @@ This gives a common API for communication to most readers in a
 homogeneous fashion. This document assumes that the driver developer is
 experienced with standards such as ISO-7816-(1, 2, 3, 4), EMV and MCT
 specifications. For listings of these specifications please access the
-above web site. 
+above web site.
 
 @section UsbReaders USB readers
 
@@ -125,6 +122,8 @@ same driver supports many different readers.
    <string>SCM Microsystems USB Reader</string>
 @endverbatim
 
+The reader name must use the ASCII character set.
+
 @subsection CFBundleExecutable
 
    The executable name which exists in the particular platform's directory.
@@ -192,7 +191,7 @@ Complete sample file:
 @endverbatim
 
 As indicated in the XML file the DTD is available at
-http://www.apple.com/DTDs/PropertyList-1.0.dtd. 
+http://www.apple.com/DTDs/PropertyList-1.0.dtd.
 
 @section SerialReaders Serial readers
 
@@ -511,7 +510,7 @@ you want extended functionality.
   pdwBytesReturned.
 
 @note
-  @p *pdwBytesReturned should be set to zero on error. 
+  @p *pdwBytesReturned should be set to zero on error.
 
 @return Error codes
 @retval IFD_SUCCESS Successful (\ref IFD_SUCCESS)
@@ -552,7 +551,7 @@ Once the channel is opened the reader must be in a state in which it is
 possible to query IFDHICCPresence() for card status.
 
 USB readers can ignore the @p Channel parameter and query the USB bus
-for the particular reader by manufacturer and product id. 
+for the particular reader by manufacturer and product id.
 
 @ingroup IFDHandler
 @param[in] Lun Logical Unit Number\n
@@ -661,7 +660,7 @@ RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag, PDWORD Length,
 /**
 This function should set the slot/card capabilities for a particular
 slot/card specified by @p Lun. Again, if you have only 1 card slot and
-don't mind loading a new driver for each reader then ignore @p Lun. 
+don't mind loading a new driver for each reader then ignore @p Lun.
 
 @ingroup IFDHandler
 @param[in] Lun Logical Unit Number
@@ -683,7 +682,7 @@ RESPONSECODE IFDHSetCapabilities(DWORD Lun, DWORD Tag, DWORD Length, PUCHAR Valu
 
 /**
 This function should set the Protocol Type Selection (PTS) of a
-particular card/slot using the three PTS parameters sent 
+particular card/slot using the three PTS parameters sent
 
 @ingroup IFDHandler
 @param[in] Lun Logical Unit Number
@@ -693,7 +692,7 @@ particular card/slot using the three PTS parameters sent
 - \ref SCARD_PROTOCOL_T1
   T=1 protocol
 @param[in] Flags Logical OR of possible values to determine which PTS values
-to negotiate 
+to negotiate
 - \ref IFD_NEGOTIATE_PTS1
 - \ref IFD_NEGOTIATE_PTS2
 - \ref IFD_NEGOTIATE_PTS3
@@ -807,7 +806,7 @@ This function returns the status of the card inserted in the reader/slot
 specified by @p Lun. In cases where the device supports asynchronous
 card insertion/removal detection, it is advised that the driver manages
 this through a thread so the driver does not have to send and receive a
-command each time this function is called. 
+command each time this function is called.
 
 @ingroup IFDHandler
 @param[in] Lun Logical Unit Number
