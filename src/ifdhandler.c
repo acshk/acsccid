@@ -18,7 +18,7 @@
 	Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-/* $Id: ifdhandler.c 6977 2014-09-04 11:36:54Z rousseau $ */
+/* $Id$ */
 
 #include <config.h>
 
