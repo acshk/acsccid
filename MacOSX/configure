@@ -17,7 +17,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #    02110-1301 USA.
 
-# $Id: configure 6792 2013-11-25 13:03:21Z rousseau $
+# $Id$
 
 # to use
 # ./MacOSX/configure
