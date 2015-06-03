@@ -436,7 +436,7 @@ RESPONSECODE ACR38_Receive(unsigned int reader_index,
 
 	if (cmd[ACR38_STATUS_OFFSET] != 0)
 	{
-		ccid_error(cmd[ACR38_STATUS_OFFSET], __FILE__, __LINE__, __FUNCTION__);
+		acr38_error(cmd[ACR38_STATUS_OFFSET], __FILE__, __LINE__, __FUNCTION__);
 		return IFD_COMMUNICATION_ERROR;
 	}
 
