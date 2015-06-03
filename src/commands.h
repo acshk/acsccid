@@ -18,7 +18,7 @@
 */
 
 /*
- * $Id: commands.h 6783 2013-10-24 09:36:52Z rousseau $
+ * $Id$
  */
 
 #define SIZE_GET_SLOT_STATUS 10
