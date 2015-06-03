@@ -26,7 +26,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 #include <unistd.h>
 # ifdef S_SPLINT_S
 # include <sys/types.h>
@@ -1075,7 +1074,7 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 				usbDevice[reader_index].bus_number,
 				usbDevice[reader_index].device_address, rv, libusb_error_name(rv));
 
-			if ((ENODEV == errno) || (LIBUSB_ERROR_NO_DEVICE == rv))
+			if (LIBUSB_ERROR_NO_DEVICE == rv)
 				return STATUS_NO_SUCH_DEVICE;
 
 			return STATUS_UNSUCCESSFUL;
@@ -1136,7 +1135,7 @@ status_t ReadUSB(unsigned int reader_index, unsigned int * length,
 					usbDevice[reader_index].bus_number,
 					usbDevice[reader_index].device_address, rv, libusb_error_name(rv));
 
-				if ((ENODEV == errno) || (LIBUSB_ERROR_NO_DEVICE == rv))
+				if (LIBUSB_ERROR_NO_DEVICE == rv)
 					return STATUS_NO_SUCH_DEVICE;
 
 				return STATUS_UNSUCCESSFUL;
@@ -1195,7 +1194,7 @@ read_again:
 			usbDevice[reader_index].bus_number,
 			usbDevice[reader_index].device_address, rv, libusb_error_name(rv));
 
-		if ((ENODEV == errno) || (LIBUSB_ERROR_NO_DEVICE == rv))
+		if (LIBUSB_ERROR_NO_DEVICE == rv)
 			return STATUS_NO_SUCH_DEVICE;
 
 		return STATUS_UNSUCCESSFUL;
