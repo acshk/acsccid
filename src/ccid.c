@@ -19,7 +19,7 @@
 */
 
 /*
- * $Id: ccid.c 6976 2014-09-04 11:35:46Z rousseau $
+ * $Id$
  */
 
 #include <config.h>
