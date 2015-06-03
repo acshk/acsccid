@@ -20,9 +20,6 @@ are met:
 3. The name of the author may not be used to endorse or promote products
    derived from this software without specific prior written permission.
 
-Changes to this license can be made only by the copyright author with
-explicit written consent.
-
 THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -34,7 +31,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: tokenparser.l 6851 2014-02-14 15:43:32Z rousseau $
+ * $Id$
  */
 
 /**
@@ -45,7 +42,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 %{
 
-#include "config.h"
+#include <config.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -55,7 +52,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "simclist.h"
 #include "debuglog.h"
 #include "parser.h"
-#include "strlcpycat.h"
 
 static void eval_key(char *pcToken, list_t *list_key);
 static void eval_value(char *pcToken, list_t *list_values);
@@ -100,7 +96,8 @@ static void eval_key(char *pcToken, list_t *list_key)
 	len++;	/* final NULL byte */
 
 	elt->key = malloc(len);
-	(void)strlcpy(elt->key, &pcToken[5], len);
+	memcpy(elt->key, &pcToken[5], len-1);
+	elt->key[len-1] = '\0';
 
 	r = list_init(&elt->values);
 	assert(r >= 0);
@@ -131,7 +128,8 @@ static void eval_value(char *pcToken, list_t *list_values)
 	value = malloc(len);
 	assert(value);
 
-	(void)strlcpy(value, &pcToken[8], len);
+	memcpy(value, &pcToken[8], len-1);
+	value[len-1] = '\0';
 
 	/* for all &amp; in the string */
 	amp = value;
