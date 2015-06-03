@@ -20,7 +20,7 @@
 */
 
 /*
- * $Id: commands.c 6975 2014-09-04 11:33:05Z rousseau $
+ * $Id$
  */
 
 #include <config.h>
