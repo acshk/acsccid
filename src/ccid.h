@@ -147,11 +147,6 @@ typedef struct
 	 */
 	struct GEMALTO_FIRMWARE_FEATURES *gemalto_firmware_features;
 
-	/*
-	 * Zero Length Packet fixup (boolean)
-	 */
-	char zlp;
-
 	// Pointer to array of bStatus
 	unsigned char *bStatus;
 
