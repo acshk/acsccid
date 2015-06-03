@@ -19,7 +19,7 @@
 */
 
 /*
- * $Id: ccid_ifdhandler.h 6876 2014-03-23 12:00:57Z rousseau $
+ * $Id$
  */
 
 #ifndef _ccid_ifd_handler_h_
