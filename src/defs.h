@@ -19,7 +19,7 @@
 */
 
 /*
- * $Id: defs.h 6926 2014-06-17 09:22:00Z rousseau $
+ * $Id$
  */
 
 #include <pcsclite.h>
