@@ -1,5 +1,5 @@
 /*
-    proto-t1.h: header file for proto-t1.c
+    checksum.h: header file checksum.c
     Copyright (C) 2004   Ludovic Rousseau
 
     This library is free software; you can redistribute it and/or
@@ -17,7 +17,7 @@
 	Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-/* $Id: checksum.h 6975 2014-09-04 11:33:05Z rousseau $ */
+/* $Id$ */
 
 #ifndef __CHECKSUM_H__
 #define __CHECKSUM_H__
