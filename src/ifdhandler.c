@@ -1885,7 +1885,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 
 		// APG8201Z supports vendor specific feature
-		if (ACS_APG8201Z == ccid_descriptor -> readerID)
+		if ((ACS_APG8201Z == ccid_descriptor -> readerID)
+			|| (ACS_APG8201Z2 == ccid_descriptor -> readerID))
 		{
 			pcsc_tlv -> tag = 0x80;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
@@ -2056,7 +2057,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		/* ACR83, APG8201 and APG8201Z */
 		if ((ACS_ACR83U == ccid_descriptor -> readerID)
 			|| (ACS_APG8201 == ccid_descriptor -> readerID)
-			|| (ACS_APG8201Z == ccid_descriptor -> readerID))
+			|| (ACS_APG8201Z == ccid_descriptor -> readerID)
+			|| (ACS_APG8201Z2 == ccid_descriptor -> readerID))
 		{
 			/* bMinPINSize */
 			RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bMinPINSize;
@@ -2189,7 +2191,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	if ((ACS_ACR83U == ccid_descriptor -> readerID) ||
 		(ACS_ACR85_PINPAD_READER_ICC == ccid_descriptor -> readerID) ||
 		(ACS_APG8201 == ccid_descriptor -> readerID) ||
-		(ACS_APG8201Z == ccid_descriptor -> readerID))
+		(ACS_APG8201Z == ccid_descriptor -> readerID) ||
+		(ACS_APG8201Z2 == ccid_descriptor -> readerID))
 	{
 		// Get firmware version
 		if (IOCTL_SMARTCARD_GET_FIRMWARE_VERSION == dwControlCode)
