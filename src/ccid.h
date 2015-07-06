@@ -289,6 +289,7 @@ typedef struct
 #define ACS_AET62_1SAM_PICC_READER		0x072f0103
 #define ACS_APG8201						0x072f8201
 #define ACS_APG8201Z					0x072f8202
+#define ACS_APG8201Z2					0x072f8205
 
 // non-CCID readers
 #define ACS_ACR38U						0x072f9000
