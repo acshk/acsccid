@@ -564,11 +564,15 @@ int ccid_open_hack_post(unsigned int reader_index)
 
 		case ACS_APG8201:
 		case ACS_APG8201Z:
+		case ACS_APG8201Z2:
 			ccid_descriptor->wLcdLayout = 0x0210;
 
 			// APG8201 uses short APDU exchange
-			ccid_descriptor->dwFeatures &= ~CCID_CLASS_EXCHANGE_MASK;
-			ccid_descriptor->dwFeatures |= CCID_CLASS_SHORT_APDU;
+			if (ccid_descriptor->dwFeatures & CCID_CLASS_TPDU)
+			{
+				ccid_descriptor->dwFeatures &= ~CCID_CLASS_EXCHANGE_MASK;
+				ccid_descriptor->dwFeatures |= CCID_CLASS_SHORT_APDU;
+			}
 			break;
 
 		case ACS_ACR85_PINPAD_READER_ICC:
