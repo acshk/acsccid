@@ -1533,7 +1533,7 @@ time_request:
 				// ACR83U, ACR85 and APG8201
 				// Invalid parameter in PIN verification/modification data structure
 				if (*rx_length < 2)
-					return IFD_COMMUNICATION_ERROR;
+					return IFD_ERROR_INSUFFICIENT_BUFFER;
 				rx_buffer[0]= 0x6B;
 				rx_buffer[1]= 0x80;
 				*rx_length = 2;
@@ -1541,7 +1541,7 @@ time_request:
 
 			case 0xEF:	/* cancel */
 				if (*rx_length < 2)
-					return IFD_COMMUNICATION_ERROR;
+					return IFD_ERROR_INSUFFICIENT_BUFFER;
 				rx_buffer[0]= 0x64;
 				rx_buffer[1]= 0x01;
 				*rx_length = 2;
@@ -1549,7 +1549,7 @@ time_request:
 
 			case 0xF0:	/* timeout */
 				if (*rx_length < 2)
-					return IFD_COMMUNICATION_ERROR;
+					return IFD_ERROR_INSUFFICIENT_BUFFER;
 				rx_buffer[0]= 0x64;
 				rx_buffer[1]= 0x00;
 				*rx_length = 2;
