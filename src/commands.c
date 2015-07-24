@@ -1539,6 +1539,14 @@ time_request:
 				*rx_length = 2;
 				return IFD_SUCCESS;
 
+			case 0x84:	// Two "new PIN" entries do not match.
+				if (*rx_length < 2)
+					return IFD_ERROR_INSUFFICIENT_BUFFER;
+				rx_buffer[0]= 0x64;
+				rx_buffer[1]= 0x02;
+				*rx_length = 2;
+				return IFD_SUCCESS;
+
 			case 0xEF:	/* cancel */
 				if (*rx_length < 2)
 					return IFD_ERROR_INSUFFICIENT_BUFFER;
