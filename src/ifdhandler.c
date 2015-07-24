@@ -86,6 +86,9 @@ static unsigned int T0_card_timeout(double f, double d, int TC1, int TC2,
 static unsigned int T1_card_timeout(double f, double d, int TC1, int BWI,
 	int CWI, int clock_frequency);
 static int get_IFSC(ATR_t *atr, int *i);
+static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
+	unsigned char TxBuffer[], unsigned int TxLength,
+	unsigned char RxBuffer[], unsigned int *RxLength);
 
 
 static RESPONSECODE CreateChannelByNameOrChannel(DWORD Lun,
@@ -1672,6 +1675,16 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 		}
 	}
 
+	/* Process SPE pseudo APDU (PC/SC v2.02.02 Part 10 Supplement). */
+	if ((TxLength > 3)
+		&& (memcmp(TxBuffer, "\xFF\xC2\x01", 3) == 0))
+	{
+		rx_length = *RxLength;
+		return_value = process_spe_ppdu(reader_index, TxBuffer, TxLength,
+			RxBuffer, &rx_length);
+		goto err;
+	}
+
 	rx_length = *RxLength;
 	return_value = CcidSlots[reader_index].pXfrBlock(reader_index, TxLength, TxBuffer, &rx_length,
 		RxBuffer, SendPci.Protocol);
@@ -2911,4 +2924,334 @@ static int get_IFSC(ATR_t *atr, int *idx)
 
 	return ifsc;
 } /* get_IFSC */
+
+
+static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
+	unsigned char TxBuffer[], unsigned int TxLength,
+	unsigned char RxBuffer[], unsigned int *RxLength)
+{
+	RESPONSECODE ret = IFD_SUCCESS;
+	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
+	int supported = FALSE;
+	unsigned char buffer[43];
+	unsigned int length = 0;
+	unsigned int tmp = 0;
+
+	/* P2: Feature Number */
+	switch (TxBuffer[3])
+	{
+	case 0:	/* GET_FEATURE_REQUEST */
+		supported = TRUE;
+
+		if (ccid_descriptor->bPINSupport & CCID_CLASS_PIN_VERIFY)
+		{
+			buffer[length++] = FEATURE_VERIFY_PIN_DIRECT;
+		}
+
+		if (ccid_descriptor->bPINSupport & CCID_CLASS_PIN_MODIFY)
+		{
+			buffer[length++] = FEATURE_MODIFY_PIN_DIRECT;
+		}
+
+		if (ccid_descriptor->bPINSupport)
+		{
+			buffer[length++] = FEATURE_IFD_PIN_PROPERTIES;
+		}
+
+		buffer[length++] = FEATURE_GET_TLV_PROPERTIES;
+		buffer[length++] = FEATURE_CCID_ESC_COMMAND;
+
+		if ((ccid_descriptor->readerID == ACS_APG8201Z)
+			|| (ccid_descriptor->readerID == ACS_APG8201Z2))
+		{
+			buffer[length++] = 0x80;
+		}
+
+		/* 90 00: Feature executed successfully. */
+		if (*RxLength < length + 2)
+		{
+			ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+		}
+		else
+		{
+			memcpy(RxBuffer, buffer, length);
+			length += 2;
+			RxBuffer[length - 2] = 0x90;
+			RxBuffer[length - 1] = 0x00;
+			*RxLength = length;
+		}
+		break;
+
+	case FEATURE_VERIFY_PIN_DIRECT:
+		if (ccid_descriptor->bPINSupport & CCID_CLASS_PIN_VERIFY)
+		{
+			supported = TRUE;
+
+			/* Check the length and Lc. */
+			/* Minimum Length: CLA + INS + P1 + P2 + Lc + data */
+			if ((TxLength < 6) || (TxBuffer[4] != TxLength - 5))
+			{
+				/* 67 00: Wrong length; no further indication */
+				if (*RxLength < 2)
+				{
+					ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+				}
+				else
+				{
+					RxBuffer[0] = 0x67;
+					RxBuffer[1] = 0x00;
+					*RxLength = 2;
+				}
+			}
+			else
+			{
+				tmp = *RxLength;
+				ret = SecurePINVerify(reader_index, TxBuffer + 5, TxLength - 5,
+					RxBuffer, &tmp);
+				*RxLength = tmp;
+			}
+		}
+		break;
+
+	case FEATURE_MODIFY_PIN_DIRECT:
+		if (ccid_descriptor->bPINSupport & CCID_CLASS_PIN_MODIFY)
+		{
+			supported = TRUE;
+
+			/* Check the length and Lc. */
+			/* Minimum Length: CLA + INS + P1 + P2 + Lc + data */
+			if ((TxLength < 6) || (TxBuffer[4] != TxLength - 5))
+			{
+				/* 67 00: Wrong length; no further indication */
+				if (*RxLength < 2)
+				{
+					ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+				}
+				else
+				{
+					RxBuffer[0] = 0x67;
+					RxBuffer[1] = 0x00;
+					*RxLength = 2;
+				}
+			}
+			else
+			{
+				tmp = *RxLength;
+				ret = SecurePINModify(reader_index, TxBuffer + 5, TxLength - 5,
+					RxBuffer, &tmp);
+				*RxLength = tmp;
+			}
+		}
+		break;
+
+	case FEATURE_IFD_PIN_PROPERTIES:
+		if (ccid_descriptor->bPINSupport)
+		{
+			supported = TRUE;
+
+			if (*RxLength < 6)
+			{
+				ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+			}
+			else
+			{
+				RxBuffer[0] = ccid_descriptor->wLcdLayout & 0xFF;
+				RxBuffer[1] = (ccid_descriptor->wLcdLayout >> 8) & 0xFF;
+				RxBuffer[2] = 0x07;	/* bEntryValidationCondition */
+				RxBuffer[3] = 0x00;	/* bTimeOut2 */
+				RxBuffer[4] = 0x90;
+				RxBuffer[5] = 0x00;
+				*RxLength = 6;
+			}
+		}
+		break;
+
+	case FEATURE_GET_TLV_PROPERTIES:
+		supported = TRUE;
+
+		/* wLcdLayout */
+		buffer[length++] = PCSCv2_PART10_PROPERTY_wLcdLayout;
+		buffer[length++] = 2;
+		buffer[length++] = ccid_descriptor->wLcdLayout & 0xFF;
+		buffer[length++] = (ccid_descriptor->wLcdLayout >> 8) & 0xFF;
+
+		if (ccid_descriptor->wLcdLayout)
+		{
+			/* wLcdMaxCharacters */
+			buffer[length++] = PCSCv2_PART10_PROPERTY_wLcdMaxCharacters;
+			buffer[length++] = 2;
+			tmp = ccid_descriptor->wLcdLayout & 0xFF;
+			buffer[length++] = tmp & 0xFF;
+			buffer[length++] = (tmp >> 8) & 0xFF;
+
+			/* wLcdMaxLines */
+			buffer[length++] = PCSCv2_PART10_PROPERTY_wLcdMaxLines;
+			buffer[length++] = 2;
+			tmp = (ccid_descriptor->wLcdLayout >> 8) & 0xFF;
+			buffer[length++] = tmp & 0xFF;
+			buffer[length++] = (tmp >> 8) & 0xFF;
+		}
+
+		/* bTimeOut2 */
+		buffer[length++] = PCSCv2_PART10_PROPERTY_bTimeOut2;
+		buffer[length++] = 1;
+		buffer[length++] = 0x00;
+
+		/* ACR83, APG8201 and APG8201Z. */
+		if ((ccid_descriptor->readerID == ACS_ACR83U)
+			|| (ccid_descriptor->readerID == ACS_APG8201)
+			|| (ccid_descriptor->readerID == ACS_APG8201Z)
+			|| (ccid_descriptor->readerID == ACS_APG8201Z2))
+		{
+			/* bMinPINSize */
+			buffer[length++] = PCSCv2_PART10_PROPERTY_bMinPINSize;
+			buffer[length++] = 1;
+			buffer[length++] = 1;
+
+			/* bMaxPINSize */
+			buffer[length++] = PCSCv2_PART10_PROPERTY_bMaxPINSize;
+			buffer[length++] = 1;
+			buffer[length++] = 16;
+
+			/* bEntryValidationCondition */
+			buffer[length++] = PCSCv2_PART10_PROPERTY_bEntryValidationCondition;
+			buffer[length++] = 1;
+			buffer[length++] = 0x07;
+		}
+
+		/* bPPDUSupport */
+		buffer[length++] = PCSCv2_PART10_PROPERTY_bPPDUSupport;
+		buffer[length++] = 1;
+		buffer[length++] = 0x03;
+
+		/* wIdVendor */
+		tmp = (ccid_descriptor->readerID >> 16) & 0xFFFF;
+		buffer[length++] = PCSCv2_PART10_PROPERTY_wIdVendor;
+		buffer[length++] = 2;
+		buffer[length++] = tmp & 0xFF;
+		buffer[length++] = (tmp >> 8) & 0xFF;
+
+		/* wIdProduct */
+		tmp = ccid_descriptor->readerID & 0xFFFF;
+		buffer[length++] = PCSCv2_PART10_PROPERTY_wIdProduct;
+		buffer[length++] = 2;
+		buffer[length++] = tmp & 0xFF;
+		buffer[length++] = (tmp >> 8) & 0xFF;
+
+		/* dwMaxAPDUDataSize */
+		/* Short APDU only by default */
+		tmp = 0;
+
+		/* Reader is TPDU or extended APDU. */
+		if ((ccid_descriptor->dwFeatures & CCID_CLASS_EXTENDED_APDU)
+			|| (ccid_descriptor->dwFeatures & CCID_CLASS_TPDU))
+		{
+			tmp = 0x10000;
+		}
+
+		buffer[length++] = PCSCv2_PART10_PROPERTY_dwMaxAPDUDataSize;
+		buffer[length++] = 4;
+		buffer[length++] = tmp & 0xFF;
+		buffer[length++] = (tmp >> 8) & 0xFF;
+		buffer[length++] = (tmp >> 16) & 0xFF;
+		buffer[length++] = (tmp >> 24) & 0xFF;
+
+		/* 90 00: Feature executed successfully. */
+		if (*RxLength < length + 2)
+		{
+			ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+		}
+		else
+		{
+			memcpy(RxBuffer, buffer, length);
+			length += 2;
+			RxBuffer[length - 2] = 0x90;
+			RxBuffer[length - 1] = 0x00;
+			*RxLength = length;
+		}
+		break;
+
+	case FEATURE_CCID_ESC_COMMAND:
+		supported = TRUE;
+
+		/* Check the length and Lc. */
+		/* Minimum Length: CLA + INS + P1 + P2 + Lc + data */
+		if ((TxLength < 6) || (TxBuffer[4] != TxLength - 5))
+		{
+			/* 67 00: Wrong length; no further indication */
+			if (*RxLength < 2)
+			{
+				ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+			}
+			else
+			{
+				RxBuffer[0] = 0x67;
+				RxBuffer[1] = 0x00;
+				*RxLength = 2;
+			}
+		}
+		else
+		{
+			tmp = *RxLength;
+			ret = CmdEscape(reader_index, TxBuffer + 5, TxLength - 5, RxBuffer,
+				&tmp, -1);
+			if (ret == IFD_SUCCESS)
+			{
+				/* 90 00: Feature executed successfully. */
+				if (*RxLength < tmp + 2)
+				{
+					ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+				}
+				else
+				{
+					tmp += 2;
+					RxBuffer[tmp - 2] = 0x90;
+					RxBuffer[tmp - 1] = 0x00;
+					*RxLength = tmp;
+				}
+			}
+		}
+		break;
+
+	case 0x80:
+		if ((ccid_descriptor->readerID == ACS_APG8201Z)
+			|| (ccid_descriptor->readerID == ACS_APG8201Z2))
+		{
+			supported = TRUE;
+
+			/* 90 00: Feature executed successfully. */
+			if (*RxLength < 2)
+			{
+				ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+			}
+			else
+			{
+				RxBuffer[0] = 0x90;
+				RxBuffer[1] = 0x00;
+				*RxLength = 2;
+			}
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	if (!supported)
+	{
+		/* 6A 86: Incorrect value for P2 (requested feature not present) */
+		if (*RxLength < 2)
+		{
+			ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+		}
+		else
+		{
+			RxBuffer[0] = 0x6A;
+			RxBuffer[1] = 0x86;
+			*RxLength = 2;
+		}
+	}
+
+	return ret;
+} /* process_spe_ppdu */
 
