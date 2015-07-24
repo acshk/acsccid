@@ -326,7 +326,19 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 	if (TxLength < 19+4 /* 4 = APDU size */)	/* command too short? */
 	{
 		DEBUG_INFO3("Command too short: %d < %d", TxLength, 19+4);
-		return IFD_NOT_SUPPORTED;
+
+		/* 6B 80: Invalid parameter in passed structure */
+		if (*RxLength < 2)
+		{
+			return IFD_ERROR_INSUFFICIENT_BUFFER;
+		}
+		else
+		{
+			RxBuffer[0] = 0x6B;
+			RxBuffer[1] = 0x80;
+			*RxLength = 2;
+			return IFD_SUCCESS;
+		}
 	}
 
 	/* On little endian machines we are all set. */
@@ -346,7 +358,19 @@ RESPONSECODE SecurePINVerify(unsigned int reader_index,
 	if (dw2i(TxBuffer, 15) + 19 != TxLength) /* ulDataLength field coherency */
 	{
 		DEBUG_INFO3("Wrong lengths: %d %d", dw2i(TxBuffer, 15) + 19, TxLength);
-		return IFD_NOT_SUPPORTED;
+
+		/* 6B 80: Invalid parameter in passed structure */
+		if (*RxLength < 2)
+		{
+			return IFD_ERROR_INSUFFICIENT_BUFFER;
+		}
+		else
+		{
+			RxBuffer[0] = 0x6B;
+			RxBuffer[1] = 0x80;
+			*RxLength = 2;
+			return IFD_SUCCESS;
+		}
 	}
 
 	/* make sure bEntryValidationCondition is valid
