@@ -2092,9 +2092,10 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		/* bPPDUSupport */
 		RxBuffer[p++] = PCSCv2_PART10_PROPERTY_bPPDUSupport;
 		RxBuffer[p++] = 1;	/* length */
-		RxBuffer[p++] = 1;
+		RxBuffer[p++] = 0x03;
 			/* bit0: PPDU is supported over SCardControl using
-			 * FEATURE_CCID_ESC_COMMAND */
+			 * FEATURE_CCID_ESC_COMMAND
+			 * bit1: PPDU is supported over SCardTransmit */
 
 		/* wIdVendor */
 		{
