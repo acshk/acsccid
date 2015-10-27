@@ -1003,6 +1003,9 @@ again:
 end:
 	if (usbDevice[reader_index].dev_handle == NULL)
 	{
+		/* free the libusb allocated list & devices */
+		libusb_free_device_list(devs, 1);
+
 #ifdef __APPLE__
 		/* give some time to libusb to detect the new USB devices on Mac OS X */
 		if (count_libusb > 0)
