@@ -247,6 +247,7 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 #else
 	/* 100 ms delay */
 	struct timespec sleep_time = { 0, 100 * 1000 * 1000 };
+	int count_libusb = 10;
 #endif
 	int interface_number = -1;
 	int i;
@@ -340,8 +341,7 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 	}
 
 #ifdef __APPLE__
-	/* give some time to libusb to detect the new USB devices on Mac OS X */
-	nanosleep(&sleep_time, NULL);
+again_libusb:
 #endif
 	cnt = libusb_get_device_list(ctx, &devs);
 	if (cnt < 0)
@@ -1002,6 +1002,17 @@ again:
 end:
 	if (usbDevice[reader_index].dev_handle == NULL)
 	{
+#ifdef __APPLE__
+		/* give some time to libusb to detect the new USB devices on Mac OS X */
+		if (count_libusb > 0)
+		{
+			count_libusb--;
+			DEBUG_INFO2("Wait after libusb: %d", count_libusb);
+			nanosleep(&sleep_time, NULL);
+
+			goto again_libusb;
+		}
+#endif
 		close_libusb_if_needed();
 		if (claim_failed)
 			return STATUS_COMM_ERROR;
