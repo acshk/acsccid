@@ -528,6 +528,9 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 						(ACS_ACR1251K_DUAL_READER == readerID) ||
 						(ACS_ACR1252_1S_CL_READER == readerID))
 						*Value = 2;
+
+					if (FEITIANR502DUAL == readerID)
+						*Value = 3;
 				}
 #endif
 				DEBUG_INFO2("Reader supports %d slot(s)", *Value);

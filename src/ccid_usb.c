@@ -426,7 +426,8 @@ again_libusb:
 
 				/* simulate a composite device as when libudev is used */
 				if ((GEMALTOPROXDU == readerID)
-					|| (GEMALTOPROXSU == readerID))
+					|| (GEMALTOPROXSU == readerID)
+					|| (FEITIANR502DUAL == readerID))
 				{
 						/*
 						 * We can't talk to the two CCID interfaces
@@ -705,7 +706,7 @@ again:
 
 				/* reset for a next reader */
 				if (static_interface > 2)
-					static_interface = 1;
+					static_interface = (FEITIANR502DUAL == readerID) ? 0: 1;
 #endif
 
 				/* Get Endpoints values*/
