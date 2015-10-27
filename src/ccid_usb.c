@@ -333,7 +333,7 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 		rv = libusb_init(&ctx);
 		if (rv != 0)
 		{
-			DEBUG_CRITICAL2("libusb_init failed: %d", rv);
+			DEBUG_CRITICAL2("libusb_init failed: %s", libusb_error_name(rv));
 			return_value = STATUS_UNSUCCESSFUL;
 			goto end1;
 		}
@@ -578,8 +578,8 @@ status_t OpenUSBByName(unsigned int reader_index, /*@null@*/ char *device)
 				r = libusb_open(dev, &dev_handle);
 				if (r < 0)
 				{
-					DEBUG_CRITICAL4("Can't libusb_open(%d/%d): %d",
-						bus_number, device_address, r);
+					DEBUG_CRITICAL4("Can't libusb_open(%d/%d): %s",
+						bus_number, device_address, libusb_error_name(r));
 
 					continue;
 				}
@@ -604,8 +604,9 @@ again:
 						if (r < 0)
 						{
 							(void)libusb_close(dev_handle);
-							DEBUG_CRITICAL4("Can't set configuration on %d/%d: %d",
-									bus_number, device_address, r);
+							DEBUG_CRITICAL4("Can't set configuration on %d/%d: %s",
+									bus_number, device_address,
+									libusb_error_name(r));
 							continue;
 						}
 					}
@@ -616,8 +617,8 @@ again:
 					{
 #endif
 						(void)libusb_close(dev_handle);
-						DEBUG_CRITICAL4("Can't get config descriptor on %d/%d: %d",
-							bus_number, device_address, r);
+						DEBUG_CRITICAL4("Can't get config descriptor on %d/%d: %s",
+							bus_number, device_address, libusb_error_name(r));
 						continue;
 					}
 #ifdef __APPLE__
@@ -678,8 +679,8 @@ again:
 				if (r < 0)
 				{
 					(void)libusb_close(dev_handle);
-					DEBUG_CRITICAL4("Can't claim interface %d/%d: %d",
-						bus_number, device_address, r);
+					DEBUG_CRITICAL4("Can't claim interface %d/%d: %s",
+						bus_number, device_address, libusb_error_name(r));
 					claim_failed = TRUE;
 					interface_number = -1;
 					continue;
