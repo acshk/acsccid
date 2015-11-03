@@ -2337,6 +2337,7 @@ static void *CardDetectionThread(void *pParam)
 		usbDevice[reader_index].bus_number,
 		usbDevice[reader_index].device_address);
 
-	return ((void *) 0);
+	pthread_exit(NULL);
+	return NULL;
 }
 #endif
