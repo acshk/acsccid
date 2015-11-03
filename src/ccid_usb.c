@@ -983,7 +983,7 @@ again:
 				}
 
 				// Create thread for card detection
-				r = pthread_create(&usbDevice[reader_index].hThread, NULL, CardDetectionThread, &reader_index);
+				r = pthread_create(&usbDevice[reader_index].hThread, NULL, CardDetectionThread, (void *) (intptr_t) reader_index);
 				if (r != 0)
 				{
 					pthread_mutex_destroy(usbDevice[reader_index].pTransferLock);
@@ -2167,7 +2167,7 @@ static struct usbDevice_MultiSlot_Extension *Multi_CreateNextSlot(int physical_r
 // Card detection thread
 static void *CardDetectionThread(void *pParam)
 {
-	int reader_index = *((int *) pParam);
+	int reader_index = (int) pParam;
 	int rv = 0;
 	int status = 0;
 	int actual_length = 0;
