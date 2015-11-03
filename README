@@ -17,7 +17,7 @@ To build acsccid, you need the following software:
 
 Linux
 - pcsclite 1.8.3 or above
-- libusb 1.0.8 or above
+- libusb 1.0.9 or above
 - flex
 - perl
 - pkg-config
@@ -48,6 +48,7 @@ CCID Readers
 VID  PID  Reader              Reader Name
 ---- ---- ------------------- -----------------------------
 072F B301 ACR32-A1            ACS ACR32 ICC Reader
+072F B304 ACR3201-A1          ACS ACR3201 ICC Reader
 072F 8300 ACR33U-A1           ACS ACR33U-A1 3SAM ICC Reader
 072F 8302 ACR33U-A2           ACS ACR33U-A2 3SAM ICC Reader
 072F 8307 ACR33U-A3           ACS ACR33U-A3 3SAM ICC Reader
@@ -89,6 +90,7 @@ VID  PID  Reader              Reader Name
 072F 221B ACR1251U-C          ACS ACR1251U-C Smart Card Reader
 072F 2232 ACR1251UK           ACS ACR1251K Dual Reader
 072F 2242 ACR1251U-C3         ACS ACR1251 1S Dual Reader
+072F 2238 ACR1251U-C9         ACS ACR1251 Reader
 072F 223B ACR1252U-A1         ACS ACR1252 1S CL Reader
 072F 223E ACR1252U-A2         ACS ACR1252 CL Reader
 072F 223D ACR1252U BL         ACS ACR1252 USB FW_Upgrade v100
@@ -117,6 +119,7 @@ VID  PID  Reader              Reader Name
 072F 0100 AET65               ACS AET65 ICC Reader
 072F 8201 APG8201-A1          ACS APG8201
 072F 8202 [OEM Reader]        [OEM Reader Name]
+072F 8205 [OEM Reader]        [OEM Reader Name]
 072F 90DB CryptoMate64        ACS CryptoMate64
 072F B200 ACOS5T1             ACS CryptoMate (T1)
 072F B106 ACOS5T2             ACS CryptoMate (T2)
@@ -135,6 +138,39 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.1.1 (3/11/2015)
+- Fix the mutex lock problem in Multi_InterruptRead().
+- Fix uninitialized variable warning in ACR38_CmdPowerOn().
+- Fix APDU sequence bug in ACR122U.
+- Merge with ccid 1.4.19.
+  - Use libusb_error_name() instead of strerror().
+  - Ignore errno and use libusb returned value only.
+  - IFDHSleep(): timout parameter is in ms not µs.
+  - Enable syslog logging on Yosemite.
+- Merge with ccid 1.4.20.
+  - MacOSX/configure: use /usr/local/libexec/... on El Capitan.
+- Merge with ccid 1.4.21.
+  - Use libusb_error_name() to display the error name.
+  - OpenUSBByName(): add more time on Mac OS X.
+  - OpenUSBByName(): fix the order of interfaces in log.
+  - OpenUSBByName(): free the device list in case of error.
+  - Info.plist: use hex values in the documentation.
+- Replace ccid_error() with acr38_error() in ACR38_Receive().
+- Update LIBUSB_NEEDED_VERSION to 1.0.9 in configure.ac.
+- Return IFD_ERROR_INSUFFICIENT_BUFFER if rx_length < 2 in CCID_Receive().
+- Return 64 02 if two "new PIN" entries do not match in CCID_Receive().
+- Implements SPE pseudo APDU from PC/SC v2.02.02 Part 10 Supplement.
+- Enable bPPDUSupport over SCardTransmit in IFDHControl().
+- Return 6B 80 if the parameter is invalid in SecurePINVerify().
+- Return 6B 80 if the parameter is invalid in SecurePINModify().
+- Fix segmentation fault on Mac OS X in CardDetectionThread().
+- Break if the device was disconnected in CardDetectionThread().
+- Use pthread_exit() in CardDetectionThread().
+- Add the following readers support:
+  ACR1251 Reader
+  ACR3201 ICC Reader
+  OEM Reader (VID: 072F, PID: 8205)
 
 v1.1.0 (10/12/2014)
 - Add the following readers support:
@@ -361,7 +397,7 @@ Fax: +852 2796 1286
 
 
 -------------------------------------------------------------------------------
-Copyright (C) 2009-2014 Advanced Card Systems Ltd.
+Copyright (C) 2009-2015 Advanced Card Systems Ltd.
 Copyright (C) 2003-2011 Ludovic Rousseau
 Copyright (C) 2000-2001 Carlos Prados
 Copyright (C) 2003 Olaf Kirch
