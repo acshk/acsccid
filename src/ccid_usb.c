@@ -2257,6 +2257,15 @@ static void *CardDetectionThread(void *pParam)
 
 			libusb_free_transfer(transfer);
 
+			/* Break if the device was disconnected. */
+			if (status == LIBUSB_TRANSFER_NO_DEVICE)
+			{
+				DEBUG_COMM3("%d/%d: Device disconnected",
+					usbDevice[reader_index].bus_number,
+					usbDevice[reader_index].device_address);
+				break;
+			}
+
 			switch (status)
 			{
 				case LIBUSB_TRANSFER_COMPLETED:
