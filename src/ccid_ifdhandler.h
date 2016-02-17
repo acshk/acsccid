@@ -18,10 +18,6 @@
 	Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-/*
- * $Id$
- */
-
 #ifndef _ccid_ifd_handler_h_
 #define _ccid_ifd_handler_h_
 
