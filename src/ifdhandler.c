@@ -88,6 +88,22 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 	unsigned char TxBuffer[], unsigned int TxLength,
 	unsigned char RxBuffer[], unsigned int *RxLength);
 
+static void FreeChannel(int reader_index)
+{
+#ifdef HAVE_PTHREAD
+	(void)pthread_mutex_lock(&ifdh_context_mutex);
+#endif
+
+	(void)ClosePort(reader_index);
+	ReleaseReaderIndex(reader_index);
+
+	free(CcidSlots[reader_index].readerName);
+	memset(&CcidSlots[reader_index], 0, sizeof(CcidSlots[reader_index]));
+
+#ifdef HAVE_PTHREAD
+	(void)pthread_mutex_unlock(&ifdh_context_mutex);
+#endif
+}
 
 static RESPONSECODE CreateChannelByNameOrChannel(DWORD Lun,
 	LPSTR lpcDevice, DWORD Channel)
@@ -331,19 +347,7 @@ EXTERNAL RESPONSECODE IFDHCloseChannel(DWORD Lun)
 	(void)CcidSlots[reader_index].pPowerOff(reader_index);
 	/* No reader status check, if it failed, what can you do ? :) */
 
-#ifdef HAVE_PTHREAD
-	(void)pthread_mutex_lock(&ifdh_context_mutex);
-#endif
-
-	(void)ClosePort(reader_index);
-	ReleaseReaderIndex(reader_index);
-
-	free(CcidSlots[reader_index].readerName);
-	memset(&CcidSlots[reader_index], 0, sizeof(CcidSlots[reader_index]));
-
-#ifdef HAVE_PTHREAD
-	(void)pthread_mutex_unlock(&ifdh_context_mutex);
-#endif
+	FreeChannel(reader_index);
 
 	return IFD_SUCCESS;
 } /* IFDHCloseChannel */
