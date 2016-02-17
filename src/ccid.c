@@ -52,7 +52,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #endif
 
-static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFirmwareVersion);
+static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pVersion1, unsigned int *pVersion2);
 static int ACR83_DisplayLcdMessage(unsigned int reader_index, const char *message);
 static int ACR1222_GetFirmwareVersion(unsigned int reader_index, char *firmwareVersion, unsigned int *pFirmwareVersionLen);
 
@@ -542,7 +542,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 				ccid_descriptor->wLcdLayout = 0x0210;
 
 				DEBUG_INFO1("Getting ACR83U firmware version...");
-				if (ACR83_GetFirmwareVersion(reader_index, &firmwareVersion))
+				if (ACR83_GetFirmwareVersion(reader_index, &firmwareVersion, NULL))
 				{
 					DEBUG_INFO2("ACR83U firmware version: 0x%04X", firmwareVersion);
 					if (firmwareVersion >= 0x4500)
@@ -585,7 +585,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 				ccid_descriptor->dwFeatures |= CCID_CLASS_SHORT_APDU;
 
 				DEBUG_INFO1("Getting ACR85 ICC firmware version...");
-				if (ACR83_GetFirmwareVersion(reader_index, &firmwareVersion))
+				if (ACR83_GetFirmwareVersion(reader_index, &firmwareVersion, NULL))
 				{
 					DEBUG_INFO2("ACR85 ICC firmware version: 0x%04X", firmwareVersion);
 
@@ -1054,7 +1054,7 @@ void EnablePicc(unsigned int reader_index, int enabled)
 	}
 }
 
-static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFirmwareVersion)
+static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pVersion1, unsigned int *pVersion2)
 {
 	int ret = 0;
 	unsigned char command[] = { 0x04, 0x00, 0x00, 0x00, 0x00 };
@@ -1064,9 +1064,18 @@ static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pFi
 
 	if (CmdEscape(reader_index, command, commandLen, response, &responseLen, 0) == IFD_SUCCESS)
 	{
-		if ((responseLen >= 7) && (response[0] == 0x84))
+		if ((responseLen >= 9) && (response[0] == 0x84))
 		{
-			*pFirmwareVersion = (response[5] << 8) | response[6];
+			if (pVersion1 != NULL)
+			{
+				*pVersion1 = (response[5] << 8) | response[6];
+			}
+
+			if (pVersion2 != NULL)
+			{
+				*pVersion2 = (response[7] << 8) | response[8];
+			}
+
 			ret = 1;
 		}
 	}
