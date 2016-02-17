@@ -565,7 +565,6 @@ int ccid_open_hack_post(unsigned int reader_index)
 
 		case ACS_APG8201:
 		case ACS_APG8201Z:
-		case ACS_APG8201Z2:
 			ccid_descriptor->wLcdLayout = 0x0210;
 
 			// APG8201 uses short APDU exchange
@@ -573,6 +572,30 @@ int ccid_open_hack_post(unsigned int reader_index)
 			{
 				ccid_descriptor->dwFeatures &= ~CCID_CLASS_EXCHANGE_MASK;
 				ccid_descriptor->dwFeatures |= CCID_CLASS_SHORT_APDU;
+			}
+			break;
+
+		case ACS_APG8201Z2:
+			{
+				unsigned int version1 = 0;
+				unsigned int version2 = 0;
+
+				ccid_descriptor->wLcdLayout = 0x0210;
+
+				DEBUG_INFO1("Getting APG8201Z2 firmware version...");
+				if (ACR83_GetFirmwareVersion(reader_index, &version1,
+					&version2))
+				{
+					DEBUG_INFO3("APG8201Z2 firmware version: 0x%04X%04X",
+						version1, version2);
+
+					/* Disable SetParameters for 029Z. */
+					if ((version1 == 0x3032) && (version2 == 0x395A))
+					{
+						ccid_descriptor->dwFeatures &= ~CCID_CLASS_AUTO_PPS_CUR;
+						ccid_descriptor->dwFeatures |= CCID_CLASS_AUTO_PPS_PROP;
+					}
+				}
 			}
 			break;
 
