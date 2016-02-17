@@ -253,8 +253,7 @@ error:
 	if (return_value != IFD_SUCCESS)
 	{
 		/* release the allocated resources */
-		free(CcidSlots[reader_index].readerName);
-		ReleaseReaderIndex(reader_index);
+		FreeChannel(reader_index);
 	}
 	else
 	{
