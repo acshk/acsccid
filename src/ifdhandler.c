@@ -1536,11 +1536,13 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 	if (-1 == (reader_index = LunToReaderIndex(Lun)))
 		return IFD_COMMUNICATION_ERROR;
 
+	ccid_descriptor = get_ccid_descriptor(reader_index);
+
 	DEBUG_INFO3("%s (lun: " DWORD_X ")", CcidSlots[reader_index].readerName,
 		Lun);
 
 	/* special APDU for the Kobil IDToken (CLASS = 0xFF) */
-	if (KOBIL_IDTOKEN == get_ccid_descriptor(reader_index) -> readerID)
+	if (KOBIL_IDTOKEN == ccid_descriptor -> readerID)
 	{
 		char manufacturer[] = {0xFF, 0x9A, 0x01, 0x01, 0x00};
 		char product_name[] = {0xFF, 0x9A, 0x01, 0x03, 0x00};
@@ -1568,7 +1570,7 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 		if ((sizeof firmware_version == TxLength)
 			&& (memcmp(TxBuffer, firmware_version, sizeof firmware_version) == 0))
 		{
-			int IFD_bcdDevice = get_ccid_descriptor(reader_index)->IFD_bcdDevice;
+			int IFD_bcdDevice = ccid_descriptor -> IFD_bcdDevice;
 
 			DEBUG_INFO1("IDToken: Firmware version command");
 			*RxLength = sprintf((char *)RxBuffer, "%X.%02X",
@@ -1589,8 +1591,6 @@ EXTERNAL RESPONSECODE IFDHTransmitToICC(DWORD Lun, SCARD_IO_HEADER SendPci,
 		}
 
 	}
-
-	ccid_descriptor = get_ccid_descriptor(reader_index);
 
 	// Fix reader hang problem by checking card status of ACR85 PICC before exchanging APDU
 	if ((ccid_descriptor->readerID == ACS_ACR85_PINPAD_READER_PICC) &&
