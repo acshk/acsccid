@@ -139,6 +139,22 @@ VID  PID  Reader              Reader Name
 History
 -------
 
+v1.1.2 (18/2/2016)
+- Return the second version in ACR83_GetFirmwareVersion().
+- Disable SetParameters for OEM Reader (VID: 072F, PID: 8205) v029Z in
+  ccid_open_hack_post().
+- Merge with ccid 1.4.22.
+  - Comments: Remove the $Id$ tag.
+  - Move max() definition in a header file.
+  - IFDHTransmitToICC: Reuse ccid_descriptor.
+  - OpenUSBByName(): use device bus and address only when available.
+  - IFDHCloseChannel(): use FreeChannel().
+  - CreateChannelByNameOrChannel(): call FreeChannel() in case of error.
+  - OpenUSBByName(): do not call close_libusb_if_needed().
+  - OpenUSBByName(): read Info.plist only once.
+  - OpenUSBByName(): add some low level debug.
+  - OpenUSBByName(): fix possible use of uninitialized variable.
+
 v1.1.1 (3/11/2015)
 - Fix the mutex lock problem in Multi_InterruptRead().
 - Fix uninitialized variable warning in ACR38_CmdPowerOn().
@@ -397,7 +413,7 @@ Fax: +852 2796 1286
 
 
 -------------------------------------------------------------------------------
-Copyright (C) 2009-2015 Advanced Card Systems Ltd.
+Copyright (C) 2009-2016 Advanced Card Systems Ltd.
 Copyright (C) 2003-2011 Ludovic Rousseau
 Copyright (C) 2000-2001 Carlos Prados
 Copyright (C) 2003 Olaf Kirch
