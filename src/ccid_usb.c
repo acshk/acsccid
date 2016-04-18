@@ -1885,6 +1885,15 @@ static void *Multi_PollingProc(void *p_ext)
 
 			libusb_free_transfer(transfer);
 
+			/* Break if the device was disconnected. */
+			if (status == LIBUSB_TRANSFER_NO_DEVICE)
+			{
+				DEBUG_COMM3("Multi_PollingProc (%d/%d): Device disconnected",
+					usbDevice[msExt->reader_index].bus_number,
+					usbDevice[msExt->reader_index].device_address);
+				break;
+			}
+
 			switch (status)
 			{
 				case LIBUSB_TRANSFER_COMPLETED:
