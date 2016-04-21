@@ -1491,7 +1491,8 @@ static int get_end_points(struct libusb_config_descriptor *desc,
 		/* CCID Class? */
 		if (desc->interface[i].altsetting->bInterfaceClass == 0xb
 #ifdef ALLOW_PROPRIETARY_CLASS
-			|| desc->interface[i].altsetting->bInterfaceClass == 0xff
+			|| (desc->interface[i].altsetting->bInterfaceClass == 0xff
+			&& 54 == desc->interface[i].altsetting->extra_length)
 
 			// bInterfaceClass is 0x00 in ACR83U, ACR88U and ACR128U
 			|| desc->interface[i].altsetting->bInterfaceClass == 0x00
