@@ -1764,7 +1764,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		(ACS_AET65_1SAM_ICC_READER == ccid_descriptor -> readerID))
 	{
 		// Set card voltage
-		if (IOCTL_SMARTCARD_SET_CARD_VOLTAGE == dwControlCode)
+		if ((IOCTL_SMARTCARD_SET_CARD_VOLTAGE == dwControlCode)
+			|| (WINIOCTL_SMARTCARD_SET_CARD_VOLTAGE == dwControlCode))
 		{
 			unsigned int iBytesReturned;
 
@@ -1775,7 +1776,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		}
 
 		// Set card type
-		if (IOCTL_SMARTCARD_SET_CARD_TYPE == dwControlCode)
+		if ((IOCTL_SMARTCARD_SET_CARD_TYPE == dwControlCode)
+			|| (WINIOCTL_SMARTCARD_SET_CARD_TYPE == dwControlCode))
 		{
 			unsigned int iBytesReturned;
 
@@ -2195,7 +2197,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	}
 
 	// MS CCID I/O control code for escape command
-	if (IOCTL_CCID_ESCAPE == dwControlCode)
+	if ((IOCTL_CCID_ESCAPE == dwControlCode)
+		|| (WINIOCTL_CCID_ESCAPE == dwControlCode))
 	{
 		unsigned int iBytesReturned;
 
@@ -2213,7 +2216,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		(ACS_APG8201Z2 == ccid_descriptor -> readerID))
 	{
 		// Get firmware version
-		if (IOCTL_SMARTCARD_GET_FIRMWARE_VERSION == dwControlCode)
+		if ((IOCTL_SMARTCARD_GET_FIRMWARE_VERSION == dwControlCode)
+			|| (WINIOCTL_SMARTCARD_GET_FIRMWARE_VERSION == dwControlCode))
 		{
 			unsigned char command[] = { 0x04, 0x00, 0x00, 0x00, 0x00 };
 			unsigned int commandLen = sizeof(command);
@@ -2238,7 +2242,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		}
 
 		// Display LCD message
-		if (IOCTL_SMARTCARD_DISPLAY_LCD_MESSAGE == dwControlCode)
+		if ((IOCTL_SMARTCARD_DISPLAY_LCD_MESSAGE == dwControlCode)
+			|| (WINIOCTL_SMARTCARD_DISPLAY_LCD_MESSAGE == dwControlCode))
 		{
 			unsigned char command[5 + 32] = { 0x05, 0x00, 0x20, 0x00, 0x00 };
 			unsigned int commandLen = sizeof(command);
@@ -2272,7 +2277,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		}
 
 		// Read key
-		if (IOCTL_SMARTCARD_READ_KEY == dwControlCode)
+		if ((IOCTL_SMARTCARD_READ_KEY == dwControlCode)
+			|| (WINIOCTL_SMARTCARD_READ_KEY == dwControlCode))
 		{
 			unsigned char command[5 + 6] = { 0x06, 0x00, 0x06, 0x00, 0x00 };
 			unsigned int commandLen = sizeof(command);
@@ -2305,7 +2311,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	else
 	{
 		// ACR128 I/O control code for escape command
-		if (IOCTL_ACR128_READER_COMMAND == dwControlCode)
+		if ((IOCTL_ACR128_READER_COMMAND == dwControlCode)
+			|| (WINIOCTL_ACR128_READER_COMMAND == dwControlCode))
 		{
 			unsigned char *command;
 			unsigned int commandLen = 3 + TxLength;
