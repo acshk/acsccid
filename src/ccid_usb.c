@@ -1032,6 +1032,9 @@ end:
 			goto again_libusb;
 		}
 #endif
+		/* failed */
+		close_libusb_if_needed();
+
 		if (claim_failed)
 			return STATUS_COMM_ERROR;
 		DEBUG_INFO1("Device not found?");
@@ -1049,6 +1052,9 @@ end2:
 end1:
 	/* free bundle list */
 	bundleRelease(&plist);
+
+	if (return_value != STATUS_SUCCESS)
+		close_libusb_if_needed();
 
 	return return_value;
 } /* OpenUSBByName */
