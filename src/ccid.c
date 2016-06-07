@@ -79,6 +79,13 @@ int ccid_open_hack_pre(unsigned int reader_index)
 			ccid_descriptor->dwMaxDataRate = 9600;
 			break;
 
+		case ElatecTWN4:
+			/* use a timeout of 400 ms instead of 100 ms in CmdGetSlotStatus()
+			 * used by CreateChannelByNameOrChannel()
+			 * The reader answers after 280 ms if no tag is present */
+			ccid_descriptor->readTimeout = DEFAULT_COM_READ_TIMEOUT * 4;
+			break;
+
 		case ACS_ACR122U:
 		case ACS_AET62_PICC_READER:
 		case ACS_AET62_1SAM_PICC_READER:
@@ -537,6 +544,11 @@ int ccid_open_hack_post(unsigned int reader_index)
 				ccid_descriptor->dwFeatures &= ~CCID_CLASS_EXCHANGE_MASK;
 				ccid_descriptor->dwFeatures |= CCID_CLASS_EXTENDED_APDU;
 			}
+			break;
+
+		case ElatecTWN4:
+			/* restore default timeout (modified in ccid_open_hack_pre()) */
+			ccid_descriptor->readTimeout = DEFAULT_COM_READ_TIMEOUT;
 			break;
 
 		case ACS_ACR33U_A1_3SAM_ICC_READER:
