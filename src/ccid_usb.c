@@ -2248,7 +2248,7 @@ static void *CardDetectionThread(void *pParam)
 		completed = 0;
 		while (!completed && !usbDevice[reader_index].terminated)
 		{
-			rv = libusb_handle_events(ctx);
+			rv = libusb_handle_events_completed(ctx, &completed);
 			if (rv < 0)
 			{
 				DEBUG_COMM2("libusb_handle_events err %d", rv);
@@ -2260,7 +2260,7 @@ static void *CardDetectionThread(void *pParam)
 
 				while (!completed && !usbDevice[reader_index].terminated)
 				{
-					if (libusb_handle_events(ctx) < 0)
+					if (libusb_handle_events_completed(ctx, &completed) < 0)
 						break;
 				}
 
