@@ -225,8 +225,11 @@ static RESPONSECODE CreateChannelByNameOrChannel(DWORD Lun,
 		/* 100 ms just to resync the USB toggle bits */
 		/* Do not use a fixed 100 ms value but compute it from the
 		 * default timeout. It is now possible to use a different value
-		 * by changing readTimeout in ccid_open_hack_pre() */
-		ccid_descriptor->readTimeout = ccid_descriptor->readTimeout * 100.0 / DEFAULT_COM_READ_TIMEOUT;
+		 * by changing readTimeout in ccid_open_hack_pre()
+		 * ccid_descriptor->readTimeout = ccid_descriptor->readTimeout * 100.0 / DEFAULT_COM_READ_TIMEOUT; */
+
+		/* Avoid libusb timeout on Mac OS X. */
+		ccid_descriptor->readTimeout = 1000;
 
 		if ((IFD_COMMUNICATION_ERROR == CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer))
 			&& (IFD_COMMUNICATION_ERROR == CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer)))
