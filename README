@@ -61,6 +61,7 @@ VID  PID  Reader              Reader Name
 072F B102 ACR39T              ACS ACR39T ICC Reader
 072F B103 ACR39F              ACS ACR39F ICC Reader
 072F B104 ACR39U-SAM          ACS ACR39U-SAM ICC Reader
+072F B10C ACR39U-U1           ACS ACR39U ID1 Card Reader
 072F B000 ACR3901U            ACS ACR3901U ICC Reader
 072F 90D2 ACR83U-A1           ACS ACR83U
 072F 8306 ACR85               ACS ACR85 PINPad Reader
@@ -91,6 +92,7 @@ VID  PID  Reader              Reader Name
 072F 2232 ACR1251UK           ACS ACR1251K Dual Reader
 072F 2242 ACR1251U-C3         ACS ACR1251 1S Dual Reader
 072F 2238 ACR1251U-C9         ACS ACR1251 Reader
+072F 224F ACM1251U-Z2         ACS ACR1251 CL Reader
 072F 223B ACR1252U-A1         ACS ACR1252 1S CL Reader
 072F 223E ACR1252U-A2         ACS ACR1252 CL Reader
 072F 223D ACR1252U BL         ACS ACR1252 USB FW_Upgrade v100
@@ -138,6 +140,29 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.1.3 (22/6/2016)
+- Add the following readers support:
+  ACR39U ID1 Card Reader
+  ACR1251 CL Reader (ACM1251U-Z2)
+- Break if the device was disconnected in Multi_PollingProc().
+- Merge with ccid 1.4.23.
+  - MacOSX/configure: exit in error if configure failed.
+  - InterruptRead(): log libusb error name.
+  - Remove support of DRIVER_OPTION_RESET_ON_CLOSE.
+  - Update URL in a comment.
+  - ccid_usb.c: improve close_libusb_if_needed().
+  - Fix a busy loop consuming 100% of CPU.
+- Merge with ccid 1.4.15.
+  - get_end_points(): be more strict for bInterfaceClass = 255.
+- Add control codes for Windows compatibility.
+- Merge with ccid 1.4.24.
+  - ccid_usb.c: fix a race condition on multi reader.
+  - CreateChannel: allow to use a non default timeout.
+  - IFDHGetCapabilities: fix SCARD_ATTR_VENDOR_IFD_SERIAL_NO size.
+- Fix a race condition in CardDetectionThread().
+- Avoid libusb timeout on Mac OS X in CreateChannelByNameOrChannel().
+- Fix random order of interfaces in OpenUSBByName().
 
 v1.1.2 (18/2/2016)
 - Return the second version in ACR83_GetFirmwareVersion().
