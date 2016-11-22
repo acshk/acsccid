@@ -46,7 +46,7 @@ libacsccid_la_CFLAGS = $(PCSC_CFLAGS) $(LIBUSB_CFLAGS) $(PTHREAD_CFLAGS) \
 libacsccid_la_LDFLAGS = -avoid-version
 
 EXTRA_DIST = Info.plist.src create_Info_plist.pl supported_readers.txt \
-	towitoko/COPYING towitoko/README openct/LICENSE \
+	towitoko/COPYING towitoko/README openct/LICENSE openct/README \
 	convert_version.pl 92_pcscd_acsccid.rules
 
 INSTALL_UDEV_RULE_FILE=@/bin/echo -e "\n\33[01;31m***************\n" ; echo "copy the src/92_pcscd_acsccid.rules file in udev directory (/etc/udev/rules.d/)" ; /bin/echo -e "\n***************\n\33[0m"
