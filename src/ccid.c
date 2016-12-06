@@ -599,6 +599,24 @@ int ccid_open_hack_post(unsigned int reader_index)
 			break;
 
 		case ACS_APG8201:
+			{
+				unsigned int version1 = 0;
+				unsigned int version2 = 0;
+
+				DEBUG_INFO1("Getting APG8201 firmware version...");
+				if (ACR83_GetFirmwareVersion(reader_index, &version1,
+					&version2))
+				{
+					DEBUG_INFO3("APG8201 firmware version: 0x%04X%04X",
+						version1, version2);
+
+					/* Fix incorrect message length for 008I. */
+					if ((version1 == 0x3030) && (version2 == 0x3849))
+					{
+						ccid_descriptor->dwMaxCCIDMessageLength = 320;
+					}
+				}
+			}
 		case ACS_APG8201Z:
 			ccid_descriptor->wLcdLayout = 0x0210;
 
@@ -1132,6 +1150,20 @@ static int ACR83_GetFirmwareVersion(unsigned int reader_index, unsigned int *pVe
 			if (pVersion2 != NULL)
 			{
 				*pVersion2 = (response[7] << 8) | response[8];
+			}
+
+			ret = 1;
+		}
+		else if ((responseLen >= 6) && (response[0] == 0x84))
+		{
+			if (pVersion1 != NULL)
+			{
+				*pVersion1 = (response[2] << 8) | response[3];
+			}
+
+			if (pVersion2 != NULL)
+			{
+				*pVersion2 = (response[4] << 8) | response[5];
 			}
 
 			ret = 1;
