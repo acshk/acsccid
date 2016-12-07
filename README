@@ -100,9 +100,11 @@ VID  PID  Reader              Reader Name
 072F 223F ACR1255U-J1         ACS ACR1255U-J1 PICC Reader
 072F 2239 ACR1256U            ACS ACR1256U PICC Reader
 072F 2211 ACR1261U-C1         ACS ACR1261 1S Dual Reader
+072F 2252 ACR1261U-A          ACS ACR1261 CL Reader
 072F 2100 ACR128U             ACS ACR128U
 072F 2224 ACR1281U-C1         ACS ACR1281 1S Dual Reader
 072F 220F ACR1281U-C2 (qPBOC) ACS ACR1281 CL Reader
+072F 2217 ACR1281U-C2 (UID)   ACS ACR1281 Dual Reader
 072F 2223 ACR1281U    (qPBOC) ACS ACR1281 PICC Reader
 072F 2208 ACR1281U-C3 (qPBOC) ACS ACR1281 Dual Reader
 072F 0901 ACR1281U-C4 (BSI)   ACS ACR1281 PICC Reader
@@ -116,6 +118,7 @@ VID  PID  Reader              Reader Name
 072F 2213 ACR1283L-D1         ACS ACR1283 4S CL Reader
 072F 222C ACR1283L-D2         ACS ACR1283 CL Reader
 072F 220C ACR1283 Bootloader  ACS ACR1283U FW Upgrade
+072F 2258 ACR1311U-N1         ACS ACR1311 PICC Reader
 072F 0102 AET62               ACS AET62 PICC Reader
 072F 0103 AET62               ACS AET62 1SAM PICC Reader
 072F 0100 AET65               ACS AET65 ICC Reader
@@ -140,6 +143,21 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.1.4 (7/12/2016)
+- Add the following readers support:
+  ACR1261 CL Reader
+  ACR1311 PICC Reader
+  ACR1281 Dual Reader (ACR1281U-C2 UID Reader)
+- Merge with ccid 1.4.25.
+  - Import src/misc.h.
+  - log_msg(): log up to 3 lines of 80 characters.
+  - Fix spelling error in a log message.
+  - Add missing openct/README in distribution.
+  - CmdXfrBlockCHAR_T0: returns an error when needed.
+  - create_Info_plist.pl: fix typos in comment.
+  - Remove extra spaces.
+- Fix incorrect message length for APG8201 v008I.
 
 v1.1.3 (22/6/2016)
 - Add the following readers support:
