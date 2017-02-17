@@ -1243,7 +1243,7 @@ again:
 			/* IFSD not negociated by the reader? */
 			if (! (ccid_desc->dwFeatures & CCID_CLASS_AUTO_IFSD))
 			{
-				DEBUG_COMM2("Negociate IFSD at %d", ccid_desc -> dwMaxIFSD);
+				DEBUG_COMM2("Negotiate IFSD at %d", ccid_desc -> dwMaxIFSD);
 				if (t1_negotiate_ifsd(t1, 0, ccid_desc -> dwMaxIFSD) < 0)
 					return IFD_COMMUNICATION_ERROR;
 			}
