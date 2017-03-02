@@ -474,7 +474,8 @@ again_libusb:
 					(ACS_ACR1251_1S_CL_READER == readerID) ||
 					(ACS_ACR1251U_C == readerID) ||
 					(ACS_ACR1251K_DUAL_READER == readerID) ||
-					(ACS_ACR1252_1S_CL_READER == readerID))
+					(ACS_ACR1252_1S_CL_READER == readerID) ||
+					(ACS_ACR1252IMP_1S_CL_READER == readerID))
 				{
 					// the CCID interfaces are 0 and 1
 					interface_number = static_interface - 1;
@@ -734,7 +735,8 @@ again:
 					|| (ACS_ACR1251_1S_CL_READER == readerID)
 					|| (ACS_ACR1251U_C == readerID)
 					|| (ACS_ACR1251K_DUAL_READER == readerID)
-					|| (ACS_ACR1252_1S_CL_READER == readerID))
+					|| (ACS_ACR1252_1S_CL_READER == readerID)
+					|| (ACS_ACR1252IMP_1S_CL_READER == readerID))
 				{
 					/* use the next interface for the next "slot" */
 					static_interface++;
@@ -982,7 +984,8 @@ again:
 				if ((readerID == ACS_ACR1281_1S_PICC_READER) ||
 					(readerID == ACS_ACR1251_1S_CL_READER) ||
 					(readerID == ACS_ACR1251U_C) ||
-					(readerID == ACS_ACR1252_1S_CL_READER))
+					(readerID == ACS_ACR1252_1S_CL_READER) ||
+					(readerID == ACS_ACR1252IMP_1S_CL_READER))
 				{
 					if (interface == 1)
 						usbDevice[reader_index].ccid.isSamSlot = TRUE;
