@@ -1143,7 +1143,7 @@ again:
 		DEBUG_COMM2("Timeout: %d ms", ccid_desc->readTimeout);
 
 		ret = ccid_slot->pSetParameters(reader_index, 1, sizeof(param), param);
-		if (IFD_SUCCESS != ret)
+		if ((IFD_SUCCESS != ret) && (!specificMode))
 		{
 			DEBUG_INFO1("SetParameters (T1) Failed");
 
@@ -1204,7 +1204,7 @@ again:
 		DEBUG_COMM2("Communication timeout: %d ms", ccid_desc->readTimeout);
 
 		ret = ccid_slot->pSetParameters(reader_index, 0, sizeof(param), param);
-		if (IFD_SUCCESS != ret)
+		if ((IFD_SUCCESS != ret) && (!specificMode))
 		{
 			DEBUG_INFO1("SetParameters (T0) Failed");
 
