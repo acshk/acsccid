@@ -174,6 +174,8 @@ static RESPONSECODE CreateChannelByNameOrChannel(DWORD Lun,
 		unsigned char pcbuffer[SIZE_GET_SLOT_STATUS];
 		unsigned int oldReadTimeout;
 		RESPONSECODE cmd_ret;
+		int readerOk;
+		int numRetries;
 
 		// Assign reader operations
 		if (ccid_descriptor->bInterfaceProtocol == PROTOCOL_ACR38)
@@ -229,17 +231,39 @@ static RESPONSECODE CreateChannelByNameOrChannel(DWORD Lun,
 		/* save the current read timeout computed from card capabilities */
 		oldReadTimeout = ccid_descriptor->readTimeout;
 
-		/* 100 ms just to resync the USB toggle bits */
-		/* Do not use a fixed 100 ms value but compute it from the
-		 * default timeout. It is now possible to use a different value
-		 * by changing readTimeout in ccid_open_hack_pre()
-		 * ccid_descriptor->readTimeout = ccid_descriptor->readTimeout * 100.0 / DEFAULT_COM_READ_TIMEOUT; */
-
+		/* 1000 ms just to resync the USB toggle bits */
 		/* Avoid libusb timeout on Mac OS X. */
 		ccid_descriptor->readTimeout = 1000;
 
-		if ((IFD_COMMUNICATION_ERROR == CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer))
-			&& (IFD_COMMUNICATION_ERROR == CcidSlots[reader_index].pGetSlotStatus(reader_index, pcbuffer)))
+		if (IFD_SUCCESS == cmd_ret)
+		{
+			readerOk = TRUE;
+		}
+		else
+		{
+			/* Try 10 times to warm up the reader. */
+			readerOk = FALSE;
+			numRetries = 10;
+			while (numRetries > 0)
+			{
+				cmd_ret = CcidSlots[reader_index].pGetSlotStatus(reader_index,
+					pcbuffer);
+				if (IFD_SUCCESS == cmd_ret)
+				{
+					readerOk = TRUE;
+					break;
+				}
+				else if (IFD_NO_SUCH_DEVICE == cmd_ret)
+				{
+					return_value = cmd_ret;
+					goto error;
+				}
+
+				numRetries--;
+			}
+		}
+
+		if (!readerOk)
 		{
 			DEBUG_CRITICAL("failed");
 			return_value = IFD_COMMUNICATION_ERROR;
