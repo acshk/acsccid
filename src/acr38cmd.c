@@ -91,6 +91,12 @@
 #define ACR38_OPTION_EMV_MODE		0x10	// EMV mode
 #define ACR38_OPTION_MEMCARD_MODE	0x20	// Memory card mode
 
+#define CHECK_STATUS(res) \
+	if (STATUS_NO_SUCH_DEVICE == res) \
+		return IFD_NO_SUCH_DEVICE; \
+	if (STATUS_SUCCESS != res) \
+		return IFD_COMMUNICATION_ERROR;
+
 static RESPONSECODE ACR38_CmdXfrBlockTPDU_T0(unsigned int reader_index,
 	unsigned int tx_length, unsigned char tx_buffer[], unsigned int *rx_length,
 	unsigned char rx_buffer[]);
@@ -161,16 +167,14 @@ RESPONSECODE ACR38_CmdPowerOn(unsigned int reader_index, unsigned int *nlength,
 	}
 
 	res = WritePort(reader_index, cmdLen, cmd);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	/* reset available buffer size */
 	/* needed if we go back after a switch to ISO mode */
 	*nlength = length;
 
 	res = ReadPort(reader_index, nlength, buffer);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	if (buffer[ACR38_STATUS_OFFSET] != 0)
 	{
@@ -219,13 +223,11 @@ RESPONSECODE ACR38_CmdPowerOff(unsigned int reader_index)
 	cmd[3] = 0x00;
 
 	res = WritePort(reader_index, sizeof(cmd), cmd);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	length = sizeof(cmd);
 	res = ReadPort(reader_index, &length, cmd);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	if (cmd[ACR38_STATUS_OFFSET] != 0)
 	{
@@ -255,17 +257,11 @@ RESPONSECODE ACR38_CmdGetSlotStatus(unsigned int reader_index,
 		cmd[3] = 0x00;
 
 		res = WritePort(reader_index, sizeof(cmd), cmd);
-		if (res != STATUS_SUCCESS)
-		{
-			if (STATUS_NO_SUCH_DEVICE == res)
-				return IFD_NO_SUCH_DEVICE;
-			return IFD_COMMUNICATION_ERROR;
-		}
+		CHECK_STATUS(res)
 
 		length = sizeof(buffer_tmp);
 		res = ReadPort(reader_index, &length, buffer_tmp);
-		if (res != STATUS_SUCCESS)
-			return IFD_COMMUNICATION_ERROR;
+		CHECK_STATUS(res)
 
 		if (length < sizeof(buffer_tmp))
 		{
@@ -362,10 +358,7 @@ RESPONSECODE ACR38_TransmitT0(unsigned int reader_index, unsigned int tx_length,
 	memcpy(cmd + ACR38_HEADER_SIZE, tx_buffer, tx_length);
 
 	ret = WritePort(reader_index, ACR38_HEADER_SIZE + tx_length, cmd);
-	if (STATUS_NO_SUCH_DEVICE == ret)
-		return IFD_NO_SUCH_DEVICE;
-	if (ret != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(ret)
 
 	return IFD_SUCCESS;
 }
@@ -385,10 +378,7 @@ RESPONSECODE ACR38_TransmitT1(unsigned int reader_index, unsigned int tx_length,
 	memcpy(cmd + ACR38_HEADER_SIZE, tx_buffer, tx_length);
 
 	ret = WritePort(reader_index, ACR38_HEADER_SIZE + tx_length, cmd);
-	if (STATUS_NO_SUCH_DEVICE == ret)
-		return IFD_NO_SUCH_DEVICE;
-	if (ret != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(ret)
 
 	return IFD_SUCCESS;
 }
@@ -408,10 +398,7 @@ RESPONSECODE ACR38_TransmitPPS(unsigned int reader_index, unsigned int tx_length
 	memcpy(cmd + ACR38_HEADER_SIZE, tx_buffer, tx_length);
 
 	ret = WritePort(reader_index, ACR38_HEADER_SIZE + tx_length, cmd);
-	if (STATUS_NO_SUCH_DEVICE == ret)
-		return IFD_NO_SUCH_DEVICE;
-	if (ret != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(ret)
 
 	return IFD_SUCCESS;
 }
@@ -427,12 +414,7 @@ RESPONSECODE ACR38_Receive(unsigned int reader_index,
 
 	length = sizeof(cmd);
 	ret = ReadPort(reader_index, &length, cmd);
-	if (ret != STATUS_SUCCESS)
-	{
-		if (STATUS_NO_SUCH_DEVICE == ret)
-			return IFD_NO_SUCH_DEVICE;
-		return IFD_COMMUNICATION_ERROR;
-	}
+	CHECK_STATUS(ret)
 
 	if (cmd[ACR38_STATUS_OFFSET] != 0)
 	{
@@ -461,6 +443,7 @@ RESPONSECODE ACR38_SetParameters(unsigned int reader_index, char protocol,
 	unsigned char cmd[8];
 	int i;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
+	status_t res;
 
 	DEBUG_COMM2("length: %d bytes", length);
 
@@ -476,12 +459,12 @@ RESPONSECODE ACR38_SetParameters(unsigned int reader_index, char protocol,
 	for (i = 4; i < 7; i++)
 		cmd[7] ^= cmd[i];
 
-	if (WritePort(reader_index, sizeof(cmd), cmd) != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	res = WritePort(reader_index, sizeof(cmd), cmd);
+	CHECK_STATUS(res)
 
 	length = sizeof(cmd);
-	if (ReadPort(reader_index, &length, cmd) != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	res = ReadPort(reader_index, &length, cmd);
+	CHECK_STATUS(res)
 
 	if (cmd[ACR38_STATUS_OFFSET] != 0)
 	{
@@ -617,17 +600,11 @@ RESPONSECODE ACR38_GetFirmwareVersion(unsigned int reader_index,
 	cmd[3] = 0x00;
 
 	res = WritePort(reader_index, sizeof(cmd), cmd);
-	if (res != STATUS_SUCCESS)
-	{
-		if (STATUS_NO_SUCH_DEVICE == res)
-			return IFD_NO_SUCH_DEVICE;
-		return IFD_COMMUNICATION_ERROR;
-	}
+	CHECK_STATUS(res)
 
 	length = sizeof(buffer_tmp);
 	res = ReadPort(reader_index, &length, buffer_tmp);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	if (length < sizeof(buffer_tmp))
 	{
@@ -695,13 +672,11 @@ static RESPONSECODE ACR38_CmdSelectCardType(unsigned int reader_index, unsigned 
 	cmd[4] = card_type;
 
 	res = WritePort(reader_index, sizeof(cmd), cmd);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	length = sizeof(cmd);
 	res = ReadPort(reader_index, &length, cmd);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	if (cmd[ACR38_STATUS_OFFSET] != 0)
 	{
@@ -727,13 +702,11 @@ static RESPONSECODE ACR38_CmdSetOption(unsigned int reader_index, unsigned char 
 	cmd[4] = option;
 
 	res = WritePort(reader_index, sizeof(cmd), cmd);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	length = sizeof(cmd);
 	res = ReadPort(reader_index, &length, cmd);
-	if (res != STATUS_SUCCESS)
-		return IFD_COMMUNICATION_ERROR;
+	CHECK_STATUS(res)
 
 	if (cmd[ACR38_STATUS_OFFSET] != 0)
 	{
