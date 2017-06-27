@@ -551,19 +551,21 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 					 * multi-slot reader */
 					int readerID =  get_ccid_descriptor(reader_index) -> readerID;
 
-					// Simulate ACR1281 Dual Reader (composite device) as multi-slot reader
-					if ((GEMALTOPROXDU == readerID) ||
-						(GEMALTOPROXSU == readerID) ||
-						(ACS_ACR1281_DUAL_READER_QPBOC == readerID) ||
-						(ACS_ACR1281_DUAL_READER_BSI == readerID) ||
-						(ACS_ACR1281_1S_PICC_READER == readerID) ||
-						(ACS_ACR1251_1S_CL_READER == readerID) ||
-						(ACS_ACR1251U_C == readerID) ||
-						(ACS_ACR1251K_DUAL_READER == readerID) ||
-						(ACS_ACR1252_1S_CL_READER == readerID) ||
-						(ACS_ACR1252IMP_1S_CL_READER == readerID))
+					/* 2 CCID interfaces */
+					if ((GEMALTOPROXDU == readerID)
+						|| (GEMALTOPROXSU == readerID)
+						|| (HID_OMNIKEY_5422 == readerID)
+						|| (ACS_ACR1281_DUAL_READER_QPBOC == readerID)
+						|| (ACS_ACR1281_DUAL_READER_BSI == readerID)
+						|| (ACS_ACR1281_1S_PICC_READER == readerID)
+						|| (ACS_ACR1251_1S_CL_READER == readerID)
+						|| (ACS_ACR1251U_C == readerID)
+						|| (ACS_ACR1251K_DUAL_READER == readerID)
+						|| (ACS_ACR1252_1S_CL_READER == readerID)
+						|| (ACS_ACR1252IMP_1S_CL_READER == readerID))
 						*Value = 2;
 
+					/* 3 CCID interfaces */
 					if (FEITIANR502DUAL == readerID)
 						*Value = 3;
 				}

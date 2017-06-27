@@ -454,11 +454,21 @@ again_libusb:
 #ifdef USE_COMPOSITE_AS_MULTISLOT
 				/* use the first CCID interface on first call */
 				static int static_interface = -1;
+				int max_interface_number = 2;
 
 				/* simulate a composite device as when libudev is used */
 				if ((GEMALTOPROXDU == readerID)
 					|| (GEMALTOPROXSU == readerID)
-					|| (FEITIANR502DUAL == readerID))
+					|| (HID_OMNIKEY_5422 == readerID)
+					|| (FEITIANR502DUAL == readerID)
+					|| (ACS_ACR1281_DUAL_READER_QPBOC == readerID)
+					|| (ACS_ACR1281_DUAL_READER_BSI == readerID)
+					|| (ACS_ACR1281_1S_PICC_READER == readerID)
+					|| (ACS_ACR1251_1S_CL_READER == readerID)
+					|| (ACS_ACR1251U_C == readerID)
+					|| (ACS_ACR1251K_DUAL_READER == readerID)
+					|| (ACS_ACR1252_1S_CL_READER == readerID)
+					|| (ACS_ACR1252IMP_1S_CL_READER == readerID))
 				{
 						/*
 						 * We can't talk to the two CCID interfaces
@@ -489,21 +499,24 @@ again_libusb:
 					 * 0: R502 Contactless Reader (CCID)
 					 * 1: R502 Contact Reader (CCID)
 					 * 2: R502 SAM1 Reader (CCID)
+					 *
+					 * For the HID Omnikey 5422 the interfaces are:
+					 * 0: OMNIKEY 5422CL Smartcard Reader
+					 * 1: OMNIKEY 5422 Smartcard Reader
 					 */
 					interface_number = static_interface;
-				}
-				// Simulate ACR1281 Dual Reader (composite device) as multi-slot reader
-				else if ((ACS_ACR1281_DUAL_READER_QPBOC == readerID) ||
-					(ACS_ACR1281_DUAL_READER_BSI == readerID) ||
-					(ACS_ACR1281_1S_PICC_READER == readerID) ||
-					(ACS_ACR1251_1S_CL_READER == readerID) ||
-					(ACS_ACR1251U_C == readerID) ||
-					(ACS_ACR1251K_DUAL_READER == readerID) ||
-					(ACS_ACR1252_1S_CL_READER == readerID) ||
-					(ACS_ACR1252IMP_1S_CL_READER == readerID))
-				{
-					// the CCID interfaces are 0 and 1
-					interface_number = static_interface - 1;
+
+					if ((HID_OMNIKEY_5422 == readerID)
+						|| (ACS_ACR1281_DUAL_READER_QPBOC == readerID)
+						|| (ACS_ACR1281_DUAL_READER_BSI == readerID)
+						|| (ACS_ACR1281_1S_PICC_READER == readerID)
+						|| (ACS_ACR1251_1S_CL_READER == readerID)
+						|| (ACS_ACR1251U_C == readerID)
+						|| (ACS_ACR1251K_DUAL_READER == readerID)
+						|| (ACS_ACR1252_1S_CL_READER == readerID)
+						|| (ACS_ACR1252IMP_1S_CL_READER == readerID))
+						/* only 2 interfaces for this device */
+						max_interface_number = 1;
 				}
 #endif
 				/* is it already opened? */
@@ -753,6 +766,7 @@ again:
 #ifdef USE_COMPOSITE_AS_MULTISLOT
 				if ((GEMALTOPROXDU == readerID)
 					|| (GEMALTOPROXSU == readerID)
+					|| (HID_OMNIKEY_5422 == readerID)
 					|| (FEITIANR502DUAL == readerID)
 					|| (ACS_ACR1281_DUAL_READER_QPBOC == readerID)
 					|| (ACS_ACR1281_DUAL_READER_BSI == readerID)
@@ -768,7 +782,7 @@ again:
 
 					/* reset for a next reader */
 					/* max interface number for all 3 readers is 2 */
-					if (static_interface > 2)
+					if (static_interface > max_interface_number)
 						static_interface = -1;
 				}
 #endif
