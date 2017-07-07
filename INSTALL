@@ -8,8 +8,19 @@ Installation
 # tar -jxvf acsccid-x.y.z.tar.bz2
 # cd acsccid-x.y.z
 
-3. Enter the following commands to install the driver.
+3. To build the driver in Linux, please install development tools and 
+   the following dependencies.
 
+# libtool
+# autoconf
+
+  Enter the following commands to build and install the driver.
+
+# libtoolize --force
+# aclocal
+# autoheader
+# automake --force-missing --add-missing
+# autoconf
 # ./configure
 # make
 # make install
