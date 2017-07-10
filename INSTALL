@@ -16,11 +16,7 @@ Installation
 
   Enter the following commands to build and install the driver.
 
-# libtoolize --force
-# aclocal
-# autoheader
-# automake --force-missing --add-missing
-# autoconf
+# autoreconf -i
 # ./configure
 # make
 # make install
