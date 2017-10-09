@@ -2268,7 +2268,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 				{
 					*pdwBytesReturned = responseLen - 3;
 					if (RxLength < *pdwBytesReturned)
-						return_value = IFD_COMMUNICATION_ERROR;
+						return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
 					else
 						memcpy(RxBuffer, response + 3, *pdwBytesReturned);
 				}
@@ -2302,7 +2302,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 					{
 						*pdwBytesReturned = responseLen - 3;
 						if (RxLength < *pdwBytesReturned)
-							return_value = IFD_COMMUNICATION_ERROR;
+							return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
 						else
 							memcpy(RxBuffer, response + 3, *pdwBytesReturned);
 					}
@@ -2334,7 +2334,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 					{
 						*pdwBytesReturned = responseLen - 3;
 						if (RxLength < *pdwBytesReturned)
-							return_value = IFD_COMMUNICATION_ERROR;
+							return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
 						else
 							memcpy(RxBuffer, response + 3, *pdwBytesReturned);
 					}
