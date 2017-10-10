@@ -57,6 +57,25 @@
 #include <pthread.h>
 #endif
 
+#if defined(__APPLE__) | defined(sun)
+#pragma pack(1)
+#else
+#pragma pack(push, 1)
+#endif
+
+/* Structure for FEATURE_IFD_DISPLAY_PROPERTIES */
+typedef struct _DISPLAY_PROPERTIES
+{
+	uint16_t wLcdMaxCharacters;	/* Maximum number of characters on a single line */
+	uint16_t wLcdMaxLines;		/* Maximum number of lines that can be used */
+} DISPLAY_PROPERTIES, *PDISPLAY_PROPERTIES;
+
+#if defined(__APPLE__) | defined(sun)
+#pragma pack()
+#else
+#pragma pack(pop)
+#endif
+
 /* Array of structures to hold the ATR and other state value of each slot */
 static CcidDesc CcidSlots[CCID_DRIVER_MAX_READERS];
 
@@ -1880,7 +1899,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		int readerID = ccid_descriptor -> readerID;
 
 		/* we need room for up to five records */
-		if (RxLength < 7 * sizeof(PCSC_TLV_STRUCTURE))
+		if (RxLength < 8 * sizeof(PCSC_TLV_STRUCTURE))
 			return IFD_ERROR_INSUFFICIENT_BUFFER;
 
 		/* We can only support direct verify and/or modify currently */
@@ -1925,6 +1944,12 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 		}
+
+		pcsc_tlv -> tag = FEATURE_IFD_DISPLAY_PROPERTIES;
+		pcsc_tlv -> length = 0x04; /* always 0x04 */
+		pcsc_tlv -> value = htonl(IOCTL_FEATURE_IFD_DISPLAY_PROPERTIES);
+		pcsc_tlv++;
+		iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 
 		pcsc_tlv -> tag = FEATURE_GET_TLV_PROPERTIES;
 		pcsc_tlv -> length = 0x04; /* always 0x04 */
@@ -1987,6 +2012,23 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		caps -> bTimeOut2 = 0x00; /* We do not distinguish bTimeOut from TimeOut2 */
 
 		*pdwBytesReturned = sizeof(*caps);
+		return_value = IFD_SUCCESS;
+	}
+
+	/* Get maximum number of characters and lines. */
+	if (IOCTL_FEATURE_IFD_DISPLAY_PROPERTIES == dwControlCode)
+	{
+		PDISPLAY_PROPERTIES pProps = (PDISPLAY_PROPERTIES) RxBuffer;
+
+		if (RxLength < sizeof(DISPLAY_PROPERTIES))
+		{
+			return IFD_ERROR_INSUFFICIENT_BUFFER;
+		}
+
+		pProps->wLcdMaxCharacters = ccid_descriptor-> wLcdLayout & 0xFF;
+		pProps->wLcdMaxLines = (ccid_descriptor->wLcdLayout >> 8) & 0xFF;
+
+		*pdwBytesReturned = sizeof(DISPLAY_PROPERTIES);
 		return_value = IFD_SUCCESS;
 	}
 
