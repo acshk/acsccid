@@ -3048,6 +3048,7 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 			buffer[length++] = FEATURE_IFD_PIN_PROPERTIES;
 		}
 
+		buffer[length++] = FEATURE_IFD_DISPLAY_PROPERTIES;
 		buffer[length++] = FEATURE_GET_TLV_PROPERTIES;
 		buffer[length++] = FEATURE_CCID_ESC_COMMAND;
 
@@ -3153,6 +3154,34 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 				RxBuffer[5] = 0x00;
 				*RxLength = 6;
 			}
+		}
+		break;
+
+	case FEATURE_IFD_DISPLAY_PROPERTIES:
+		supported = TRUE;
+
+		/* wLcdMaxCharacters */
+		tmp = ccid_descriptor->wLcdLayout & 0xFF;
+		buffer[length++] = tmp & 0xFF;
+		buffer[length++] = (tmp >> 8) & 0xFF;
+
+		/* wLcdMaxLines */
+		tmp = (ccid_descriptor->wLcdLayout >> 8) & 0xFF;
+		buffer[length++] = tmp & 0xFF;
+		buffer[length++] = (tmp >> 8) & 0xFF;
+
+		/* 90 00: Feature executed successfully. */
+		if (*RxLength < length + 2)
+		{
+			ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+		}
+		else
+		{
+			memcpy(RxBuffer, buffer, length);
+			length += 2;
+			RxBuffer[length - 2] = 0x90;
+			RxBuffer[length - 1] = 0x00;
+			*RxLength = length;
 		}
 		break;
 
