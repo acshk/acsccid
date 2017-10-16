@@ -63,6 +63,15 @@
 #pragma pack(push, 1)
 #endif
 
+/* Structure for FEATURE_GET_KEY */
+typedef struct _GET_KEY
+{
+	uint16_t wWaitTime;	/* Time in seconds to wait for a key to be hit */
+	uint8_t bMode;		/* Display mode of key */
+	uint8_t bPosX;		/* Column (starting at 0) */
+	uint8_t bPosY;		/* Row (starting at 0) */
+} GET_KEY, *PGET_KEY;
+
 /* Structure for FEATURE_IFD_DISPLAY_PROPERTIES */
 typedef struct _DISPLAY_PROPERTIES
 {
@@ -1899,7 +1908,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		int readerID = ccid_descriptor -> readerID;
 
 		/* we need room for up to five records */
-		if (RxLength < 8 * sizeof(PCSC_TLV_STRUCTURE))
+		if (RxLength < 9 * sizeof(PCSC_TLV_STRUCTURE))
 			return IFD_ERROR_INSUFFICIENT_BUFFER;
 
 		/* We can only support direct verify and/or modify currently */
@@ -1940,6 +1949,16 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			pcsc_tlv -> tag = FEATURE_MCT_READER_DIRECT;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
 			pcsc_tlv -> value = htonl(IOCTL_FEATURE_MCT_READER_DIRECT);
+
+			pcsc_tlv++;
+			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
+		}
+
+		if (ACS_APG8201_B2 == readerID)
+		{
+			pcsc_tlv -> tag = FEATURE_GET_KEY;
+			pcsc_tlv -> length = 0x04; /* always 0x04 */
+			pcsc_tlv -> value = htonl(IOCTL_FEATURE_GET_KEY);
 
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
@@ -2013,6 +2032,79 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 
 		*pdwBytesReturned = sizeof(*caps);
 		return_value = IFD_SUCCESS;
+	}
+
+	/* Get a key. */
+	if (IOCTL_FEATURE_GET_KEY == dwControlCode)
+	{
+		if (ACS_APG8201_B2 == ccid_descriptor->readerID)
+		{
+			PGET_KEY pGetKey = (PGET_KEY) TxBuffer;
+			uint16_t wLcdMaxCharacters = ccid_descriptor->wLcdLayout & 0xFF;
+			uint16_t wLcdMaxLines = (ccid_descriptor->wLcdLayout >> 8) & 0xFF;
+			unsigned char command[11];
+			unsigned int commandLength = sizeof(command);
+			unsigned char response[3 + 4];
+			unsigned int responseLength = sizeof(response);
+
+			/* Check the parameter. */
+			if ((TxLength < sizeof(GET_KEY))
+				|| (pGetKey->wWaitTime == 0)
+				|| (pGetKey->wWaitTime > 255)
+				|| (pGetKey->bMode > 2)
+				|| (pGetKey->bPosX >= wLcdMaxCharacters)
+				|| (pGetKey->bPosY >= wLcdMaxLines))
+			{
+				return_value = IFD_COMMUNICATION_ERROR;
+				goto err;
+			}
+
+			/* Initialize the command. */
+			command[0] = 0x0A;
+			command[1] = 0x00;
+			command[2] = 0x06;
+			command[3] = 0x00;
+			command[4] = 0x00;
+			command[5] = pGetKey->wWaitTime;
+			command[6] = 0x01;
+			command[7] = 0x01;
+			command[8] = 0x05;
+			command[9] = pGetKey->bPosY * wLcdMaxCharacters + pGetKey->bPosX;
+			command[10] = pGetKey->bMode;
+
+			/* Send the command. */
+			return_value = CmdEscape(reader_index, command, commandLength,
+				response, &responseLength, (pGetKey->wWaitTime + 10) * 1000);
+			if (return_value == IFD_SUCCESS)
+			{
+				if ((responseLength > 5)
+					&& (response[0] == 0x8A)
+					&& (response[3] == 0x00)
+					&& (response[4] == 0x00))
+				{
+					if (responseLength > 6)
+					{
+						*pdwBytesReturned = 1;
+						if (RxLength < *pdwBytesReturned)
+						{
+							return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
+						}
+						else
+						{
+							RxBuffer[0] = response[6];
+						}
+					}
+					else
+					{
+						*pdwBytesReturned = 0;
+					}
+				}
+				else
+				{
+					return_value = IFD_COMMUNICATION_ERROR;
+				}
+			}
+		}
 	}
 
 	/* Get maximum number of characters and lines. */
