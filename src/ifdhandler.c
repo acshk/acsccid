@@ -3140,6 +3140,11 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 			buffer[length++] = FEATURE_IFD_PIN_PROPERTIES;
 		}
 
+		if (ccid_descriptor->readerID == ACS_APG8201_B2)
+		{
+			buffer[length++] = FEATURE_GET_KEY;
+		}
+
 		buffer[length++] = FEATURE_IFD_DISPLAY_PROPERTIES;
 		buffer[length++] = FEATURE_GET_TLV_PROPERTIES;
 		buffer[length++] = FEATURE_CCID_ESC_COMMAND;
@@ -3245,6 +3250,124 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 				RxBuffer[4] = 0x90;
 				RxBuffer[5] = 0x00;
 				*RxLength = 6;
+			}
+		}
+		break;
+
+	case FEATURE_GET_KEY:
+		if (ccid_descriptor->readerID == ACS_APG8201_B2)
+		{
+			unsigned char *data = NULL;
+			uint16_t wWaitTime = 0;
+			uint8_t bMode = 0;
+			uint8_t bPosX = 0;
+			uint8_t bPosY = 0;
+			uint16_t wLcdMaxCharacters = ccid_descriptor->wLcdLayout & 0xFF;
+			uint16_t wLcdMaxLines = (ccid_descriptor->wLcdLayout >> 8) & 0xFF;
+			unsigned char command[11];
+			unsigned int commandLength = sizeof(command);
+			unsigned char response[3 + 4];
+			unsigned int responseLength = sizeof(response);
+
+			supported = TRUE;
+
+			/* Check the length and Lc. */
+			/* Minimum Length: CLA + INS + P1 + P2 + Lc + data (5 bytes) */
+			if ((TxLength < 10) || (TxBuffer[4] != TxLength - 5))
+			{
+				/* 67 00: Wrong length; no further indication */
+				if (*RxLength < 2)
+				{
+					ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+				}
+				else
+				{
+					RxBuffer[0] = 0x67;
+					RxBuffer[1] = 0x00;
+					*RxLength = 2;
+				}
+
+				break;
+			}
+
+			/* Check the data. */
+			data = TxBuffer + 5;
+			wWaitTime = data[0] | (data[1] << 8);
+			bMode = data[2];
+			bPosX = data[3];
+			bPosY = data[4];
+			if ((wWaitTime == 0)
+				|| (wWaitTime > 255)
+				|| (bMode > 2)
+				|| (bPosX >= wLcdMaxCharacters)
+				|| (bPosY >= wLcdMaxLines))
+			{
+				/* 6A 80: Incorrect parameters in the command data field */
+				if (*RxLength < 2)
+				{
+					ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+				}
+				else
+				{
+					RxBuffer[0] = 0x6A;
+					RxBuffer[1] = 0x80;
+					*RxLength = 2;
+				}
+
+				break;
+			}
+
+			/* Initialize the command. */
+			command[0] = 0x0A;
+			command[1] = 0x00;
+			command[2] = 0x06;
+			command[3] = 0x00;
+			command[4] = 0x00;
+			command[5] = wWaitTime;
+			command[6] = 0x01;
+			command[7] = 0x01;
+			command[8] = 0x05;
+			command[9] = bPosY * wLcdMaxCharacters + bPosX;
+			command[10] = bMode;
+
+			/* Send the command. */
+			ret = CmdEscape(reader_index, command, commandLength, response,
+				&responseLength, (wWaitTime + 10) * 1000);
+			if (ret == IFD_SUCCESS)
+			{
+				if ((responseLength > 5)
+					&& (response[0] == 0x8A)
+					&& (response[3] == 0x00)
+					&& (response[4] == 0x00))
+				{
+					if (responseLength > 6)
+					{
+						buffer[0] = response[6];
+						length = 1;
+					}
+					else
+					{
+						length = 0;
+					}
+
+					/* 90 00: Feature executed successfully. */
+					if (*RxLength < length + 2)
+					{
+						ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+					}
+					else
+					{
+						memcpy(RxBuffer, buffer, length);
+						length += 2;
+						RxBuffer[length - 2] = 0x90;
+						RxBuffer[length - 1] = 0x00;
+						*RxLength = length;
+					}
+				}
+				else
+				{
+					ret = IFD_COMMUNICATION_ERROR;
+				}
 			}
 		}
 		break;
