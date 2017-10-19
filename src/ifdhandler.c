@@ -3253,6 +3253,11 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 
 		if (ccid_descriptor->readerID == ACS_APG8201_B2)
 		{
+			buffer[length++] = FEATURE_WRITE_DISPLAY;
+		}
+
+		if (ccid_descriptor->readerID == ACS_APG8201_B2)
+		{
 			buffer[length++] = FEATURE_GET_KEY;
 		}
 
@@ -3361,6 +3366,140 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 				RxBuffer[4] = 0x90;
 				RxBuffer[5] = 0x00;
 				*RxLength = 6;
+			}
+		}
+		break;
+
+	case FEATURE_WRITE_DISPLAY:
+		if (ccid_descriptor->readerID == ACS_APG8201_B2)
+		{
+			unsigned char *data = NULL;
+			uint16_t wDisplayTime = 0;
+			uint8_t bPosX = 0;
+			uint8_t bPosY = 0;
+			uint8_t bStringLength = 0;
+			uint16_t wLcdMaxCharacters = ccid_descriptor->wLcdLayout & 0xFF;
+			uint16_t wLcdMaxLines = (ccid_descriptor->wLcdLayout >> 8) & 0xFF;
+			unsigned char command[5 + 34];
+			unsigned int commandLength = 0;
+			unsigned char response[3 + 2];
+			unsigned int responseLength = sizeof(response);
+			iconv_t cd = (iconv_t) -1;
+			char *inBuffer = NULL;
+			size_t inBytesLeft = 0;
+			char *outBuffer = NULL;
+			size_t outBytesLeft = 0;
+			size_t nconv = 0;
+
+			supported = TRUE;
+
+			/* Check the length and Lc. */
+			/* Minimum Length: CLA + INS + P1 + P2 + Lc + data (5 bytes) */
+			if ((TxLength < 13) || (TxBuffer[4] != TxLength - 5))
+			{
+				/* 67 00: Wrong length; no further indication */
+				if (*RxLength < 2)
+				{
+					ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+				}
+				else
+				{
+					RxBuffer[0] = 0x67;
+					RxBuffer[1] = 0x00;
+					*RxLength = 2;
+				}
+
+				break;
+			}
+
+			/* Check the data. */
+			data = TxBuffer + 5;
+			wDisplayTime = data[0] | (data[1] << 8);
+			bPosX = data[2];
+			bPosY = data[3];
+			bStringLength = data[6];
+			if ((wDisplayTime / 1000 > 255)
+				|| (bPosX >= wLcdMaxCharacters)
+				|| (bPosY >= wLcdMaxLines)
+				|| (bStringLength != TxLength - 5 - 7))
+			{
+				/* 6A 80: Incorrect parameters in the command data field */
+				if (*RxLength < 2)
+				{
+					ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+				}
+				else
+				{
+					RxBuffer[0] = 0x6A;
+					RxBuffer[1] = 0x80;
+					*RxLength = 2;
+				}
+
+				break;
+			}
+
+			/* Convert UTF-8 string to ISO-8859-2 string. */
+			cd = iconv_open("ISO-8859-2", "UTF-8");
+			if (cd == (iconv_t) -1)
+			{
+				DEBUG_INFO1("iconv_open() failed");
+				ret = IFD_COMMUNICATION_ERROR;
+				break;
+			}
+
+			inBuffer = (char *) data + 7;
+			inBytesLeft = bStringLength;
+			outBuffer = (char *) command + 7;
+			outBytesLeft = 32;
+			nconv = iconv(cd, &inBuffer, &inBytesLeft, &outBuffer,
+				&outBytesLeft);
+			iconv_close(cd);
+			if (nconv == (size_t) -1)
+			{
+				DEBUG_INFO1("iconv() failed");
+				ret = IFD_COMMUNICATION_ERROR;
+				break;
+			}
+
+			/* Calculate the length. */
+			length = 34 - outBytesLeft;
+			commandLength = 5 + length;
+
+			/* Initialize the command. */
+			command[0] = 0x07;
+			command[1] = (length >> 8) & 0xFF;
+			command[2] = length & 0xFF;
+			command[3] = 0x00;
+			command[4] = 0x00;
+			command[5] = wDisplayTime / 1000;
+			command[6] = bPosY * wLcdMaxCharacters + bPosX;
+
+			/* Send the command. */
+			ret = CmdEscape(reader_index, command, commandLength, response,
+				&responseLength, 10 * 1000);
+			if (ret == IFD_SUCCESS)
+			{
+				if ((responseLength > 4)
+					&& (response[0] == 0x87)
+					&& (response[3] == 0x00)
+					&& (response[4] == 0x00))
+				{
+					/* 90 00: Feature executed successfully. */
+					if (*RxLength < 2)
+					{
+						ret = IFD_ERROR_INSUFFICIENT_BUFFER;
+					}
+					else
+					{
+						RxBuffer[0] = 0x90;
+						RxBuffer[1] = 0x00;
+						*RxLength = 2;
+					}
+				}
+				else
+				{
+					ret = IFD_COMMUNICATION_ERROR;
+				}
 			}
 		}
 		break;
