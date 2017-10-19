@@ -57,11 +57,24 @@
 #include <pthread.h>
 #endif
 
+#include <iconv.h>
+
 #if defined(__APPLE__) | defined(sun)
 #pragma pack(1)
 #else
 #pragma pack(push, 1)
 #endif
+
+/* Structure for FEATURE_WRITE_DISPLAY */
+typedef struct _WRITE_DISPLAY
+{
+	uint16_t wDisplayTime;	/* Display time in ms */
+	uint8_t bPosX;			/* Column (starting at 0) */
+	uint8_t bPosY;			/* Row (starting at 0) */
+	uint16_t wLangId;		/* Language ID of the message */
+	uint8_t bStringLength;	/* Length of message, in bytes */
+	uint8_t bString[1];		/* Message string in UTF-8 */
+} WRITE_DISPLAY, *PWRITE_DISPLAY;
 
 /* Structure for FEATURE_GET_KEY */
 typedef struct _GET_KEY
@@ -1908,7 +1921,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		int readerID = ccid_descriptor -> readerID;
 
 		/* we need room for up to five records */
-		if (RxLength < 9 * sizeof(PCSC_TLV_STRUCTURE))
+		if (RxLength < 10 * sizeof(PCSC_TLV_STRUCTURE))
 			return IFD_ERROR_INSUFFICIENT_BUFFER;
 
 		/* We can only support direct verify and/or modify currently */
@@ -1949,6 +1962,16 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			pcsc_tlv -> tag = FEATURE_MCT_READER_DIRECT;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
 			pcsc_tlv -> value = htonl(IOCTL_FEATURE_MCT_READER_DIRECT);
+
+			pcsc_tlv++;
+			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
+		}
+
+		if (ACS_APG8201_B2 == readerID)
+		{
+			pcsc_tlv -> tag = FEATURE_WRITE_DISPLAY;
+			pcsc_tlv -> length = 0x04; /* always 0x04 */
+			pcsc_tlv -> value = htonl(IOCTL_FEATURE_WRITE_DISPLAY);
 
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
@@ -2032,6 +2055,94 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 
 		*pdwBytesReturned = sizeof(*caps);
 		return_value = IFD_SUCCESS;
+	}
+
+	/* Write any UTF-8 based message to the display. */
+	if (IOCTL_FEATURE_WRITE_DISPLAY == dwControlCode)
+	{
+		if (ACS_APG8201_B2 == ccid_descriptor->readerID)
+		{
+			PWRITE_DISPLAY pWriteDisplay = (PWRITE_DISPLAY) TxBuffer;
+			uint16_t wLcdMaxCharacters = ccid_descriptor->wLcdLayout & 0xFF;
+			uint16_t wLcdMaxLines = (ccid_descriptor->wLcdLayout >> 8) & 0xFF;
+			unsigned char command[5 + 34];
+			unsigned int commandLength = 0;
+			unsigned char response[3 + 2];
+			unsigned int responseLength = sizeof(response);
+			iconv_t cd = (iconv_t) -1;
+			char *inBuffer = NULL;
+			size_t inBytesLeft = 0;
+			char *outBuffer = NULL;
+			size_t outBytesLeft = 0;
+			size_t nconv = 0;
+			unsigned int length = 0;
+
+			/* Check the parameter. */
+			if ((TxLength < sizeof(WRITE_DISPLAY))
+				|| (pWriteDisplay->wDisplayTime / 1000 > 255)
+				|| (pWriteDisplay->bPosX >= wLcdMaxCharacters)
+				|| (pWriteDisplay->bPosY >= wLcdMaxLines)
+				|| (pWriteDisplay->bStringLength != TxLength - 7))
+			{
+				return_value = IFD_COMMUNICATION_ERROR;
+				goto err;
+			}
+
+			/* Convert UTF-8 string to ISO-8859-2 string. */
+			cd = iconv_open("ISO-8859-2", "UTF-8");
+			if (cd == (iconv_t) -1)
+			{
+				DEBUG_INFO1("iconv_open() failed");
+				return_value = IFD_COMMUNICATION_ERROR;
+				goto err;
+			}
+
+			inBuffer = (char *) pWriteDisplay->bString;
+			inBytesLeft = pWriteDisplay->bStringLength;
+			outBuffer = (char *) command + 7;
+			outBytesLeft = 32;
+			nconv = iconv(cd, &inBuffer, &inBytesLeft, &outBuffer,
+				&outBytesLeft);
+			iconv_close(cd);
+			if (nconv == (size_t) -1)
+			{
+				DEBUG_INFO1("iconv() failed");
+				return_value = IFD_COMMUNICATION_ERROR;
+				goto err;
+			}
+
+			/* Calculate the length. */
+			length = 34 - outBytesLeft;
+			commandLength = 5 + length;
+
+			/* Initialize the command. */
+			command[0] = 0x07;
+			command[1] = (length >> 8) & 0xFF;
+			command[2] = length & 0xFF;
+			command[3] = 0x00;
+			command[4] = 0x00;
+			command[5] = pWriteDisplay->wDisplayTime / 1000;
+			command[6] = pWriteDisplay->bPosY * wLcdMaxCharacters
+				+ pWriteDisplay->bPosX;
+
+			/* Send the command. */
+			return_value = CmdEscape(reader_index, command, commandLength,
+				response, &responseLength, 10 * 1000);
+			if (return_value == IFD_SUCCESS)
+			{
+				if ((responseLength > 4)
+					&& (response[0] == 0x87)
+					&& (response[3] == 0x00)
+					&& (response[4] == 0x00))
+				{
+					*pdwBytesReturned = 0;
+				}
+				else
+				{
+					return_value = IFD_COMMUNICATION_ERROR;
+				}
+			}
+		}
 	}
 
 	/* Get a key. */
