@@ -57,10 +57,10 @@ Info.plist: Info.plist.src $(srcdir)/supported_readers.txt
 DISTCLEANFILES = tokenparser.c Info.plist
 
 install: libacsccid.la Info.plist
-	$(mkinstalldirs) $(DESTDIR)$(usbdropdir)/$(CCID_BUNDLE)/Contents/$(BUNDLE_HOST)/
-	cp Info.plist $(DESTDIR)$(usbdropdir)/$(CCID_BUNDLE)/Contents/
-	cp .libs/$(CCID_LIB) $(DESTDIR)$(usbdropdir)/$(CCID_BUNDLE)/Contents/$(BUNDLE_HOST)/$(CCID_LIB)
+	$(mkinstalldirs) "$(DESTDIR)$(usbdropdir)/$(CCID_BUNDLE)/Contents/$(BUNDLE_HOST)/"
+	cp Info.plist "$(DESTDIR)$(usbdropdir)/$(CCID_BUNDLE)/Contents/"
+	cp .libs/$(CCID_LIB) "$(DESTDIR)$(usbdropdir)/$(CCID_BUNDLE)/Contents/$(BUNDLE_HOST)/$(CCID_LIB)"
 	$(INSTALL_UDEV_RULE_FILE)
 
 uninstall:
-	rm -rf $(DESTDIR)$(usbdropdir)/$(CCID_BUNDLE)
+	rm -rf "$(DESTDIR)$(usbdropdir)/$(CCID_BUNDLE)"
