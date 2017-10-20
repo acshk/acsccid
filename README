@@ -62,7 +62,7 @@ VID  PID  Reader              Reader Name
 072F B103 ACR39F              ACS ACR39F ICC Reader
 072F B104 ACR39U-SAM          ACS ACR39U-SAM ICC Reader
 072F B10C ACR39U-U1           ACS ACR39U ID1 Card Reader
-072F B000 ACR3901U            ACS ACR3901U ICC Reader
+072F B000 ACR3901U            ACS ACR3901 ICC Reader
 072F 90D2 ACR83U-A1           ACS ACR83U
 072F 8306 ACR85               ACS ACR85 PINPad Reader
 072F 2011 ACR88U              ACS ACR88U
@@ -94,9 +94,11 @@ VID  PID  Reader              Reader Name
 072F 2238 ACR1251U-C9         ACS ACR1251 Reader
 072F 224F ACM1251U-Z2         ACS ACR1251 CL Reader
 072F 223B ACR1252U-A1         ACS ACR1252 1S CL Reader
+072F 223B ACR1252U-M1         ACS ACR1252 1S CL Reader
 072F 223E ACR1252U-A2         ACS ACR1252 CL Reader
 072F 223D ACR1252U BL         ACS ACR1252 USB FW_Upgrade v100
 072F 2244 ACR1252U-A1 (PICC)  ACS ACR1252U BADANAMU MAGIC READER
+072F 2259 ACR1252U-A1         ACS ACR1252IMP 1S CL Reader
 072F 223F ACR1255U-J1         ACS ACR1255U-J1 PICC Reader
 072F 2239 ACR1256U            ACS ACR1256U PICC Reader
 072F 2211 ACR1261U-C1         ACS ACR1261 1S Dual Reader
@@ -122,7 +124,9 @@ VID  PID  Reader              Reader Name
 072F 0102 AET62               ACS AET62 PICC Reader
 072F 0103 AET62               ACS AET62 1SAM PICC Reader
 072F 0100 AET65               ACS AET65 ICC Reader
+072F 224A AMR220-C            ACS AMR220 Reader
 072F 8201 APG8201-A1          ACS APG8201
+072F 8206 APG8201-B2          ACS APG8201-B2
 072F 8202 [OEM Reader]        [OEM Reader Name]
 072F 8205 [OEM Reader]        [OEM Reader Name]
 072F 90DB CryptoMate64        ACS CryptoMate64
@@ -143,6 +147,47 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.1.5 (23/10/2017)
+- Add the following readers support:
+  ACR1252IMP 1S CL Reader
+  AMR220 Reader
+  APG8201-B2
+- Merge with ccid 1.4.26.
+  - Fix spelling in log message.
+  - PowerOn: use automatic voltage selection when needed.
+  - PowerOn: move from 1.8V to 5V if 1.8V is not supported.
+  - PowerOn: always try every possible voltage values.
+  - PowerOn: default value comes from Info.plist.
+  - MacOSX/configure: remove reference to libusbx.
+  - MacOSX/configure: check static libusb will be used.
+  - MacOSX/configure: move definition of MAC_VERSION.
+  - ifdhandler: only GetNewReaderIndex() has to be thread protected.
+  - FreeChannel(): release reader_index only after use.
+- Fix ACR39U memory card problem in IFDHSetProtocolParameters().
+- Use CHECK_STATUS macro to check read/write status in acr38cmd.c.
+- Try 10 times to warm up the reader in CreateChannelByNameOrChannel().
+- Merge with ccid 1.4.27.
+  - InterruptRead(): return a valid IFDHandler code.
+  - ccid_usb.c: document CCID composite devices.
+  - Makefile.am: do not display udev message in red.
+  - OpenUSBByName(): the device bus & addr must match.
+  - CmdEscapeCheck(): signals buffer overflow.
+  - OpenUSBByName(): simplify USE_COMPOSITE_AS_MULTISLOT code.
+  - configure.ac: fix error message for SCardEstablishContext.
+- Return IFD_ERROR_INSUFFICIENT_BUFFER in IFDHControl().
+- Rename ACR3901U ICC Reader to ACR3901 ICC Reader.
+- Merge with ccid 1.4.28.
+  - udev rule: allow rule overwrite.
+  - Makefile: add support of spaces in DESTDIR.
+- Process IOCTL_FEATURE_IFD_DISPLAY_PROPERTIES in IFDHControl().
+- Process FEATURE_IFD_DISPLAY_PROPERTIES in process_spe_ppdu().
+- Process IOCTL_FEATURE_GET_KEY in IFDHControl().
+- Process FEATURE_GET_KEY in process_spe_ppdu().
+- Process IOCTL_FEATURE_WRITE_DISPLAY in IFDHControl().
+- Process FEATURE_WRITE_DISPLAY in process_spe_ppdu().
+- Check for iconv.
+- Enable specific I/O controls for APG8201-B2 in IFDHControl().
 
 v1.1.4 (7/12/2016)
 - Add the following readers support:
@@ -456,7 +501,7 @@ Fax: +852 2796 1286
 
 
 -------------------------------------------------------------------------------
-Copyright (C) 2009-2016 Advanced Card Systems Ltd.
+Copyright (C) 2009-2017 Advanced Card Systems Ltd.
 Copyright (C) 2003-2011 Ludovic Rousseau
 Copyright (C) 2000-2001 Carlos Prados
 Copyright (C) 2003 Olaf Kirch
