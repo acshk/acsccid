@@ -3686,6 +3686,7 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 		/* ACR83, APG8201 and APG8201Z. */
 		if ((ccid_descriptor->readerID == ACS_ACR83U)
 			|| (ccid_descriptor->readerID == ACS_APG8201)
+			|| (ccid_descriptor->readerID == ACS_APG8201_B2)
 			|| (ccid_descriptor->readerID == ACS_APG8201Z)
 			|| (ccid_descriptor->readerID == ACS_APG8201Z2))
 		{
