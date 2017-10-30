@@ -2357,6 +2357,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		/* ACR83, APG8201 and APG8201Z */
 		if ((ACS_ACR83U == ccid_descriptor -> readerID)
 			|| (ACS_APG8201 == ccid_descriptor -> readerID)
+			|| (ACS_APG8201_B2 == ccid_descriptor -> readerID)
 			|| (ACS_APG8201Z == ccid_descriptor -> readerID)
 			|| (ACS_APG8201Z2 == ccid_descriptor -> readerID))
 		{
