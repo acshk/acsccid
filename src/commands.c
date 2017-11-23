@@ -73,6 +73,10 @@
 		return IFD_COMMUNICATION_ERROR;
 
 /* internal functions */
+static RESPONSECODE CmdXfrBlockAPDU_short(unsigned int reader_index,
+	unsigned int tx_length, unsigned char tx_buffer[], unsigned int *rx_length,
+	unsigned char rx_buffer[]);
+
 static RESPONSECODE CmdXfrBlockAPDU_extended(unsigned int reader_index,
 	unsigned int tx_length, unsigned char tx_buffer[], unsigned int *rx_length,
 	unsigned char rx_buffer[]);
@@ -1341,7 +1345,7 @@ RESPONSECODE CmdXfrBlock(unsigned int reader_index, unsigned int tx_length,
 
 		case CCID_CLASS_SHORT_APDU:
 			ccid_descriptor -> readTimeout = 0;	// Infinite
-			return_value = CmdXfrBlockTPDU_T0(reader_index,
+			return_value = CmdXfrBlockAPDU_short(reader_index,
 				tx_length, tx_buffer, rx_length, rx_buffer);
 			break;
 
@@ -1696,6 +1700,55 @@ time_request:
 
 /*****************************************************************************
  *
+ *					CmdXfrBlockAPDU_short
+ *
+ ****************************************************************************/
+static RESPONSECODE CmdXfrBlockAPDU_short(unsigned int reader_index,
+	unsigned int tx_length, unsigned char tx_buffer[], unsigned int *rx_length,
+	unsigned char rx_buffer[])
+{
+	RESPONSECODE return_value = IFD_SUCCESS;
+	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
+
+	DEBUG_COMM2("T=0: %d bytes", tx_length);
+
+	/* command length too big for CCID reader? */
+	if (tx_length > ccid_descriptor->dwMaxCCIDMessageLength-10)
+	{
+#ifdef BOGUS_SCM_FIRMWARE_FOR_dwMaxCCIDMessageLength
+		if (263 == ccid_descriptor->dwMaxCCIDMessageLength)
+		{
+			DEBUG_INFO3("Command too long (%d bytes) for max: %d bytes."
+				" SCM reader with bogus firmware?",
+				tx_length, ccid_descriptor->dwMaxCCIDMessageLength-10);
+		}
+		else
+#endif
+		{
+			DEBUG_CRITICAL3("Command too long (%d bytes) for max: %d bytes",
+				tx_length, ccid_descriptor->dwMaxCCIDMessageLength-10);
+			return IFD_COMMUNICATION_ERROR;
+		}
+	}
+
+	/* command length too big for CCID driver? */
+	if (tx_length > CMD_BUF_SIZE)
+	{
+		DEBUG_CRITICAL3("Command too long (%d bytes) for max: %d bytes",
+				tx_length, CMD_BUF_SIZE);
+		return IFD_COMMUNICATION_ERROR;
+	}
+
+	return_value = CCID_Transmit(reader_index, tx_length, tx_buffer, 0, 0);
+	if (return_value != IFD_SUCCESS)
+		return return_value;
+
+	return CCID_Receive(reader_index, rx_length, rx_buffer, NULL);
+} /* CmdXfrBlockAPDU_short */
+
+
+/*****************************************************************************
+ *
  *					CmdXfrBlockAPDU_extended
  *
  ****************************************************************************/
@@ -1850,6 +1903,7 @@ static RESPONSECODE CmdXfrBlockTPDU_T0(unsigned int reader_index,
 {
 	RESPONSECODE return_value = IFD_SUCCESS;
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
+	unsigned char *tmpBuffer = NULL;
 
 	DEBUG_COMM2("T=0: %d bytes", tx_length);
 
@@ -1880,7 +1934,51 @@ static RESPONSECODE CmdXfrBlockTPDU_T0(unsigned int reader_index,
 		return IFD_COMMUNICATION_ERROR;
 	}
 
+	/* Convert APDU to TPDU. */
+	if (tx_length > 5)
+	{
+		unsigned int dataLength = tx_length - 5;
+		unsigned char Lc = tx_buffer[4];
+
+		if (Lc > 0)
+		{
+			/* Remove Le field if data length is longer than Lc. */
+			if (dataLength > Lc)
+			{
+				tx_length = 5 + Lc;
+			}
+			/* Append trailing zeros if data length is shorter than Lc. */
+			else if (dataLength < Lc)
+			{
+				unsigned int tmpBufferLength = 5 + Lc;
+
+				/* Allocate the buffer. */
+				tmpBuffer = (unsigned char *) malloc(tmpBufferLength);
+				if (tmpBuffer == NULL)
+				{
+					DEBUG_CRITICAL("Not enough memory");
+					return IFD_COMMUNICATION_ERROR;
+				}
+				else
+				{
+					memset(tmpBuffer, 0, tmpBufferLength);
+					memcpy(tmpBuffer, tx_buffer, tx_length);
+					tx_buffer = tmpBuffer;
+					tx_length = tmpBufferLength;
+				}
+			}
+		}
+	}
+
 	return_value = CCID_Transmit(reader_index, tx_length, tx_buffer, 0, 0);
+
+	/* Free the buffer. */
+	if (tmpBuffer != NULL)
+	{
+		free(tmpBuffer);
+		tmpBuffer = NULL;
+	}
+
 	if (return_value != IFD_SUCCESS)
 		return return_value;
 
