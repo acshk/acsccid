@@ -1611,12 +1611,21 @@ time_request:
 			case 0xFF:	// Abort
 				// ACR83U, ACR85 and APG8201
 				// Invalid parameter in PIN verification/modification data structure
-				if (*rx_length < 2)
-					return IFD_ERROR_INSUFFICIENT_BUFFER;
-				rx_buffer[0]= 0x6B;
-				rx_buffer[1]= 0x80;
-				*rx_length = 2;
-				return IFD_SUCCESS;
+				if ((ACS_ACR83U == ccid_descriptor->readerID)
+					|| (ACS_ACR85_PINPAD_READER_ICC == ccid_descriptor->readerID)
+					|| (ACS_APG8201 == ccid_descriptor->readerID)
+					|| (ACS_APG8201_B2 == ccid_descriptor->readerID)
+					|| (ACS_APG8201Z == ccid_descriptor->readerID)
+					|| (ACS_APG8201Z2 == ccid_descriptor->readerID))
+				{
+					if (*rx_length < 2)
+						return IFD_ERROR_INSUFFICIENT_BUFFER;
+					rx_buffer[0]= 0x6B;
+					rx_buffer[1]= 0x80;
+					*rx_length = 2;
+					return IFD_SUCCESS;
+				}
+				return IFD_COMMUNICATION_ERROR;
 
 			case 0x84:	// Two "new PIN" entries do not match.
 				if (*rx_length < 2)
