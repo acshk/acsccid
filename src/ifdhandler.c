@@ -1916,7 +1916,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		PCSC_TLV_STRUCTURE *pcsc_tlv = (PCSC_TLV_STRUCTURE *)RxBuffer;
 		int readerID = ccid_descriptor -> readerID;
 
-		/* we need room for up to five records */
+		/* we need room for up to ten records */
 		if (RxLength < 10 * sizeof(PCSC_TLV_STRUCTURE))
 			return IFD_ERROR_INSUFFICIENT_BUFFER;
 
