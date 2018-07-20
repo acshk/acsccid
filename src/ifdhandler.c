@@ -1482,7 +1482,8 @@ EXTERNAL RESPONSECODE IFDHPowerICC(DWORD Lun, DWORD Action,
 			if ((return_value != IFD_SUCCESS) || (nlength == 0))	// ACR1222: No ATR is returned
 			{
 				/* used by GemCore SIM PRO: no card is present */
-				if (GEMCORESIMPRO == ccid_descriptor -> readerID)
+				if ((ccid_descriptor->isSamSlot)
+					|| (GEMCORESIMPRO == ccid_descriptor -> readerID))
 					get_ccid_descriptor(reader_index)->dwSlotStatus
 						= IFD_ICC_NOT_PRESENT;
 
