@@ -823,6 +823,31 @@ int ccid_open_hack_post(unsigned int reader_index)
 			{
 				ccid_descriptor->dwFeatures = 0x000204BA;	// MCU
 				ccid_descriptor->dwMaxDataRate = 344100;
+
+				/* ACR1281U-C1 >= v526 supports ICC extended APDU. */
+				if (ccid_descriptor->readerID == ACS_ACR1281_1S_DUAL_READER)
+				{
+					char firmwareVersion[30];
+					unsigned int firmwareVersionLen = sizeof(firmwareVersion);
+
+					DEBUG_INFO1("Getting ACR1281U-C1 firmware version...");
+					if (ACR1222_GetFirmwareVersion(reader_index,
+						firmwareVersion, &firmwareVersionLen))
+					{
+						int version = 0;
+
+						DEBUG_INFO2("ACR1281U-C1 firmware version: %s",
+							firmwareVersion);
+						if (sscanf(firmwareVersion, "ACR1281U_V%d", &version)
+							> 0)
+						{
+							if (version >= 526)
+							{
+								ccid_descriptor->dwFeatures = 0x000404BA;
+							}
+						}
+					}
+				}
 			}
 			else if (ccid_descriptor->bCurrentSlotIndex == 1)
 			{
