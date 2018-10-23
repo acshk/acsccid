@@ -2623,6 +2623,51 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		}
 	}
 
+	/* Control code for toggling the card state in SAM slot */
+	if ((IOCTL_SMARTCARD_TOGGLE_CARD_STATE == dwControlCode)
+		|| (WINIOCTL_SMARTCARD_TOGGLE_CARD_STATE == dwControlCode))
+	{
+		if (ccid_descriptor->isSamSlot)
+		{
+			if (TxLength > 0)
+			{
+				if (TxBuffer[0] == 0)
+				{
+					UCHAR buffer[MAX_ATR_SIZE];
+					DWORD length = sizeof(buffer);
+
+					/* Power down the card. */
+					(void)IFDHPowerICC(Lun, IFD_POWER_DOWN, buffer, &length);
+					usleep(10 * 1000);
+
+					/* Set the card state to absent. */
+					ccid_descriptor->dwSlotStatus = IFD_ICC_NOT_PRESENT;
+				}
+				else
+				{
+					/* Set the card state to present. */
+					ccid_descriptor->dwSlotStatus = IFD_ICC_PRESENT;
+				}
+
+				/* Trigger the slot change. */
+				TriggerSlotChange(reader_index);
+			}
+
+			*pdwBytesReturned = 1;
+			if (RxLength < *pdwBytesReturned)
+			{
+				return_value = IFD_ERROR_INSUFFICIENT_BUFFER;
+			}
+			else
+			{
+				/* Return the current state. */
+				RxBuffer[0] =
+					(ccid_descriptor->dwSlotStatus == IFD_ICC_PRESENT) ? 1 : 0;
+				return_value = IFD_SUCCESS;
+			}
+		}
+	}
+
 err:
 	if (IFD_SUCCESS != return_value)
 		*pdwBytesReturned = 0;

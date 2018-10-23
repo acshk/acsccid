@@ -42,4 +42,6 @@ int ControlUSB(int reader_index, int requesttype, int request, int value,
 
 int InterruptRead(int reader_index, int timeout);
 void InterruptStop(int reader_index);
+
+void TriggerSlotChange(int reader_index);
 #endif

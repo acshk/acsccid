@@ -1885,6 +1885,35 @@ void InterruptStop(int reader_index)
 
 /*****************************************************************************
  *
+ *					TriggerSlotChange
+ *
+ ****************************************************************************/
+void TriggerSlotChange(int reader_index)
+{
+	struct usbDevice_MultiSlot_Extension *msExt =
+		usbDevice[reader_index].multislot_extension;
+
+	if (msExt != NULL)
+	{
+		int interrupt_byte =
+			(usbDevice[reader_index].ccid.bCurrentSlotIndex / 4) + 1;
+		int interrupt_value =
+			0x02 << (2 * (usbDevice[reader_index].ccid.bCurrentSlotIndex % 4));
+
+		pthread_mutex_lock(&msExt->mutex);
+
+		msExt->status = LIBUSB_TRANSFER_COMPLETED;
+		memset(msExt->buffer, 0, sizeof(msExt->buffer));
+		msExt->buffer[interrupt_byte] = interrupt_value;
+
+		pthread_cond_broadcast(&msExt->condition);
+		pthread_mutex_unlock(&msExt->mutex);
+	}
+}
+
+
+/*****************************************************************************
+ *
  *					Multi_PollingProc
  *
  ****************************************************************************/
