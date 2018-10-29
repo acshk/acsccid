@@ -28,7 +28,7 @@ Mac OS X
 
 For more information, see the INSTALL file.
 
-[1] http://pcsclite.alioth.debian.org/ccid.html
+[1] https://ccid.apdu.fr/
 
 
 
@@ -99,6 +99,8 @@ VID  PID  Reader              Reader Name
 072F 223D ACR1252U BL         ACS ACR1252 USB FW_Upgrade v100
 072F 2244 ACR1252U-A1 (PICC)  ACS ACR1252U BADANAMU MAGIC READER
 072F 2259 ACR1252U-A1         ACS ACR1252IMP 1S CL Reader
+072F 225B ACM1252U-Z2ACE      ACS ACR1252 CL Reader
+072F 225C ACM1252U-Z2ACE BL   ACS ACR1252 USB FW_Upgrade v100
 072F 223F ACR1255U-J1         ACS ACR1255U-J1 PICC Reader
 072F 2239 ACR1256U            ACS ACR1256U PICC Reader
 072F 2211 ACR1261U-C1         ACS ACR1261 1S Dual Reader
@@ -147,6 +149,29 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.1.6 (29/10/2018)
+- Add the following readers support:
+  ACR1252 CL Reader           (ACM1252U-Z2ACE)
+  ACR1252 USB FW_Upgrade v100 (ACM1252U-Z2ACE BL)
+- Enable TLV properties for APG8201-B2 in IFDHControl().
+- Enable TLV properties for APG8201-B2 in process_spe_ppdu().
+- Fix ACR39U T=0 APDU problem in CmdXfrBlockTPDU_T0().
+- Return 6B 80 for supported readers in CCID_Receive().
+- Merge with ccid 1.4.29.
+  - Remove extra_egt() causing problems.
+- Update the comment in IFDHControl().
+- Fix undefined symbol yylex.
+- Set the status to absent if SAM reset failed in IFDHPowerICC().
+- Merge with ccid 1.4.30.
+  - Import files from ccid 1.4.30.
+  - macOS: exit configure with an error when needed.
+  - Fix libusb config descriptor leak.
+  - Fix leaking an allocated bundle in case no matching reader was found.
+  - InterruptStop(): Log the libusb text instead of number.
+  - InterruptRead(): revert change.
+- Enable ICC extended APDU for ACR1281U-C1 >= v526.
+- Add IOCTL_SMARTCARD_TOGGLE_CARD_STATE for SAM slot.
 
 v1.1.5 (23/10/2017)
 - Add the following readers support:
@@ -501,7 +526,7 @@ Fax: +852 2796 1286
 
 
 -------------------------------------------------------------------------------
-Copyright (C) 2009-2017 Advanced Card Systems Ltd.
+Copyright (C) 2009-2018 Advanced Card Systems Ltd.
 Copyright (C) 2003-2011 Ludovic Rousseau
 Copyright (C) 2000-2001 Carlos Prados
 Copyright (C) 2003 Olaf Kirch
