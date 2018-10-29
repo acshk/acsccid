@@ -1,7 +1,7 @@
 /*
     ccid_ifdhandler.h: non-generic ifdhandler functions
     Copyright (C) 2004-2010   Ludovic Rousseau
-    Copyright (C) 2010-2017   Advanced Card Systems Ltd.
+    Copyright (C) 2010-2018   Advanced Card Systems Ltd.
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
