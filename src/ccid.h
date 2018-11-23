@@ -150,6 +150,10 @@ typedef struct
 	// Lock for array of bStatus
 	pthread_mutex_t bStatusLock;
 	pthread_mutex_t *pbStatusLock;
+
+	/* True if the last slot was opened. */
+	int lastSlotOpened;
+	int *pLastSlotOpened;
 #endif
 
 	// Firmware fix enabled

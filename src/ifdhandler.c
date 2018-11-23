@@ -344,6 +344,14 @@ error:
 		DEBUG_INFO2("bVoltageSupport: 0x%02X", ccid_descriptor->bVoltageSupport);
 	}
 
+#ifdef __APPLE__
+	if (ccid_descriptor->bCurrentSlotIndex == ccid_descriptor->bMaxSlotIndex)
+	{
+		/* Last slot was opened. */
+		*(ccid_descriptor->pLastSlotOpened) = TRUE;
+	}
+#endif
+
 	return return_value;
 } /* CreateChannelByNameOrChannel */
 
@@ -2701,6 +2709,15 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	DEBUG_PERIODIC3("%s (lun: " DWORD_X ")", CcidSlots[reader_index].readerName, Lun);
 
 	ccid_descriptor = get_ccid_descriptor(reader_index);
+
+#ifdef __APPLE__
+	/* Return no card if the last slot was not opened. */
+	if (!*(ccid_descriptor->pLastSlotOpened))
+	{
+		return_value = IFD_ICC_NOT_PRESENT;
+		goto end;
+	}
+#endif
 
 	// Get slot index
 	slot_index = ccid_descriptor->bCurrentSlotIndex;

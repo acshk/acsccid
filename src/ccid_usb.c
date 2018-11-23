@@ -1044,6 +1044,8 @@ again:
 				usbDevice[reader_index].pTransfer = &usbDevice[reader_index].polling_transfer;
 				usbDevice[reader_index].pTransferLock = &usbDevice[reader_index].transferLock;
 				usbDevice[reader_index].ccid.pbStatusLock = &usbDevice[reader_index].ccid.bStatusLock;
+				usbDevice[reader_index].ccid.lastSlotOpened = FALSE;
+				usbDevice[reader_index].ccid.pLastSlotOpened = &usbDevice[reader_index].ccid.lastSlotOpened;
 
 				// Create transfer lock
 				r = pthread_mutex_init(usbDevice[reader_index].pTransferLock, NULL);
