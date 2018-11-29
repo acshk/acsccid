@@ -660,19 +660,14 @@ again:
 					 * So on Mac OS X the reader configuration is not done
 					 * by the OS/kernel and we do it ourself.
 					 */
-					if ((0xFF == desc.bDeviceClass)
-						&& (0xFF == desc.bDeviceSubClass)
-						&& (0xFF == desc.bDeviceProtocol))
+					r = libusb_set_configuration(dev_handle, 1);
+					if (r < 0)
 					{
-						r = libusb_set_configuration(dev_handle, 1);
-						if (r < 0)
-						{
-							(void)libusb_close(dev_handle);
-							DEBUG_CRITICAL4("Can't set configuration on %d/%d: %s",
-									bus_number, device_address,
-									libusb_error_name(r));
-							continue;
-						}
+						(void)libusb_close(dev_handle);
+						DEBUG_CRITICAL4("Can't set configuration on %d/%d: %s",
+								bus_number, device_address,
+								libusb_error_name(r));
+						continue;
 					}
 
 					/* recall */
