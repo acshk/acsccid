@@ -109,6 +109,7 @@ typedef struct
 #ifdef __APPLE__
 	// Thread handle for card detection
 	pthread_t hThread;
+	int threadCreated;
 
 	// Flag to terminate thread
 	int terminated;
@@ -1038,6 +1039,7 @@ again:
 				usbDevice[reader_index].pTerminated = &usbDevice[reader_index].terminated;
 				usbDevice[reader_index].pTransfer = &usbDevice[reader_index].polling_transfer;
 				usbDevice[reader_index].pTransferLock = &usbDevice[reader_index].transferLock;
+				usbDevice[reader_index].threadCreated = FALSE;
 				usbDevice[reader_index].ccid.pbStatusLock = &usbDevice[reader_index].ccid.bStatusLock;
 				usbDevice[reader_index].ccid.lastSlotOpened = FALSE;
 				usbDevice[reader_index].ccid.pLastSlotOpened = &usbDevice[reader_index].ccid.lastSlotOpened;
@@ -1065,6 +1067,15 @@ again:
 					goto end2;
 				}
 
+				/* Disable card detection thread for APG8201 series. */
+				if ((usbDevice[reader_index].ccid.readerID == ACS_APG8201)
+					|| (usbDevice[reader_index].ccid.readerID == ACS_APG8201_B2)
+					|| (usbDevice[reader_index].ccid.readerID == ACS_APG8201Z)
+					|| (usbDevice[reader_index].ccid.readerID == ACS_APG8201Z2))
+				{
+					goto end;
+				}
+
 				// Create thread for card detection
 				r = pthread_create(&usbDevice[reader_index].hThread, NULL, CardDetectionThread, (void *) (intptr_t) reader_index);
 				if (r != 0)
@@ -1078,6 +1089,8 @@ again:
 					return_value = STATUS_UNSUCCESSFUL;
 					goto end2;
 				}
+
+				usbDevice[reader_index].threadCreated = TRUE;
 #endif
 				goto end;
 			}
@@ -1362,28 +1375,32 @@ status_t CloseUSB(unsigned int reader_index)
 		DEBUG_COMM("Last slot closed. Release resources");
 
 #ifdef __APPLE__
-		DEBUG_INFO3("Terminating thread: %d/%d",
-			usbDevice[reader_index].bus_number,
-			usbDevice[reader_index].device_address);
-
-		// Terminate thread
-		*usbDevice[reader_index].pTerminated = TRUE;
-
-		// Lock transfer
-		pthread_mutex_lock(usbDevice[reader_index].pTransferLock);
-
-		// Cancel transfer
-		if (*usbDevice[reader_index].pTransfer != NULL)
+		if (usbDevice[reader_index].threadCreated)
 		{
-			libusb_cancel_transfer(*usbDevice[reader_index].pTransfer);
-			*usbDevice[reader_index].pTransfer = NULL;
+			DEBUG_INFO3("Terminating thread: %d/%d",
+				usbDevice[reader_index].bus_number,
+				usbDevice[reader_index].device_address);
+
+			// Terminate thread
+			*usbDevice[reader_index].pTerminated = TRUE;
+
+			// Lock transfer
+			pthread_mutex_lock(usbDevice[reader_index].pTransferLock);
+
+			// Cancel transfer
+			if (*usbDevice[reader_index].pTransfer != NULL)
+			{
+				libusb_cancel_transfer(*usbDevice[reader_index].pTransfer);
+				*usbDevice[reader_index].pTransfer = NULL;
+			}
+
+			// Unlock transfer
+			pthread_mutex_unlock(usbDevice[reader_index].pTransferLock);
+
+			// Wait thread
+			pthread_join(usbDevice[reader_index].hThread, NULL);
+			usbDevice[reader_index].threadCreated = FALSE;
 		}
-
-		// Unlock transfer
-		pthread_mutex_unlock(usbDevice[reader_index].pTransferLock);
-
-		// Wait thread
-		pthread_join(usbDevice[reader_index].hThread, NULL);
 
 		// Free bStatus lock
 		pthread_mutex_destroy(usbDevice[reader_index].ccid.pbStatusLock);

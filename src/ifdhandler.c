@@ -680,6 +680,15 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 
 				ccid_desc = get_ccid_descriptor(reader_index);
 
+				/* Disable polling thread for APG8201 series. */
+				if ((ccid_desc->readerID == ACS_APG8201)
+					|| (ccid_desc->readerID == ACS_APG8201_B2)
+					|| (ccid_desc->readerID == ACS_APG8201Z)
+					|| (ccid_desc->readerID == ACS_APG8201Z2))
+				{
+					break;
+				}
+
 				/* CCID and not ICCD */
 				if (((PROTOCOL_CCID == ccid_desc -> bInterfaceProtocol)
 					|| (PROTOCOL_ACR38 == ccid_desc -> bInterfaceProtocol))
@@ -727,6 +736,16 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				*Length = 0;
 
 				ccid_desc = get_ccid_descriptor(reader_index);
+
+				/* Disable polling thread for APG8201 series. */
+				if ((ccid_desc->readerID == ACS_APG8201)
+					|| (ccid_desc->readerID == ACS_APG8201_B2)
+					|| (ccid_desc->readerID == ACS_APG8201Z)
+					|| (ccid_desc->readerID == ACS_APG8201Z2))
+				{
+					break;
+				}
+
 				/* CCID and not ICCD */
 				if (((PROTOCOL_CCID == ccid_desc -> bInterfaceProtocol)
 					|| (PROTOCOL_ACR38 == ccid_desc -> bInterfaceProtocol))
