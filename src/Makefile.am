@@ -42,7 +42,7 @@ lib_LTLIBRARIES = libacsccid.la
 libacsccid_la_SOURCES = $(COMMON) $(USB) $(TOKEN_PARSER) $(PROVIDED_BY_PCSC) $(T1)
 libacsccid_la_LIBADD = $(LIBUSB_LIBS) $(PTHREAD_LIBS) $(LTLIBICONV)
 libacsccid_la_CFLAGS = $(PCSC_CFLAGS) $(LIBUSB_CFLAGS) $(PTHREAD_CFLAGS) \
-	$(SYMBOL_VISIBILITY) -D$(CCID_VERSION)
+	$(SYMBOL_VISIBILITY) -D$(CCID_VERSION) -DSIMCLIST_NO_DUMPRESTORE
 libacsccid_la_LDFLAGS = -avoid-version
 
 EXTRA_DIST = Info.plist.src create_Info_plist.pl supported_readers.txt \
