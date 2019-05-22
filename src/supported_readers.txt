@@ -241,6 +241,9 @@
 # CryptoMate T2
 0x072f:0xb106:ACS CryptoMate (T2)
 
+# CryptoMate T2 (ACOS5-EVO)
+0x072f:0xb112:ACS CryptoMate EVO
+
 #
 # non-CCID readers
 #
