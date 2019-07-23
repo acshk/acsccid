@@ -49,6 +49,7 @@ VID  PID  Reader              Reader Name
 ---- ---- ------------------- -----------------------------
 072F B301 ACR32-A1            ACS ACR32 ICC Reader
 072F B304 ACR3201-A1          ACS ACR3201 ICC Reader
+072F B305 ACR3201             ACS ACR3201 ICC Reader
 072F 8300 ACR33U-A1           ACS ACR33U-A1 3SAM ICC Reader
 072F 8302 ACR33U-A2           ACS ACR33U-A2 3SAM ICC Reader
 072F 8307 ACR33U-A3           ACS ACR33U-A3 3SAM ICC Reader
@@ -134,6 +135,7 @@ VID  PID  Reader              Reader Name
 072F 90DB CryptoMate64        ACS CryptoMate64
 072F B200 ACOS5T1             ACS CryptoMate (T1)
 072F B106 ACOS5T2             ACS CryptoMate (T2)
+072F B112 ACOS5T2             ACS CryptoMate EVO
 
 non-CCID Readers
 
@@ -149,6 +151,17 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.1.7 (24/7/2019)
+- Add the following readers support:
+  ACR3201 ICC Reader
+  CryptoMate EVO
+- Fix card detection issue for multi-slot readers on macOS.
+- Fix configuration descriptor issue on macOS in OpenUSBByName().
+- Fix APG8201 response timeout issue.
+- Merge with ccid 1.4.5.
+  - Do not build simclist with (unused) file dump option.
+- MacOSX/configure: fix checking error for dynamic library libusb.
 
 v1.1.6 (29/10/2018)
 - Add the following readers support:
@@ -526,7 +539,7 @@ Fax: +852 2796 1286
 
 
 -------------------------------------------------------------------------------
-Copyright (C) 2009-2018 Advanced Card Systems Ltd.
+Copyright (C) 2009-2019 Advanced Card Systems Ltd.
 Copyright (C) 2003-2011 Ludovic Rousseau
 Copyright (C) 2000-2001 Carlos Prados
 Copyright (C) 2003 Olaf Kirch
