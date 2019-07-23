@@ -1,7 +1,7 @@
 /*
 	ccid_usb.c: USB access routines using the libusb library
 	Copyright (C) 2003-2010	Ludovic Rousseau
-	Copyright (C) 2009-2018	Advanced Card Systems Ltd.
+	Copyright (C) 2009-2019	Advanced Card Systems Ltd.
 
 	This library is free software; you can redistribute it and/or
 	modify it under the terms of the GNU Lesser General Public
