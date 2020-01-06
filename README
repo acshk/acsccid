@@ -63,6 +63,8 @@ VID  PID  Reader              Reader Name
 072F B103 ACR39F              ACS ACR39F ICC Reader
 072F B104 ACR39U-SAM          ACS ACR39U-SAM ICC Reader
 072F B10C ACR39U-U1           ACS ACR39U ID1 Card Reader
+072F B113 ACR39U-W1           ACS ACR39U-W1 Top ICC Reader
+072F B114 ACR39U-W1           ACS ACR39U-W1 Edge ICC Reader
 072F B000 ACR3901U            ACS ACR3901 ICC Reader
 072F 90D2 ACR83U-A1           ACS ACR83U
 072F 8306 ACR85               ACS ACR85 PINPad Reader
@@ -93,6 +95,7 @@ VID  PID  Reader              Reader Name
 072F 2232 ACR1251UK           ACS ACR1251K Dual Reader
 072F 2242 ACR1251U-C3         ACS ACR1251 1S Dual Reader
 072F 2238 ACR1251U-C9         ACS ACR1251 Reader
+072F 225F ACR1251T-E2         ACS ACR1251T CL Reader
 072F 224F ACM1251U-Z2         ACS ACR1251 CL Reader
 072F 223B ACR1252U-A1         ACS ACR1252 1S CL Reader
 072F 223B ACR1252U-M1         ACS ACR1252 1S CL Reader
@@ -151,6 +154,16 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.1.8 (6/1/2020)
+- Add the following readers support:
+  ACR39U-W1 Top ICC Reader
+  ACR39U-W1 Edge ICC Reader
+  ACR1251T CL Reader
+- Import files from ccid 1.4.31.
+- Merge with ccid 1.4.31.
+  - InterruptRead(): log the timeout used.
+- Remove response timeout fix for APG8201 and APG8201Z.
 
 v1.1.7 (24/7/2019)
 - Add the following readers support:
@@ -539,7 +552,7 @@ Fax: +852 2796 1286
 
 
 -------------------------------------------------------------------------------
-Copyright (C) 2009-2019 Advanced Card Systems Ltd.
+Copyright (C) 2009-2020 Advanced Card Systems Ltd.
 Copyright (C) 2003-2011 Ludovic Rousseau
 Copyright (C) 2000-2001 Carlos Prados
 Copyright (C) 2003 Olaf Kirch
