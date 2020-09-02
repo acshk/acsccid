@@ -134,7 +134,7 @@ int ccid_open_hack_pre(unsigned int reader_index)
 
 		DEBUG_COMM("ICCD type A");
 		(void)CmdPowerOff(reader_index);
-		(void)CmdPowerOn(reader_index, &n, tmp, CCID_CLASS_AUTO_VOLTAGE);
+		(void)CmdPowerOn(reader_index, &n, tmp, VOLTAGE_AUTO);
 		(void)CmdPowerOff(reader_index);
 	}
 
@@ -154,7 +154,7 @@ int ccid_open_hack_pre(unsigned int reader_index)
 		}
 
 		(void)CmdPowerOff(reader_index);
-		(void)CmdPowerOn(reader_index, &n, tmp, CCID_CLASS_AUTO_VOLTAGE);
+		(void)CmdPowerOn(reader_index, &n, tmp, VOLTAGE_AUTO);
 		(void)CmdPowerOff(reader_index);
 	}
 
