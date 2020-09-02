@@ -1947,7 +1947,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		{
 			pcsc_tlv -> tag = FEATURE_VERIFY_PIN_DIRECT;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_FEATURE_VERIFY_PIN_DIRECT);
+			set_U32(&pcsc_tlv -> value, htonl(IOCTL_FEATURE_VERIFY_PIN_DIRECT));
 
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
@@ -1957,7 +1957,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		{
 			pcsc_tlv -> tag = FEATURE_MODIFY_PIN_DIRECT;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_FEATURE_MODIFY_PIN_DIRECT);
+			set_U32(&pcsc_tlv -> value, htonl(IOCTL_FEATURE_MODIFY_PIN_DIRECT));
 
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
@@ -1968,7 +1968,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		{
 			pcsc_tlv -> tag = FEATURE_IFD_PIN_PROPERTIES;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_FEATURE_IFD_PIN_PROPERTIES);
+			set_U32(&pcsc_tlv -> value, htonl(IOCTL_FEATURE_IFD_PIN_PROPERTIES));
 
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
@@ -1979,7 +1979,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		{
 			pcsc_tlv -> tag = FEATURE_MCT_READER_DIRECT;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_FEATURE_MCT_READER_DIRECT);
+			set_U32(&pcsc_tlv -> value, htonl(IOCTL_FEATURE_MCT_READER_DIRECT));
 
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
@@ -1989,7 +1989,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		{
 			pcsc_tlv -> tag = FEATURE_WRITE_DISPLAY;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_FEATURE_WRITE_DISPLAY);
+			set_U32(&pcsc_tlv -> value, htonl(IOCTL_FEATURE_WRITE_DISPLAY));
 
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
@@ -1999,7 +1999,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		{
 			pcsc_tlv -> tag = FEATURE_GET_KEY;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = htonl(IOCTL_FEATURE_GET_KEY);
+			set_U32(&pcsc_tlv -> value, htonl(IOCTL_FEATURE_GET_KEY));
 
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
@@ -2007,20 +2007,20 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 
 		pcsc_tlv -> tag = FEATURE_IFD_DISPLAY_PROPERTIES;
 		pcsc_tlv -> length = 0x04; /* always 0x04 */
-		pcsc_tlv -> value = htonl(IOCTL_FEATURE_IFD_DISPLAY_PROPERTIES);
+		set_U32(&pcsc_tlv -> value, htonl(IOCTL_FEATURE_IFD_DISPLAY_PROPERTIES));
 		pcsc_tlv++;
 		iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 
 		pcsc_tlv -> tag = FEATURE_GET_TLV_PROPERTIES;
 		pcsc_tlv -> length = 0x04; /* always 0x04 */
-		pcsc_tlv -> value = htonl(IOCTL_FEATURE_GET_TLV_PROPERTIES);
+		set_U32(&pcsc_tlv -> value, htonl(IOCTL_FEATURE_GET_TLV_PROPERTIES));
 		pcsc_tlv++;
 		iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 
 		/* IOCTL_CCID_ESCAPE */
 		pcsc_tlv -> tag = FEATURE_CCID_ESC_COMMAND;
 		pcsc_tlv -> length = 0x04; /* always 0x04 */
-		pcsc_tlv -> value = htonl(IOCTL_CCID_ESCAPE);
+		set_U32(&pcsc_tlv -> value, htonl(IOCTL_CCID_ESCAPE));
 		pcsc_tlv++;
 		iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 
@@ -2030,7 +2030,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		{
 			pcsc_tlv -> tag = 0x80;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
-			pcsc_tlv -> value = 0;
+			set_U32(&pcsc_tlv -> value, 0);
 
 			pcsc_tlv++;
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
@@ -2050,7 +2050,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			return IFD_ERROR_INSUFFICIENT_BUFFER;
 
 		/* Only give the LCD size for now */
-		caps -> wLcdLayout = ccid_descriptor -> wLcdLayout;
+		set_U16(&caps -> wLcdLayout, ccid_descriptor -> wLcdLayout);
 
 		/* Hardcoded special reader cases */
 		switch (ccid_descriptor->readerID)
