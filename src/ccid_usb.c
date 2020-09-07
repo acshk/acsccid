@@ -1586,7 +1586,7 @@ uint8_t get_ccid_usb_device_address(int reader_index)
  *					get_ccid_usb_interface
  *
  ****************************************************************************/
-/*@null@*/ EXTERNAL const struct libusb_interface * get_ccid_usb_interface(
+/*@null@*/ const struct libusb_interface * get_ccid_usb_interface(
 	struct libusb_config_descriptor *desc, int *num)
 {
 	const struct libusb_interface *usb_interface = NULL;
