@@ -67,6 +67,14 @@ CFLAGS="$CFLAGS -DRESPONSECODE_DEFINED_IN_WINTYPES_H"
 # get the Mac OS X major version. Example: El Capitan 10.11 -> 10011
 MAC_VERSION=$(sw_vers -productVersion | awk -F '.' '{print $1 * 1000 + $2}')
 
+# Set the target version from the deployment target.
+if [ -n "$MACOSX_DEPLOYMENT_TARGET" ]
+then
+	TARGET_VERSION=$(echo $MACOSX_DEPLOYMENT_TARGET | awk -F '.' '{print $1 * 1000 + $2}')
+else
+	TARGET_VERSION=$MAC_VERSION
+fi
+
 # Build a Universal Binary
 UB=$(file $LIBUSB_ARCHIVE | grep "Mach-O universal binary")
 echo $UB
@@ -92,7 +100,7 @@ CONFIGURE_ARGS="--disable-dependency-tracking"
 # Are we on a CryptoTokenKit system? (like Mac OS X 10.10 Yosemite)
 if [ -d /System/Library/CryptoTokenKit ]
 then
-	if [ 10012 -gt $MAC_VERSION ]
+	if [ 10012 -gt $TARGET_VERSION ]
 	then
 		# use syslog(3) to logs for macOS < 10.12
 		CONFIGURE_ARGS="$CONFIGURE_ARGS --enable-syslog"
