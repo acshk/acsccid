@@ -821,34 +821,49 @@ int ccid_open_hack_post(unsigned int reader_index)
 
 		case ACS_ACR1251_1S_DUAL_READER:
 		case ACS_ACR1261_1S_DUAL_READER:
-		case ACS_ACR1281_1S_DUAL_READER:
 			// Adjust features and maximum data rate
 			if (ccid_descriptor->bCurrentSlotIndex == 0)
 			{
 				ccid_descriptor->dwFeatures = 0x000204BA;	// MCU
 				ccid_descriptor->dwMaxDataRate = 344100;
+			}
+			else if (ccid_descriptor->bCurrentSlotIndex == 1)
+			{
+				ccid_descriptor->dwFeatures = 0x0004047A;	// Contactless
+				ccid_descriptor->dwMaxDataRate = 344100;
+			}
+			else
+			{
+				ccid_descriptor->dwFeatures = 0x000204BA;	// SAM
+				ccid_descriptor->dwMaxDataRate = 125000;
+				ccid_descriptor->isSamSlot = 1;
+			}
+			break;
+
+		case ACS_ACR1281_1S_DUAL_READER:
+			// Adjust features and maximum data rate
+			if (ccid_descriptor->bCurrentSlotIndex == 0)
+			{
+				char firmwareVersion[30];
+				unsigned int firmwareVersionLen = sizeof(firmwareVersion);
+
+				ccid_descriptor->dwFeatures = 0x000204BA;	// MCU
+				ccid_descriptor->dwMaxDataRate = 344100;
 
 				/* ACR1281U-C1 >= v526 supports ICC extended APDU. */
-				if (ccid_descriptor->readerID == ACS_ACR1281_1S_DUAL_READER)
+				DEBUG_INFO1("Getting ACR1281U-C1 firmware version...");
+				if (ACR1222_GetFirmwareVersion(reader_index, firmwareVersion,
+					&firmwareVersionLen))
 				{
-					char firmwareVersion[30];
-					unsigned int firmwareVersionLen = sizeof(firmwareVersion);
+					int version = 0;
 
-					DEBUG_INFO1("Getting ACR1281U-C1 firmware version...");
-					if (ACR1222_GetFirmwareVersion(reader_index,
-						firmwareVersion, &firmwareVersionLen))
+					DEBUG_INFO2("ACR1281U-C1 firmware version: %s",
+						firmwareVersion);
+					if (sscanf(firmwareVersion, "ACR1281U_V%d", &version) > 0)
 					{
-						int version = 0;
-
-						DEBUG_INFO2("ACR1281U-C1 firmware version: %s",
-							firmwareVersion);
-						if (sscanf(firmwareVersion, "ACR1281U_V%d", &version)
-							> 0)
+						if (version >= 526)
 						{
-							if (version >= 526)
-							{
-								ccid_descriptor->dwFeatures = 0x000404BA;
-							}
+							ccid_descriptor->dwFeatures = 0x000404BA;
 						}
 					}
 				}
@@ -861,7 +876,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 			else
 			{
 				ccid_descriptor->dwFeatures = 0x000204BA;	// SAM
-				ccid_descriptor->dwMaxDataRate = 125000;
+				ccid_descriptor->dwMaxDataRate = 688172;
 				ccid_descriptor->isSamSlot = 1;
 			}
 			break;
