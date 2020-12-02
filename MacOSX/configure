@@ -87,11 +87,7 @@ then
 	echo -en $NORMAL
 else
 	echo "Universal Binary build"
-	CFLAGS="$CFLAGS -arch i386 -arch x86_64"
-	if [ -d /Developer/SDKs/MacOSX10.6.sdk ]
-	then
-		CFLAGS="$CFLAGS -arch ppc"
-	fi
+	CFLAGS="$CFLAGS -arch arm64 -arch x86_64"
 fi
 echo
 
