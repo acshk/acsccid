@@ -330,6 +330,13 @@ error:
 	}
 	else
 	{
+#ifdef __APPLE__
+		if (ccid_descriptor->bCurrentSlotIndex == ccid_descriptor->bMaxSlotIndex)
+		{
+			/* Last slot was opened. */
+			*(ccid_descriptor->pLastSlotOpened) = TRUE;
+		}
+#endif
 		DEBUG_INFO2("dwFeatures: 0x%08X", ccid_descriptor->dwFeatures);
 		DEBUG_INFO2("wLcdLayout: 0x%04X", ccid_descriptor->wLcdLayout);
 		DEBUG_INFO2("bPINSupport: 0x%02X", ccid_descriptor->bPINSupport);
@@ -343,14 +350,6 @@ error:
 		DEBUG_INFO2("bNumEndpoints: %d", ccid_descriptor->bNumEndpoints);
 		DEBUG_INFO2("bVoltageSupport: 0x%02X", ccid_descriptor->bVoltageSupport);
 	}
-
-#ifdef __APPLE__
-	if (ccid_descriptor->bCurrentSlotIndex == ccid_descriptor->bMaxSlotIndex)
-	{
-		/* Last slot was opened. */
-		*(ccid_descriptor->pLastSlotOpened) = TRUE;
-	}
-#endif
 
 	return return_value;
 } /* CreateChannelByNameOrChannel */
