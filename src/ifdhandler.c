@@ -1155,7 +1155,8 @@ again:
 	}
 
 	/* Now we must set the reader parameters */
-	(void)ATR_GetConvention(&atr, &convention);
+	if (ATR_MALFORMED == ATR_GetConvention(&atr, &convention))
+		return IFD_COMMUNICATION_ERROR;
 
 	/* specific mode and implicit parameters? (b5 of TA2) */
 	if (atr.ib[1][ATR_INTERFACE_BYTE_TA].present
