@@ -824,6 +824,7 @@ again:
 					usbDevice[reader_index].ccid.bNumEndpoints = 3;
 					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 					usbDevice[reader_index].ccid.bVoltageSupport = 0x07;
+					usbDevice[reader_index].ccid.dwProtocols = 0x0003;
 				}
 				else if ((readerID == ACS_ACR38U_SAM) || (readerID == IRIS_SCR21U) ||
 					(readerID == ACS_AET65_1SAM_ICC_READER))
@@ -843,6 +844,7 @@ again:
 					usbDevice[reader_index].ccid.bNumEndpoints = 3;
 					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 					usbDevice[reader_index].ccid.bVoltageSupport = 0x07;
+					usbDevice[reader_index].ccid.dwProtocols = 0x0003;
 				}
 				else if (readerID == ACS_ACR88U)
 				{
@@ -861,6 +863,7 @@ again:
 					usbDevice[reader_index].ccid.bNumEndpoints = 3;
 					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 					usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+					usbDevice[reader_index].ccid.dwProtocols = 0x0003;
 				}
 				else if (readerID == ACS_ACR128U)
 				{
@@ -879,6 +882,7 @@ again:
 					usbDevice[reader_index].ccid.bNumEndpoints = 3;
 					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 					usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+					usbDevice[reader_index].ccid.dwProtocols = 0x0003;
 				}
 				else if ((readerID == ACS_ACR1251_1S_DUAL_READER) ||
 					(readerID == ACS_ACR1261_1S_DUAL_READER) ||
@@ -900,6 +904,7 @@ again:
 					usbDevice[reader_index].ccid.bNumEndpoints = 3;
 					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 					usbDevice[reader_index].ccid.bVoltageSupport = 0x03;
+					usbDevice[reader_index].ccid.dwProtocols = 0x0003;
 				}
 				else
 				{
@@ -937,6 +942,7 @@ again:
 					usbDevice[reader_index].ccid.bNumEndpoints = usb_interface->altsetting->bNumEndpoints;
 					usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 					usbDevice[reader_index].ccid.bVoltageSupport = device_descriptor[5];
+					usbDevice[reader_index].ccid.dwProtocols = dw2i(device_descriptor, 6);
 				}
 
 				usbDevice[reader_index].ccid.sIFD_serial_number = NULL;

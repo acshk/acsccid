@@ -98,6 +98,11 @@ typedef struct
 	int cardProtocol;
 
 	/*
+	 * Reader protocols
+	 */
+	int dwProtocols;
+
+	/*
 	 * bInterfaceProtocol (CCID, ICCD-A, ICCD-B)
 	 */
 	int bInterfaceProtocol;
