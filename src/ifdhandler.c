@@ -1343,7 +1343,8 @@ again:
 
 end:
 	/* set IFSC & IFSD in T=1 */
-	if (SCARD_PROTOCOL_T1 == Protocol)
+	if ((SCARD_PROTOCOL_T1 == Protocol)
+		&& (CCID_CLASS_TPDU == (ccid_desc->dwFeatures & CCID_CLASS_EXCHANGE_MASK)))
 	{
 		t1_state_t *t1 = &(ccid_slot -> t1);
 		int i, ifsc;
@@ -1355,16 +1356,12 @@ end:
 			(void)t1_set_param(t1, IFD_PROTOCOL_T1_IFSC, ifsc);
 		}
 
-		// Valid only in TPDU exchange level
-		if (ccid_desc->dwFeatures & CCID_CLASS_TPDU)
+		/* IFSD not negociated by the reader? */
+		if (! (ccid_desc->dwFeatures & CCID_CLASS_AUTO_IFSD))
 		{
-			/* IFSD not negociated by the reader? */
-			if (! (ccid_desc->dwFeatures & CCID_CLASS_AUTO_IFSD))
-			{
-				DEBUG_COMM2("Negotiate IFSD at %d", ccid_desc -> dwMaxIFSD);
-				if (t1_negotiate_ifsd(t1, 0, ccid_desc -> dwMaxIFSD) < 0)
-					return IFD_COMMUNICATION_ERROR;
-			}
+			DEBUG_COMM2("Negotiate IFSD at %d", ccid_desc -> dwMaxIFSD);
+			if (t1_negotiate_ifsd(t1, 0, ccid_desc -> dwMaxIFSD) < 0)
+				return IFD_COMMUNICATION_ERROR;
 		}
 		(void)t1_set_param(t1, IFD_PROTOCOL_T1_IFSD, ccid_desc -> dwMaxIFSD);
 
