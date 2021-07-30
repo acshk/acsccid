@@ -620,9 +620,9 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 						|| (ACS_ACR1252IMP_1S_CL_READER == readerID))
 						*Value = 2;
 
-					/* 3 CCID interfaces */
+					/* 4 CCID interfaces */
 					if (FEITIANR502DUAL == readerID)
-						*Value = 3;
+						*Value = 4;
 				}
 #endif
 				DEBUG_INFO2("Reader supports %d slot(s)", *Value);
