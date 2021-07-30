@@ -577,6 +577,12 @@ int ccid_open_hack_post(unsigned int reader_index)
 			ccid_descriptor->readTimeout = DEFAULT_COM_READ_TIMEOUT;
 			break;
 
+		case BIT4ID_MINILECTOR:
+			/* The firmware 1.11 advertises pinpad but actually doesn't
+			 * have one */
+			ccid_descriptor->bPINSupport = 0;
+			break;
+
 		case ACS_ACR33U_A1_3SAM_ICC_READER:
 		case ACS_ACR33U_A2_3SAM_ICC_READER:
 		case ACS_ACR33U_A3_3SAM_ICC_READER:

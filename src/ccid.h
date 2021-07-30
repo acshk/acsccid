@@ -270,6 +270,7 @@ typedef struct
 #define IDENTIV_uTrust3700F		0x04E65790
 #define IDENTIV_uTrust3701F		0x04E65791
 #define IDENTIV_uTrust4701F		0x04E65724
+#define BIT4ID_MINILECTOR		0x25DD3111
 
 // CCID readers
 #define ACS_ACR32_ICC_READER			0x072fb301
