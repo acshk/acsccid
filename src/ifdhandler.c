@@ -2013,7 +2013,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 		}
 
-		if (ACS_APG8201_B2 == readerID)
+		if ((ACS_APG8201_B2 == readerID)
+			|| (ACS_APG8201_B2RO == readerID))
 		{
 			pcsc_tlv -> tag = FEATURE_WRITE_DISPLAY;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
@@ -2023,7 +2024,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 			iBytesReturned += sizeof(PCSC_TLV_STRUCTURE);
 		}
 
-		if (ACS_APG8201_B2 == readerID)
+		if ((ACS_APG8201_B2 == readerID)
+			|| (ACS_APG8201_B2RO == readerID))
 		{
 			pcsc_tlv -> tag = FEATURE_GET_KEY;
 			pcsc_tlv -> length = 0x04; /* always 0x04 */
@@ -2106,7 +2108,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	/* Write any UTF-8 based message to the display. */
 	if (IOCTL_FEATURE_WRITE_DISPLAY == dwControlCode)
 	{
-		if (ACS_APG8201_B2 == ccid_descriptor->readerID)
+		if ((ACS_APG8201_B2 == ccid_descriptor->readerID)
+			|| (ACS_APG8201_B2RO == ccid_descriptor->readerID))
 		{
 			PWRITE_DISPLAY pWriteDisplay = (PWRITE_DISPLAY) TxBuffer;
 			uint16_t wLcdMaxCharacters = ccid_descriptor->wLcdLayout & 0xFF;
@@ -2194,7 +2197,8 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 	/* Get a key. */
 	if (IOCTL_FEATURE_GET_KEY == dwControlCode)
 	{
-		if (ACS_APG8201_B2 == ccid_descriptor->readerID)
+		if ((ACS_APG8201_B2 == ccid_descriptor->readerID)
+			|| (ACS_APG8201_B2RO == ccid_descriptor->readerID))
 		{
 			PGET_KEY pGetKey = (PGET_KEY) TxBuffer;
 			uint16_t wLcdMaxCharacters = ccid_descriptor->wLcdLayout & 0xFF;
@@ -2432,6 +2436,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		if ((ACS_ACR83U == ccid_descriptor -> readerID)
 			|| (ACS_APG8201 == ccid_descriptor -> readerID)
 			|| (ACS_APG8201_B2 == ccid_descriptor -> readerID)
+			|| (ACS_APG8201_B2RO == ccid_descriptor -> readerID)
 			|| (ACS_APG8201Z == ccid_descriptor -> readerID)
 			|| (ACS_APG8201Z2 == ccid_descriptor -> readerID))
 		{
@@ -2569,6 +2574,7 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 		(ACS_ACR85_PINPAD_READER_ICC == ccid_descriptor -> readerID) ||
 		(ACS_APG8201 == ccid_descriptor -> readerID) ||
 		(ACS_APG8201_B2 == ccid_descriptor -> readerID) ||
+		(ACS_APG8201_B2RO == ccid_descriptor -> readerID) ||
 		(ACS_APG8201Z == ccid_descriptor -> readerID) ||
 		(ACS_APG8201Z2 == ccid_descriptor -> readerID))
 	{
