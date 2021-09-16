@@ -1655,6 +1655,7 @@ time_request:
 					|| (ACS_ACR85_PINPAD_READER_ICC == ccid_descriptor->readerID)
 					|| (ACS_APG8201 == ccid_descriptor->readerID)
 					|| (ACS_APG8201_B2 == ccid_descriptor->readerID)
+					|| (ACS_APG8201_B2RO == ccid_descriptor->readerID)
 					|| (ACS_APG8201Z == ccid_descriptor->readerID)
 					|| (ACS_APG8201Z2 == ccid_descriptor->readerID))
 				{
