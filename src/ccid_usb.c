@@ -1079,7 +1079,8 @@ again:
 				}
 
 				/* Disable card detection thread for APG8201-B2. */
-				if (usbDevice[reader_index].ccid.readerID == ACS_APG8201_B2)
+				if ((usbDevice[reader_index].ccid.readerID == ACS_APG8201_B2)
+					|| (usbDevice[reader_index].ccid.readerID == ACS_APG8201_B2RO))
 				{
 					goto end;
 				}
