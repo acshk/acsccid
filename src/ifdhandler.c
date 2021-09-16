@@ -688,7 +688,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				ccid_desc = get_ccid_descriptor(reader_index);
 
 				/* Disable polling thread for APG8201-B2. */
-				if (ccid_desc->readerID == ACS_APG8201_B2)
+				if ((ccid_desc->readerID == ACS_APG8201_B2)
+					|| (ccid_desc->readerID == ACS_APG8201_B2RO))
 				{
 					break;
 				}
@@ -742,7 +743,8 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 				ccid_desc = get_ccid_descriptor(reader_index);
 
 				/* Disable polling thread for APG8201-B2. */
-				if (ccid_desc->readerID == ACS_APG8201_B2)
+				if ((ccid_desc->readerID == ACS_APG8201_B2)
+					|| (ccid_desc->readerID == ACS_APG8201_B2RO))
 				{
 					break;
 				}
