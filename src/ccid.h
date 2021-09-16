@@ -316,6 +316,7 @@ typedef struct
 #define ACS_AET62_1SAM_PICC_READER		0x072f0103
 #define ACS_APG8201						0x072f8201
 #define ACS_APG8201_B2					0x072f8206
+#define ACS_APG8201_B2RO				0x072f8207
 #define ACS_APG8201Z					0x072f8202
 #define ACS_APG8201Z2					0x072f8205
 
