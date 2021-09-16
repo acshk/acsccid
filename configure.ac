@@ -69,7 +69,6 @@ AC_SUBST(LIBTOOL_DEPS)
 AM_ICONV
 
 # Checks for header files.
-AC_HEADER_STDC
 AC_CHECK_HEADERS(errno.h fcntl.h stdlib.h unistd.h termios.h string.h sys/time.h sys/types.h stdarg.h arpa/inet.h stdio.h,,
 	[AC_MSG_ERROR([some header files not found])])
 
