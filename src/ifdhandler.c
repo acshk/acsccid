@@ -3310,12 +3310,14 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 			buffer[length++] = FEATURE_IFD_PIN_PROPERTIES;
 		}
 
-		if (ccid_descriptor->readerID == ACS_APG8201_B2)
+		if ((ccid_descriptor->readerID == ACS_APG8201_B2)
+			|| (ccid_descriptor->readerID == ACS_APG8201_B2RO))
 		{
 			buffer[length++] = FEATURE_WRITE_DISPLAY;
 		}
 
-		if (ccid_descriptor->readerID == ACS_APG8201_B2)
+		if ((ccid_descriptor->readerID == ACS_APG8201_B2)
+			|| (ccid_descriptor->readerID == ACS_APG8201_B2RO))
 		{
 			buffer[length++] = FEATURE_GET_KEY;
 		}
@@ -3430,7 +3432,8 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 		break;
 
 	case FEATURE_WRITE_DISPLAY:
-		if (ccid_descriptor->readerID == ACS_APG8201_B2)
+		if ((ccid_descriptor->readerID == ACS_APG8201_B2)
+			|| (ccid_descriptor->readerID == ACS_APG8201_B2RO))
 		{
 			unsigned char *data = NULL;
 			uint16_t wDisplayTime = 0;
@@ -3564,7 +3567,8 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 		break;
 
 	case FEATURE_GET_KEY:
-		if (ccid_descriptor->readerID == ACS_APG8201_B2)
+		if ((ccid_descriptor->readerID == ACS_APG8201_B2)
+			|| (ccid_descriptor->readerID == ACS_APG8201_B2RO))
 		{
 			unsigned char *data = NULL;
 			uint16_t wWaitTime = 0;
@@ -3744,6 +3748,7 @@ static RESPONSECODE process_spe_ppdu(unsigned int reader_index,
 		if ((ccid_descriptor->readerID == ACS_ACR83U)
 			|| (ccid_descriptor->readerID == ACS_APG8201)
 			|| (ccid_descriptor->readerID == ACS_APG8201_B2)
+			|| (ccid_descriptor->readerID == ACS_APG8201_B2RO)
 			|| (ccid_descriptor->readerID == ACS_APG8201Z)
 			|| (ccid_descriptor->readerID == ACS_APG8201Z2))
 		{
