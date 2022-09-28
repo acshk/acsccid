@@ -1,18 +1,18 @@
 /*
-    commands.c: Commands sent to the card
-    Copyright (C) 2003-2010   Ludovic Rousseau
-    Copyright (C) 2005 Martin Paljak
-    Copyright (C) 2010-2018   Advanced Card Systems Ltd.
+	commands.c: Commands sent to the card
+	Copyright (C) 2003-2010   Ludovic Rousseau
+	Copyright (C) 2005 Martin Paljak
+	Copyright (C) 2010-2018   Advanced Card Systems Ltd.
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+	This library is free software; you can redistribute it and/or
+	modify it under the terms of the GNU Lesser General Public
+	License as published by the Free Software Foundation; either
+	version 2.1 of the License, or (at your option) any later version.
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+	This library is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+	Lesser General Public License for more details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with this library; if not, write to the Free Software Foundation,
@@ -248,7 +248,7 @@ again:
 
 	if (buffer[STATUS_OFFSET] & CCID_COMMAND_FAILED)
 	{
-		ccid_error(PCSC_LOG_ERROR, buffer[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);    /* bError */
+		ccid_error(PCSC_LOG_ERROR, buffer[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);	/* bError */
 
 		if (0xBB == buffer[ERROR_OFFSET] &&	/* Protocol error in EMV mode */
 			((GEMPC433 == ccid_descriptor->readerID)
@@ -1108,7 +1108,7 @@ time_request:
 	{
 		/* mayfail: the error may be expected and not fatal */
 		ccid_error(mayfail ? PCSC_LOG_INFO : PCSC_LOG_ERROR,
-			cmd_out[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);    /* bError */
+			cmd_out[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);	/* bError */
 		return_value = IFD_COMMUNICATION_ERROR;
 	}
 
@@ -1213,7 +1213,7 @@ RESPONSECODE CmdPowerOff(unsigned int reader_index)
 
 	if (cmd[STATUS_OFFSET] & CCID_COMMAND_FAILED)
 	{
-		ccid_error(PCSC_LOG_ERROR, cmd[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);    /* bError */
+		ccid_error(PCSC_LOG_ERROR, cmd[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);	/* bError */
 		return_value = IFD_COMMUNICATION_ERROR;
 	}
 
@@ -1339,7 +1339,7 @@ again_status:
 		&& (buffer[ERROR_OFFSET] != 0xFE))
 	{
 		return_value = IFD_COMMUNICATION_ERROR;
-		ccid_error(PCSC_LOG_ERROR, buffer[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);    /* bError */
+		ccid_error(PCSC_LOG_ERROR, buffer[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);	/* bError */
 	}
 
 	return return_value;
@@ -1645,7 +1645,7 @@ time_request:
 
 	if (cmd[STATUS_OFFSET] & CCID_COMMAND_FAILED)
 	{
-		ccid_error(PCSC_LOG_ERROR, cmd[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);    /* bError */
+		ccid_error(PCSC_LOG_ERROR, cmd[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);	/* bError */
 		switch (cmd[ERROR_OFFSET])
 		{
 			case 0xFF:	// Abort
@@ -2540,7 +2540,7 @@ RESPONSECODE SetParameters(unsigned int reader_index, char protocol,
 
 	if (cmd[STATUS_OFFSET] & CCID_COMMAND_FAILED)
 	{
-		ccid_error(PCSC_LOG_ERROR, cmd[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);    /* bError */
+		ccid_error(PCSC_LOG_ERROR, cmd[ERROR_OFFSET], __FILE__, __LINE__, __FUNCTION__);	/* bError */
 		if (0x00 == cmd[ERROR_OFFSET])	/* command not supported */
 			return IFD_NOT_SUPPORTED;
 		else
@@ -2581,7 +2581,7 @@ static void i2dw(int value, unsigned char buffer[])
 
 /*****************************************************************************
 *
-*                  bei2i (big endian integer to host order interger)
+*					bei2i (big endian integer to host order interger)
 *
 ****************************************************************************/
 

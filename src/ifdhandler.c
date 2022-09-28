@@ -1,17 +1,17 @@
 /*
-    ifdhandler.c: IFDH API
-    Copyright (C) 2003-2010   Ludovic Rousseau
-    Copyright (C) 2009-2019   Advanced Card Systems Ltd.
+	ifdhandler.c: IFDH API
+	Copyright (C) 2003-2010   Ludovic Rousseau
+	Copyright (C) 2009-2019   Advanced Card Systems Ltd.
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+	This library is free software; you can redistribute it and/or
+	modify it under the terms of the GNU Lesser General Public
+	License as published by the Free Software Foundation; either
+	version 2.1 of the License, or (at your option) any later version.
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+	This library is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+	Lesser General Public License for more details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with this library; if not, write to the Free Software Foundation,
@@ -3202,7 +3202,7 @@ static unsigned int T1_card_timeout(double f, double d, int TC1,
 
 	/* Timeout applied on ISO in + ISO out card exchange
 	 *
-     * Timeout is the sum of:
+	 * Timeout is the sum of:
 	 * - ISO in delay between leading edge of the first character sent by the
 	 *   interface device and the last one (NAD PCB LN APDU CKS) = 260 EGT,
 	 * - delay between ISO in and ISO out = BWT,
