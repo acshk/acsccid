@@ -469,7 +469,8 @@ again_libusb:
 					|| (ACS_ACR1251U_C == readerID)
 					|| (ACS_ACR1251K_DUAL_READER == readerID)
 					|| (ACS_ACR1252_1S_CL_READER == readerID)
-					|| (ACS_ACR1252IMP_1S_CL_READER == readerID))
+					|| (ACS_ACR1252IMP_1S_CL_READER == readerID)
+					|| (ACS_WALLETMATE_1S_CL_READER == readerID))
 				{
 						/*
 						 * We can't talk to the two CCID interfaces
@@ -516,7 +517,8 @@ again_libusb:
 						|| (ACS_ACR1251U_C == readerID)
 						|| (ACS_ACR1251K_DUAL_READER == readerID)
 						|| (ACS_ACR1252_1S_CL_READER == readerID)
-						|| (ACS_ACR1252IMP_1S_CL_READER == readerID))
+						|| (ACS_ACR1252IMP_1S_CL_READER == readerID)
+						|| (ACS_WALLETMATE_1S_CL_READER == readerID))
 						/* only 2 interfaces for this device */
 						max_interface_number = 1;
 
@@ -781,7 +783,8 @@ again:
 					|| (ACS_ACR1251U_C == readerID)
 					|| (ACS_ACR1251K_DUAL_READER == readerID)
 					|| (ACS_ACR1252_1S_CL_READER == readerID)
-					|| (ACS_ACR1252IMP_1S_CL_READER == readerID))
+					|| (ACS_ACR1252IMP_1S_CL_READER == readerID)
+					|| (ACS_WALLETMATE_1S_CL_READER == readerID))
 				{
 					/* use the next interface for the next "slot" */
 					static_interface = interface + 1;
