@@ -470,7 +470,8 @@ again_libusb:
 					|| (ACS_ACR1251K_DUAL_READER == readerID)
 					|| (ACS_ACR1252_1S_CL_READER == readerID)
 					|| (ACS_ACR1252IMP_1S_CL_READER == readerID)
-					|| (ACS_WALLETMATE_1S_CL_READER == readerID))
+					|| (ACS_WALLETMATE_1S_CL_READER == readerID)
+					|| (ACS_ACR1581_1S_DUAL_READER == readerID))
 				{
 						/*
 						 * We can't talk to the two CCID interfaces
@@ -521,6 +522,10 @@ again_libusb:
 						|| (ACS_WALLETMATE_1S_CL_READER == readerID))
 						/* only 2 interfaces for this device */
 						max_interface_number = 1;
+
+					if (ACS_ACR1581_1S_DUAL_READER == readerID)
+						/* 3 interfaces for this device */
+						max_interface_number = 2;
 
 					if (FEITIANR502DUAL == readerID)
 						/* 4 interfaces for Feitian R502 reader */
@@ -784,7 +789,8 @@ again:
 					|| (ACS_ACR1251K_DUAL_READER == readerID)
 					|| (ACS_ACR1252_1S_CL_READER == readerID)
 					|| (ACS_ACR1252IMP_1S_CL_READER == readerID)
-					|| (ACS_WALLETMATE_1S_CL_READER == readerID))
+					|| (ACS_WALLETMATE_1S_CL_READER == readerID)
+					|| (ACS_ACR1581_1S_DUAL_READER == readerID))
 				{
 					/* use the next interface for the next "slot" */
 					static_interface = interface + 1;
