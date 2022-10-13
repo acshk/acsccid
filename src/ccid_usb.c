@@ -1042,7 +1042,8 @@ again:
 					(readerID == ACS_ACR1251_1S_CL_READER) ||
 					(readerID == ACS_ACR1251U_C) ||
 					(readerID == ACS_ACR1252_1S_CL_READER) ||
-					(readerID == ACS_ACR1252IMP_1S_CL_READER))
+					(readerID == ACS_ACR1252IMP_1S_CL_READER) ||
+					(readerID == ACS_WALLETMATE_1S_CL_READER))
 				{
 					if (interface == 1)
 						usbDevice[reader_index].ccid.isSamSlot = TRUE;
