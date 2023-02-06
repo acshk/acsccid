@@ -2498,9 +2498,25 @@ static void *CardDetectionThread(void *pParam)
 							if (bufferIndex + 1 < actual_length)
 							{
 								if (buffer[bufferIndex + 1] & (1 << bitIndex))
+								{
 									usbDevice[reader_index].ccid.bStatus[i] = CCID_ICC_PRESENT_ACTIVE;
+
+									/* Update the status for SAM slot. */
+									if ((i == 0) && (usbDevice[reader_index].ccid.isSamSlot))
+									{
+										usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+									}
+								}
 								else
+								{
 									usbDevice[reader_index].ccid.bStatus[i] = CCID_ICC_ABSENT;
+
+									/* Update the status for SAM slot. */
+									if ((i == 0) && (usbDevice[reader_index].ccid.isSamSlot))
+									{
+										usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_NOT_PRESENT;
+									}
+								}
 
 								DEBUG_INFO5("%d/%d: Slot %d: 0x%02X",
 									usbDevice[reader_index].bus_number,
