@@ -989,13 +989,11 @@ again:
 				}
 
 				usbDevice[reader_index].ccid.IFD_bcdDevice = desc.bcdDevice;
-#ifndef __APPLE__
-				/* If this is a multislot reader, init the multislot stuff */
-				if (usbDevice[reader_index].ccid.bMaxSlotIndex)
-					usbDevice[reader_index].multislot_extension = Multi_CreateFirstSlot(reader_index);
-				else
+#ifdef __APPLE__
+				usbDevice[reader_index].multislot_extension = NULL;
+#else
+				usbDevice[reader_index].multislot_extension = Multi_CreateFirstSlot(reader_index);
 #endif
-					usbDevice[reader_index].multislot_extension = NULL;
 
 				libusb_free_config_descriptor(config_desc);
 
