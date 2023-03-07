@@ -2738,9 +2738,6 @@ EXTERNAL RESPONSECODE IFDHControl(DWORD Lun, DWORD dwControlCode,
 					/* Set the card state to present. */
 					ccid_descriptor->dwSlotStatus = IFD_ICC_PRESENT;
 				}
-
-				/* Trigger the slot change. */
-				TriggerSlotChange(reader_index);
 			}
 
 			*pdwBytesReturned = 1;
