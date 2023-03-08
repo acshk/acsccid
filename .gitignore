@@ -9,6 +9,7 @@ config.status
 config/ar-lib
 config/compile
 config/config.guess
+config/config.rpath
 config/config.sub
 config/depcomp
 config/install-sh
