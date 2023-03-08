@@ -7,6 +7,20 @@ find ./ -name bootstrap -exec chmod 755 {} \;
 find ./ -name configure -exec chmod 755 {} \;
 find ./ -name *.pl -exec chmod 755 {} \;
 
+#
+# Copy config.rpath to the directory "config".
+# This file is needed by iconv.m4.
+#
+if [ -f /usr/share/gettext/config.rpath ]; then
+	if [ ! -d config ]; then
+		mkdir config
+	fi
+	cp /usr/share/gettext/config.rpath config
+else
+	echo "Please install gettext before running this script."
+	exit 1
+fi
+
 umask 022
 autoreconf -fiv
 rm -rf autom4te.cache
