@@ -2064,6 +2064,52 @@ static void *Multi_PollingProc(void *p_ext)
 						actual_length = 2;
 					}
 
+					/*
+					 * If RDR_to_PC_NotifySlotChange is received, update the
+					 * status for each slot.
+					 */
+					if ((actual_length > 0) && (buffer[0] == 0x50))
+					{
+						int bufferIndex = 0;
+						int bitIndex = 0;
+						int i = 0;
+
+						for (i = 0; i <= usbDevice[msExt->reader_index].ccid.bMaxSlotIndex; i++)
+						{
+							bufferIndex = i / 4;
+							bitIndex = 2 * (i % 4);
+
+							if (bufferIndex + 1 < actual_length)
+							{
+								if (buffer[bufferIndex + 1] & (1 << bitIndex))
+								{
+									usbDevice[msExt->reader_index].ccid.bStatus[i] = CCID_ICC_PRESENT_ACTIVE;
+
+									/* Update the status for SAM slot. */
+									if ((i == 0) && (usbDevice[msExt->reader_index].ccid.isSamSlot))
+									{
+										usbDevice[msExt->reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
+									}
+								}
+								else
+								{
+									usbDevice[msExt->reader_index].ccid.bStatus[i] = CCID_ICC_ABSENT;
+
+									/* Update the status for SAM slot. */
+									if ((i == 0) && (usbDevice[msExt->reader_index].ccid.isSamSlot))
+									{
+										usbDevice[msExt->reader_index].ccid.dwSlotStatus = IFD_ICC_NOT_PRESENT;
+									}
+								}
+
+								DEBUG_INFO5("%d/%d: Slot %d: 0x%02X",
+									usbDevice[msExt->reader_index].bus_number,
+									usbDevice[msExt->reader_index].device_address, i,
+									usbDevice[msExt->reader_index].ccid.bStatus[i]);
+							}
+						}
+					}
+
 					/* log the RDR_to_PC_NotifySlotChange data */
 					slot = 0;
 					for (b=0; b<actual_length-1; b++)
