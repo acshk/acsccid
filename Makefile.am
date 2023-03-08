@@ -5,7 +5,6 @@ SUBDIRS = src
 EXTRA_DIST = bootstrap \
 	ChangeLog \
 	config/config.rpath \
-	m4/ax_pthread.m4 \
 	m4/iconv.m4 \
 	MacOSX/configure \
 	MacOSX/convert_reader_h.pl \
