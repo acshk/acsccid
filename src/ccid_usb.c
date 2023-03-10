@@ -2387,7 +2387,7 @@ static struct usbDevice_MultiSlot_Extension *Multi_CreateNextSlot(int physical_r
 // Card detection thread
 static void *CardDetectionThread(void *pParam)
 {
-	int reader_index = (int) pParam;
+	int reader_index = (int) (intptr_t) pParam;
 	int rv = 0;
 	int status = 0;
 	int actual_length = 0;
