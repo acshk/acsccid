@@ -2827,7 +2827,8 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	// Simulate bStatus by reading bmSlotIccState from interrupt endpoint
 	if ((ccid_descriptor->readerID == ACS_ACR122U) &&
 		(ccid_descriptor->IFD_bcdDevice >= 0x0200) &&
-		(ccid_descriptor->IFD_bcdDevice <= 0x0204))
+		(ccid_descriptor->IFD_bcdDevice <= 0x0204) ||
+		(ccid_descriptor->readerID == ACS_ACR1581_1S_DUAL_READER))
 	{
 #ifdef __APPLE__
 		pthread_mutex_lock(ccid_descriptor->pbStatusLock);
