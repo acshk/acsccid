@@ -2,7 +2,7 @@
 	commands.c: Commands sent to the card
 	Copyright (C) 2003-2010   Ludovic Rousseau
 	Copyright (C) 2005 Martin Paljak
-	Copyright (C) 2010-2018   Advanced Card Systems Ltd.
+	Copyright (C) 2010-2023   Advanced Card Systems Ltd.
 
 	This library is free software; you can redistribute it and/or
 	modify it under the terms of the GNU Lesser General Public
