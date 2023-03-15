@@ -58,6 +58,7 @@ VID  PID  Reader              Reader Name
 072F 90CC ACR100-CCID         ACS ACR38U-CCID
 072F 90D8 ACR3801             ACS ACR3801
 072F B100 ACR39U              ACS ACR39U ICC Reader
+072F B500 ACR39 BL            ACS ACR39 FW_Upgrade
 072F B101 ACR39K              ACS ACR39K ICC Reader
 072F B102 ACR39T              ACS ACR39T ICC Reader
 072F B103 ACR39F              ACS ACR39F ICC Reader
@@ -65,7 +66,11 @@ VID  PID  Reader              Reader Name
 072F B10C ACR39U-U1           ACS ACR39U ID1 Card Reader
 072F B113 ACR39U-W1           ACS ACR39U-W1 Top ICC Reader
 072F B114 ACR39U-W1           ACS ACR39U-W1 Edge ICC Reader
+072F B116 ACR39U-W1           Z_ACS ACR39U-W1 Top Reader
+072F B117 ACR39U-W1           Z_ACS ACR39U-W1 Edge Reader
 072F B000 ACR3901U            ACS ACR3901 ICC Reader
+072F B501 ACR40T              ACS ACR40T ICC Reader
+072F B504 ACR40 BL            ACS ACR40 FW_Upgrade
 072F 90D2 ACR83U-A1           ACS ACR83U
 072F 8306 ACR85               ACS ACR85 PINPad Reader
 072F 2011 ACR88U              ACS ACR88U
@@ -105,6 +110,8 @@ VID  PID  Reader              Reader Name
 072F 2259 ACR1252U-A1         ACS ACR1252IMP 1S CL Reader
 072F 225B ACM1252U-Z2ACE      ACS ACR1252 CL Reader
 072F 225C ACM1252U-Z2ACE BL   ACS ACR1252 USB FW_Upgrade v100
+072F 226B ACR1252U-MW/MV      ACS WalletMate 1S CL Reader
+072F 226A ACR1252U-MW/MV BL   ACS WalletMate USB FW_Upgrade
 072F 223F ACR1255U-J1         ACS ACR1255U-J1 PICC Reader
 072F 2239 ACR1256U            ACS ACR1256U PICC Reader
 072F 2211 ACR1261U-C1         ACS ACR1261 1S Dual Reader
@@ -127,12 +134,15 @@ VID  PID  Reader              Reader Name
 072F 222C ACR1283L-D2         ACS ACR1283 CL Reader
 072F 220C ACR1283 Bootloader  ACS ACR1283U FW Upgrade
 072F 2258 ACR1311U-N1         ACS ACR1311 PICC Reader
+072F 2301 ACR1581U-C1         ACS ACR1581 1S Dual Reader
+072F 2300 ACR1581U-C1 BL      ACS ACR1581 USB FW_Upgrade
 072F 0102 AET62               ACS AET62 PICC Reader
 072F 0103 AET62               ACS AET62 1SAM PICC Reader
 072F 0100 AET65               ACS AET65 ICC Reader
 072F 224A AMR220-C            ACS AMR220 Reader
 072F 8201 APG8201-A1          ACS APG8201
 072F 8206 APG8201-B2          ACS APG8201-B2
+072F 8207 APG8201-B2RO        ACS ACR83U
 072F 8202 [OEM Reader]        [OEM Reader Name]
 072F 8205 [OEM Reader]        [OEM Reader Name]
 072F 90DB CryptoMate64        ACS CryptoMate64
@@ -154,6 +164,91 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.1.9 (15/3/2023)
+- Add the following readers support:
+  APG8201-B2RO
+  ACR39U-W1 Top Reader
+  ACR39U-W1 Edge Reader
+  WalletMate 1S CL Reader
+  WalletMate USB FW_Upgrade
+  ACR1581 1S Dual Reader
+  ACR1581 USB FW_Upgrade
+  ACR40T ICC Reader
+  ACR40 FW_Upgrade
+  ACR39 FW_Upgrade
+- Fix misleading read length in CCID_Receive().
+- Use "buffer.h" instead of <openct/buffer.h>.
+- Merge with ccid 1.4.32.
+  - ccid_open_hack_pre(): fix bug for ICCD type A & B devices.
+  - Fix "Bus Error" on SPARC64 CPU and Solaris C compiler.
+  - Add SCARD_ATTR_CHANNEL_ID for USB devices.
+  - get_ccid_usb_interface(): No need to make the function EXTERNAL.
+- Merge with ccid 1.4.33.
+  - Import files from ccid 1.4.33 to get Unicode support.
+  - towitoko: do not use "bool" type.
+  - configure: add --enable-oslog argument.
+  - debug: add support of os_log(3) for macOS.
+  - macOS: use --enable-oslog for macOS >= 10.12
+- Enable syslog or oslog from deployment target in MacOSX/configure.
+- Fix ACR1281U-C1 communication issue with NXP SAM AV3.
+- Set arm64 and x86_64 for universal binary build in MacOSX/configure.
+- Fix segmentation fault for multi-slot readers on macOS Big Sur.
+- Merge with ccid 1.4.34.
+  - T0ProcACK(): Fix a potential integer underflow.
+  - Fix a potential crash in IFDHTransmitToICC().
+  - CmdPowerOn: fix log messages.
+  - CmdPowerOn: fix a potential infinite loop.
+  - T0ProcACK: fix a potential problem.
+  - CmdPowerOn: fix a potential overrun with bogus ATR.
+  - IFDHSetProtocolParameters(): Fix reading past the end-of-buffer.
+  - CmdGetSlotStatus: fix potential read of uninitialized buffer.
+  - ReadUSB: fix potential read of uninitialized buffer.
+  - IFDHSetProtocolParameters: handle ATR_GetConvention() error.
+  - PPS_Match: fix potential read of uninitialized buffer.
+  - Fix potential reads of uninitialized buffer.
+  - dw2i: fix potential integer overflow.
+  - CCID_Transmit: call memcpy() only with a non-NULL src.
+  - Do not report an error if the wrong interface is used by the driver.
+  - Return "no smart card" if we get notified during a transmit.
+  - Display libusb error code in text.
+  - Add a new field dwProtocols in struct _ccid_descriptor.
+  - Fail if the requested protocol is not supported by reader.
+  - Fix potential memcpy call with null dest.
+- Merge with ccid 1.4.35.
+  - Solve a performance issue with T=1 and CCID_CLASS_AUTO_PPS_PROP.
+  - Reformat part of T0ProcACK().
+  - Fix a possible buffer overflow in T0ProcACK.
+  - ccid_usb: ask for bNumDataRatesSupported data rates.
+  - IFDHSetProtocolParameters: set IFSC/IFSD only for TPDU readers.
+  - CmdPowerOn: fix debug message about Voltage.
+  - Multi_PollingProc: use slot variable.
+  - configure.ac: remove AC_HEADER_STDC.
+  - configure.ac: remove AC_HEADER_TIME.
+  - Import files from ccid 1.4.35.
+  - Use ax_pthread.m4 macro from autoconf-archive.
+- Replace AM_PROG_LEX with AC_PROG_LEX([noyywrap]) in configure.ac.
+- Add ACS_APG8201_B2RO to src/ccid.h.
+- Disable card detection thread for APG8201-B2RO in OpenUSBByName().
+- Return 6B 80 for APG8201-B2RO in CCID_Receive().
+- Disable polling thread for APG8201-B2RO in IFDHGetCapabilities().
+- Enable I/O controls for APG8201-B2RO in IFDHControl().
+- Enable SPE pseudo APDU for APG8201-B2RO in process_spe_ppdu().
+- Merge with ccid 1.4.36.
+  - Code reformat: replace 4 spaces by 1 tab.
+- Enable ACR1252U-MW/MV (composite device) as multi-slot reader.
+- Enable the 2nd interface of ACR1252U-MW/MV as SAM slot.
+- Enable ACR1581U-C1 (composite device) as multi-slot reader.
+- Enable the 3rd interface of ACR1581U-C1 as SAM slot.
+- Enable SAM slot for ACR40T.
+- Update the status for SAM slot on macOS in CardDetectionThread().
+- Disable polling thread for SAM slot in IFDHGetCapabilities().
+- Remove unused TriggerSlotChange().
+- Enable multislot extension for single slot readers in OpenUSBByName().
+- Update the status for each slot in Multi_PollingProc().
+- Use iconv.m4 macro from gettext.
+- Fix compiler warnings on macOS in CardDetectionThread().
+- Enable ACR1581U-C1 to use bStatus in IFDHICCPresence().
 
 v1.1.8 (6/1/2020)
 - Add the following readers support:
@@ -552,7 +647,7 @@ Fax: +852 2796 1286
 
 
 -------------------------------------------------------------------------------
-Copyright (C) 2009-2020 Advanced Card Systems Ltd.
+Copyright (C) 2009-2023 Advanced Card Systems Ltd.
 Copyright (C) 2003-2011 Ludovic Rousseau
 Copyright (C) 2000-2001 Carlos Prados
 Copyright (C) 2003 Olaf Kirch
