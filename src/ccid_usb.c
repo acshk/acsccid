@@ -996,7 +996,14 @@ again:
 #ifdef __APPLE__
 				usbDevice[reader_index].multislot_extension = NULL;
 #else
-				usbDevice[reader_index].multislot_extension = Multi_CreateFirstSlot(reader_index);
+				/*
+				 * If the reader has interrupt endpoint, init the multislot
+				 * stuff.
+				 */
+				if (usbDevice[reader_index].has_interrupt)
+					usbDevice[reader_index].multislot_extension = Multi_CreateFirstSlot(reader_index);
+				else
+					usbDevice[reader_index].multislot_extension = NULL;
 #endif
 
 				libusb_free_config_descriptor(config_desc);
