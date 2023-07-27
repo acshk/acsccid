@@ -1554,6 +1554,11 @@ static int get_end_points(struct libusb_config_descriptor *desc,
 
 	usb_interface = get_ccid_usb_interface(desc, &num);
 
+	usbdevice->bulk_in = 0;
+	usbdevice->bulk_out = 0;
+	usbdevice->interrupt = 0;
+	usbdevice->bulkOutMaxPacketSize = 0;
+
 	/*
 	 * 3 Endpoints maximum: Interrupt In, Bulk In, Bulk Out
 	 */
