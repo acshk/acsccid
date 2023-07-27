@@ -1105,9 +1105,13 @@ again:
 					goto end2;
 				}
 
-				/* Disable card detection thread for APG8201-B2. */
+				/*
+				 * Disable card detection thread for APG8201-B2 or the reader
+				 * which does not have interrupt endpoint.
+				 */
 				if ((usbDevice[reader_index].ccid.readerID == ACS_APG8201_B2)
-					|| (usbDevice[reader_index].ccid.readerID == ACS_APG8201_B2RO))
+					|| (usbDevice[reader_index].ccid.readerID == ACS_APG8201_B2RO)
+					|| (!usbDevice[reader_index].has_interrupt))
 				{
 					goto end;
 				}
