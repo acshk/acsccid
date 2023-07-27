@@ -90,6 +90,7 @@ typedef struct
 	int bulk_in;
 	int bulk_out;
 	int interrupt;
+	int has_interrupt;
 
 	/* Number of slots using the same device */
 	int real_nb_opened_slots;
@@ -1557,6 +1558,7 @@ static int get_end_points(struct libusb_config_descriptor *desc,
 	usbdevice->bulk_in = 0;
 	usbdevice->bulk_out = 0;
 	usbdevice->interrupt = 0;
+	usbdevice->has_interrupt = FALSE;
 	usbdevice->bulkOutMaxPacketSize = 0;
 
 	/*
@@ -1570,6 +1572,7 @@ static int get_end_points(struct libusb_config_descriptor *desc,
 		{
 			usbdevice->interrupt =
 				usb_interface->altsetting->endpoint[i].bEndpointAddress;
+			usbdevice->has_interrupt = TRUE;
 			continue;
 		}
 
