@@ -1052,6 +1052,9 @@ again:
 				// Initialize isSamSlot
 				usbDevice[reader_index].ccid.isSamSlot = FALSE;
 
+				/* Initialize the write delay. */
+				usbDevice[reader_index].ccid.writeDelay = 0;
+
 				// The 2nd interface (composite device) is a SAM slot
 				if ((readerID == ACS_ACR1281_1S_PICC_READER) ||
 					(readerID == ACS_ACR1251_1S_CL_READER) ||
@@ -1198,18 +1201,9 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 	char debug_header[] = "-> 121234 ";
 	int pos;
 	int len;
-	int delayed = FALSE;
 
 	(void)snprintf(debug_header, sizeof(debug_header), "-> %06X ",
 		(int)reader_index);
-
-	// Fix APG8201 and ACR85 ICC cannot receive command properly
-	// Add delay for APG8201 and ACR85 ICC
-	if ((usbDevice[reader_index].ccid.readerID == ACS_APG8201) ||
-		(usbDevice[reader_index].ccid.readerID == ACS_ACR85_PINPAD_READER_ICC))
-	{
-		delayed = TRUE;
-	}
 
 	// Workaround for ACR122U reader
 	usbDevice[reader_index].last_write_size = length;
@@ -1241,11 +1235,11 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 			return STATUS_UNSUCCESSFUL;
 		}
 
-		if (delayed)
+		/* Delay the write operation. */
+		if ((usbDevice[reader_index].ccid.writeDelay > 0)
+			&& (length > usbDevice[reader_index].bulkOutMaxPacketSize))
 		{
-			// Delay 10 ms
-			if (length > usbDevice[reader_index].bulkOutMaxPacketSize)
-				usleep(10 * 1000);
+			usleep(usbDevice[reader_index].ccid.writeDelay * 1000);
 		}
 
 		pos += len;

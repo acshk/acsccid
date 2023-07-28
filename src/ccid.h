@@ -180,6 +180,9 @@ typedef struct
 
 	// True if it is a SAM slot
 	int isSamSlot;
+
+	/* Write delay in milliseconds */
+	int writeDelay;
 } _ccid_descriptor;
 
 /* Features from dwFeatures */

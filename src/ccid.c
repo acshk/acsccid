@@ -644,6 +644,12 @@ int ccid_open_hack_post(unsigned int reader_index)
 						ccid_descriptor->dwMaxCCIDMessageLength = 320;
 					}
 				}
+
+				/*
+				 * Fix APG8201 which cannot receive the command properly.
+				 * Set write delay to 10 ms.
+				 */
+				ccid_descriptor->writeDelay = 10;
 			}
 		case ACS_APG8201Z:
 			ccid_descriptor->wLcdLayout = 0x0210;
@@ -697,6 +703,12 @@ int ccid_open_hack_post(unsigned int reader_index)
 					ccid_descriptor->firmwareFixEnabled = (firmwareVersion == 0x0001);
 					DEBUG_INFO2("Firmware fix enabled: %d", ccid_descriptor->firmwareFixEnabled);
 				}
+
+				/*
+				 * Fix ACR85 ICC which cannot receive the command properly.
+				 * Set write delay to 10 ms.
+				 */
+				ccid_descriptor->writeDelay = 10;
 			}
 			break;
 
