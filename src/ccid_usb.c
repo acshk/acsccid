@@ -1222,6 +1222,12 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 			else
 				len = length;
 
+			if (len <= 0)
+			{
+				DEBUG_CRITICAL2("invalid packet size: %d", len);
+				return STATUS_UNSUCCESSFUL;
+			}
+
 			DEBUG_XXD(debug_header, buffer + pos, len);
 
 			rv = libusb_bulk_transfer(usbDevice[reader_index].dev_handle,
