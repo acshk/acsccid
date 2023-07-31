@@ -1199,8 +1199,7 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 	int rv;
 	int actual_length;
 	char debug_header[] = "-> 121234 ";
-	int pos;
-	int len;
+	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 
 	(void)snprintf(debug_header, sizeof(debug_header), "-> %06X ",
 		(int)reader_index);
@@ -1208,42 +1207,69 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 	// Workaround for ACR122U reader
 	usbDevice[reader_index].last_write_size = length;
 
-	// Send command by dividing number of packets
-	pos = 0;
-	while (length > 0)
+	if ((ccid_descriptor->bInterfaceProtocol == PROTOCOL_ACR38)
+		|| (usbDevice[reader_index].ccid.writeDelay > 0))
 	{
-		if (length > usbDevice[reader_index].bulkOutMaxPacketSize)
-			len = usbDevice[reader_index].bulkOutMaxPacketSize;
-		else
-			len = length;
+		int pos;
+		int len;
 
-		DEBUG_XXD(debug_header, buffer + pos, len);
-
-		rv = libusb_bulk_transfer(usbDevice[reader_index].dev_handle,
-			usbDevice[reader_index].bulk_out, buffer + pos, len,
-			&actual_length, USB_WRITE_TIMEOUT);
-
-		if (rv < 0)
+		// Send command by dividing number of packets
+		pos = 0;
+		while (length > 0)
 		{
-			DEBUG_CRITICAL5("write failed (%d/%d): %d %s",
-				usbDevice[reader_index].bus_number,
-				usbDevice[reader_index].device_address, rv, libusb_error_name(rv));
+			if (length > usbDevice[reader_index].bulkOutMaxPacketSize)
+				len = usbDevice[reader_index].bulkOutMaxPacketSize;
+			else
+				len = length;
 
-			if (LIBUSB_ERROR_NO_DEVICE == rv)
-				return STATUS_NO_SUCH_DEVICE;
+			DEBUG_XXD(debug_header, buffer + pos, len);
 
-			return STATUS_UNSUCCESSFUL;
+			rv = libusb_bulk_transfer(usbDevice[reader_index].dev_handle,
+				usbDevice[reader_index].bulk_out, buffer + pos, len,
+				&actual_length, USB_WRITE_TIMEOUT);
+
+			if (rv < 0)
+			{
+				DEBUG_CRITICAL5("write failed (%d/%d): %d %s",
+					usbDevice[reader_index].bus_number,
+					usbDevice[reader_index].device_address, rv, libusb_error_name(rv));
+
+				if (LIBUSB_ERROR_NO_DEVICE == rv)
+					return STATUS_NO_SUCH_DEVICE;
+
+				return STATUS_UNSUCCESSFUL;
+			}
+
+			/* Delay the write operation. */
+			if ((usbDevice[reader_index].ccid.writeDelay > 0)
+				&& (length > usbDevice[reader_index].bulkOutMaxPacketSize))
+			{
+				usleep(usbDevice[reader_index].ccid.writeDelay * 1000);
+			}
+
+			pos += len;
+			length -= len;
 		}
 
-		/* Delay the write operation. */
-		if ((usbDevice[reader_index].ccid.writeDelay > 0)
-			&& (length > usbDevice[reader_index].bulkOutMaxPacketSize))
-		{
-			usleep(usbDevice[reader_index].ccid.writeDelay * 1000);
-		}
+		return STATUS_SUCCESS;
+	}
 
-		pos += len;
-		length -= len;
+	DEBUG_XXD(debug_header, buffer, length);
+
+	rv = libusb_bulk_transfer(usbDevice[reader_index].dev_handle,
+		usbDevice[reader_index].bulk_out, buffer, length,
+		&actual_length, USB_WRITE_TIMEOUT);
+
+	if (rv < 0)
+	{
+		DEBUG_CRITICAL5("write failed (%d/%d): %d %s",
+			usbDevice[reader_index].bus_number,
+			usbDevice[reader_index].device_address, rv, libusb_error_name(rv));
+
+		if (LIBUSB_ERROR_NO_DEVICE == rv)
+			return STATUS_NO_SUCH_DEVICE;
+
+		return STATUS_UNSUCCESSFUL;
 	}
 
 	return STATUS_SUCCESS;
