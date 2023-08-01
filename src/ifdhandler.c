@@ -59,11 +59,7 @@
 
 #include <iconv.h>
 
-#if defined(__APPLE__) | defined(sun)
 #pragma pack(1)
-#else
-#pragma pack(push, 1)
-#endif
 
 /* Structure for FEATURE_WRITE_DISPLAY */
 typedef struct _WRITE_DISPLAY
@@ -92,11 +88,7 @@ typedef struct _DISPLAY_PROPERTIES
 	uint16_t wLcdMaxLines;		/* Maximum number of lines that can be used */
 } DISPLAY_PROPERTIES, *PDISPLAY_PROPERTIES;
 
-#if defined(__APPLE__) | defined(sun)
 #pragma pack()
-#else
-#pragma pack(pop)
-#endif
 
 /* Array of structures to hold the ATR and other state value of each slot */
 static CcidDesc CcidSlots[CCID_DRIVER_MAX_READERS];
