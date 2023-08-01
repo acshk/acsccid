@@ -70,7 +70,9 @@ VID  PID  Reader              Reader Name
 072F B117 ACR39U-W1           Z_ACS ACR39U-W1 Edge Reader
 072F B000 ACR3901U            ACS ACR3901 ICC Reader
 072F B501 ACR40T              ACS ACR40T ICC Reader
-072F B504 ACR40 BL            ACS ACR40 FW_Upgrade
+072F B504 ACR40T BL           ACS ACR40 FW_Upgrade
+072F B506 ACR40U              ACS ACR40U ICC Reader
+072F B505 ACR40U BL           ACS SCR FW_Upgrade
 072F 90D2 ACR83U-A1           ACS ACR83U
 072F 8306 ACR85               ACS ACR85 PINPad Reader
 072F 2011 ACR88U              ACS ACR88U
@@ -134,6 +136,9 @@ VID  PID  Reader              Reader Name
 072F 222C ACR1283L-D2         ACS ACR1283 CL Reader
 072F 220C ACR1283 Bootloader  ACS ACR1283U FW Upgrade
 072F 2258 ACR1311U-N1         ACS ACR1311 PICC Reader
+072F 2303 ACR1552U-M1         ACS ACR1552 1S CL Reader
+072F 2308 ACR1552U-M2         ACS ACR1552 CL Reader
+072F 2302 ACR1552U BL         ACS ACR1552 USB FW_Upgrade
 072F 2301 ACR1581U-C1         ACS ACR1581 1S Dual Reader
 072F 2300 ACR1581U-C1 BL      ACS ACR1581 USB FW_Upgrade
 072F 0102 AET62               ACS AET62 PICC Reader
@@ -164,6 +169,24 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.1.10 (1/8/2023)
+- Add the following readers support:
+  ACR40U ICC Reader
+  SCR FW_Upgrade
+  ACR1552 1S CL Reader
+  ACR1552 CL Reader
+  ACR1552 USB FW_Upgrade
+- Enable ACR1552U-M1 (composite device) as multi-slot reader.
+- Enable the 2nd interface of ACR1552U-M1 as SAM slot.
+- Fix missing initialization in get_end_points().
+- Update _usbDevice.has_interrupt in get_end_points().
+- Initialize multislot for interrupt endpoint only in OpenUSBByName().
+- Detect a card on macOS for interrupt endpoint only in OpenUSBByName().
+- Simplify the code for delaying the write operation.
+- Allow ACR38 or the reader which needs write delay in WriteUSB().
+- Check the packet size to avoid infinite loop in WriteUSB().
+- Use #pragma pack(1) for all platforms in src/ifdhandler.c.
 
 v1.1.9 (15/3/2023)
 - Add the following readers support:
