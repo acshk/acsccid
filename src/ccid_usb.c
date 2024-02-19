@@ -474,6 +474,7 @@ again_libusb:
 					|| (ACS_WALLETMATE_1S_CL_READER == readerID)
 					|| (ACS_ACR1581_1S_DUAL_READER == readerID)
 					|| (ACS_WALLETMATE_II_1S_CL_READER == readerID)
+					|| (ACS_ACR1555_1S_CL_READER == readerID)
 					|| (ACS_ACR1552_1S_CL_READER == readerID))
 				{
 						/*
@@ -524,6 +525,7 @@ again_libusb:
 						|| (ACS_ACR1252IMP_1S_CL_READER == readerID)
 						|| (ACS_WALLETMATE_1S_CL_READER == readerID)
 						|| (ACS_WALLETMATE_II_1S_CL_READER == readerID)
+						|| (ACS_ACR1555_1S_CL_READER == readerID)
 						|| (ACS_ACR1552_1S_CL_READER == readerID))
 						/* only 2 interfaces for this device */
 						max_interface_number = 1;
@@ -797,6 +799,7 @@ again:
 					|| (ACS_WALLETMATE_1S_CL_READER == readerID)
 					|| (ACS_ACR1581_1S_DUAL_READER == readerID)
 					|| (ACS_WALLETMATE_II_1S_CL_READER == readerID)
+					|| (ACS_ACR1555_1S_CL_READER == readerID)
 					|| (ACS_ACR1552_1S_CL_READER == readerID))
 				{
 					/* use the next interface for the next "slot" */
