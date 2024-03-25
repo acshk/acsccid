@@ -1069,6 +1069,7 @@ again:
 					(readerID == ACS_ACR1252IMP_1S_CL_READER) ||
 					(readerID == ACS_WALLETMATE_1S_CL_READER) ||
 					(readerID == ACS_WALLETMATE_II_1S_CL_READER) ||
+					(readerID == ACS_ACR1555_1S_CL_READER) ||
 					(readerID == ACS_ACR1552_1S_CL_READER))
 				{
 					if (interface == 1)
