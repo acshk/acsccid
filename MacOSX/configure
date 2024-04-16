@@ -24,6 +24,21 @@
 # make install
 # the driver is installed in /usr/libexec/SmartCardServices/drivers
 
+usage="$(basename "$0") [-Bh]
+
+    -B  Allows for configuration to use dylib. This is necessary for Homebrew
+    -h  Prints this help text"
+
+while getopts "Bh" opt; do
+  case $opt in
+    B) IS_HOMEBREW=0; shift ;;
+    h) echo "$usage"
+       exit ;;
+    *) IS_HOMEBREW=1 ;;
+  esac
+done
+
+
 # Colors
 RED="\033[31m"
 NORMAL="\033[0m"
@@ -49,8 +64,8 @@ LIBUSB_ARCHIVE="$LIBUSB_DIR"/libusb-1.0.a
 LIBUSB_CFLAGS=$(pkg-config --cflags --static libusb-1.0)
 LIBUSB_LIBS=$(pkg-config --libs --static libusb-1.0)
 
-if ls "$LIBUSB_DIR"/libusb-1.0*.dylib 2> /dev/null
-then
+ls -1 "$LIBUSB_DIR"/libusb-1.0*.dylib > /dev/null 2>&1
+if [ "$?" ] && [ ! $IS_HOMEBREW ]; then
 	echo -en $RED
 	echo "*****************************"
 	echo "Dynamic library libusb found in $LIBUSB_DIR"
