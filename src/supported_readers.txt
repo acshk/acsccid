@@ -244,7 +244,7 @@
 
 # ACR1552U-ZW
 0x072f:0x2307:ACS WalletMate II 1S CL Reader
-0x072f:0x2306:ACS WalletMate II V2 Upgrade
+0x072f:0x2306:ACS WalletMate V2 Upgrade
 
 # ACR1552U-MW
 0x072f:0x2401:ACS WalletMate II 2S CL Reader
