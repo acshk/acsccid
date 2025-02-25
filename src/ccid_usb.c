@@ -1081,7 +1081,8 @@ again:
 				}
 
 				// The 3rd interface (composite device) is a SAM slot
-				if (readerID == ACS_ACR1581_1S_DUAL_READER)
+				if ((readerID == ACS_ACR1581_1S_DUAL_READER)
+					|| (readerID == ACS_WALLETMATE_II_2S_CL_READER))
 				{
 					if (interface == 2)
 						usbDevice[reader_index].ccid.isSamSlot = TRUE;
