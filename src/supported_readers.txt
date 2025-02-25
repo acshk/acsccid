@@ -246,6 +246,10 @@
 0x072f:0x2307:ACS WalletMate II 1S CL Reader
 0x072f:0x2306:ACS WalletMate II V2 Upgrade
 
+# ACR1552U-MW
+0x072f:0x2401:ACS WalletMate II 2S CL Reader
+0x072f:0x2400:ACS WalletMate V3 Upgrade
+
 # ACR1555U
 0x072f:0x230a:ACS ACR1555 1S CL Reader
 0x072f:0x2309:ACS ACR1555 USB FW_Upgrade
