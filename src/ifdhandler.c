@@ -2825,6 +2825,7 @@ EXTERNAL RESPONSECODE IFDHICCPresence(DWORD Lun)
 	if ((ccid_descriptor->readerID == ACS_ACR122U) &&
 		(ccid_descriptor->IFD_bcdDevice >= 0x0200) &&
 		(ccid_descriptor->IFD_bcdDevice <= 0x0204) ||
+		(ccid_descriptor->readerID == ACS_AIR60_1S_DUAL_READER) ||
 		(ccid_descriptor->readerID == ACS_ACR1581_1S_DUAL_READER))
 	{
 #ifdef __APPLE__
