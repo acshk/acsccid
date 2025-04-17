@@ -618,6 +618,7 @@ EXTERNAL RESPONSECODE IFDHGetCapabilities(DWORD Lun, DWORD Tag,
 
 					/* 3 CCID interfaces */
 					if ((ACS_ACR1581_1S_DUAL_READER == readerID)
+						|| (ACS_AIR60_1S_DUAL_READER == readerID)
 						|| (ACS_WALLETMATE_II_2S_CL_READER == readerID))
 						*Value = 3;
 
