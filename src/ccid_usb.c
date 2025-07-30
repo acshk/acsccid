@@ -1064,6 +1064,9 @@ again:
 				// Initialize isSamSlot
 				usbDevice[reader_index].ccid.isSamSlot = FALSE;
 
+				/* Initialize isSamNotified. */
+				usbDevice[reader_index].ccid.isSamNotified = FALSE;
+
 				/* Initialize the write delay. */
 				usbDevice[reader_index].ccid.writeDelay = 0;
 
@@ -2152,7 +2155,8 @@ static void *Multi_PollingProc(void *p_ext)
 									usbDevice[msExt->reader_index].ccid.bStatus[i] = CCID_ICC_PRESENT_ACTIVE;
 
 									/* Update the status for SAM slot. */
-									if ((i == 0) && (usbDevice[msExt->reader_index].ccid.isSamSlot))
+									if (usbDevice[msExt->reader_index].ccid.isSamSlot
+										&& usbDevice[msExt->reader_index].ccid.isSamNotified)
 									{
 										usbDevice[msExt->reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 									}
@@ -2162,7 +2166,8 @@ static void *Multi_PollingProc(void *p_ext)
 									usbDevice[msExt->reader_index].ccid.bStatus[i] = CCID_ICC_ABSENT;
 
 									/* Update the status for SAM slot. */
-									if ((i == 0) && (usbDevice[msExt->reader_index].ccid.isSamSlot))
+									if (usbDevice[msExt->reader_index].ccid.isSamSlot
+										&& usbDevice[msExt->reader_index].ccid.isSamNotified)
 									{
 										usbDevice[msExt->reader_index].ccid.dwSlotStatus = IFD_ICC_NOT_PRESENT;
 									}
@@ -2583,7 +2588,8 @@ static void *CardDetectionThread(void *pParam)
 									usbDevice[reader_index].ccid.bStatus[i] = CCID_ICC_PRESENT_ACTIVE;
 
 									/* Update the status for SAM slot. */
-									if ((i == 0) && (usbDevice[reader_index].ccid.isSamSlot))
+									if (usbDevice[reader_index].ccid.isSamSlot
+										&& usbDevice[reader_index].ccid.isSamNotified)
 									{
 										usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_PRESENT;
 									}
@@ -2593,7 +2599,8 @@ static void *CardDetectionThread(void *pParam)
 									usbDevice[reader_index].ccid.bStatus[i] = CCID_ICC_ABSENT;
 
 									/* Update the status for SAM slot. */
-									if ((i == 0) && (usbDevice[reader_index].ccid.isSamSlot))
+									if (usbDevice[reader_index].ccid.isSamSlot
+										&& usbDevice[reader_index].ccid.isSamNotified)
 									{
 										usbDevice[reader_index].ccid.dwSlotStatus = IFD_ICC_NOT_PRESENT;
 									}

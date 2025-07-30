@@ -181,6 +181,9 @@ typedef struct
 	// True if it is a SAM slot
 	int isSamSlot;
 
+	/* TRUE if SAM notification is enabled, otherwise FALSE. */
+	int isSamNotified;
+
 	/* Write delay in milliseconds */
 	int writeDelay;
 } _ccid_descriptor;

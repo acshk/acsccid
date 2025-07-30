@@ -958,6 +958,7 @@ int ccid_open_hack_post(unsigned int reader_index)
 
 		case ACS_ACR40T_ICC_READER:
 			ccid_descriptor->isSamSlot = 1;
+			ccid_descriptor->isSamNotified = 1;
 			break;
 
 		default:
