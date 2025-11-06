@@ -954,7 +954,8 @@ again:
 					else if (readerID == ACS_ACR1222_1SAM_DUAL_READER)
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
 					// Fix ACR32 incorrect max slot index
-					else if (readerID == ACS_ACR32_ICC_READER)
+					else if ((readerID == ACS_ACR32_ICC_READER)
+						|| (readerID == ACS_ACR1255U_J1_BL))
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 0;
 					else
 						usbDevice[reader_index].ccid.bMaxSlotIndex = device_descriptor[4];
