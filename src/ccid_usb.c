@@ -947,13 +947,12 @@ again:
 					usbDevice[reader_index].ccid.dwDefaultClock = dw2i(device_descriptor, 10);
 					usbDevice[reader_index].ccid.dwMaxDataRate = dw2i(device_descriptor, 23);
 
-					// Fix ACR1222 incorrect max slot index
+					// Fix the incorrect bMaxSlotIndex value for readers.
 					if ((readerID == ACS_ACR1222_1SAM_PICC_READER) ||
 						(readerID == ACS_ACR1222_DUAL_READER))
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 1;
 					else if (readerID == ACS_ACR1222_1SAM_DUAL_READER)
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 2;
-					// Fix ACR32 incorrect max slot index
 					else if ((readerID == ACS_ACR32_ICC_READER)
 						|| (readerID == ACS_ACR1255U_J1_BL))
 						usbDevice[reader_index].ccid.bMaxSlotIndex = 0;
