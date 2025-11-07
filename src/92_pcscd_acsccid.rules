@@ -5,6 +5,10 @@ ACTION!="add", GOTO="pcscd_acsccid_rules_end"
 SUBSYSTEM!="usb", GOTO="pcscd_acsccid_rules_end"
 ENV{DEVTYPE}!="usb_device", GOTO="pcscd_acsccid_rules_end"
 
+# disable USB-persist for CCID devices (including composite ones)
+# https://docs.kernel.org/driver-api/usb/persist.html
+ENV{ID_USB_INTERFACES}=="*:0b0000:*", TEST=="power/persist", ATTR{power/persist}="0"
+
 # set USB power management to auto.
 ENV{ID_USB_INTERFACES}==":0b0000:", TEST=="power/control", ATTR{power/control}="auto"
 
