@@ -80,6 +80,7 @@ typedef struct CCID_DESC
 } CcidDesc;
 
 typedef enum {
+	STATUS_INSUFFICIENT_BUFFER   = 0xF8,
 	STATUS_NO_SUCH_DEVICE        = 0xF9,
 	STATUS_SUCCESS               = 0xFA,
 	STATUS_UNSUCCESSFUL          = 0xFB,
