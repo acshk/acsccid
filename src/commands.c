@@ -63,6 +63,8 @@
 #define CHECK_STATUS(res) \
 	if (STATUS_NO_SUCH_DEVICE == res) \
 		return IFD_NO_SUCH_DEVICE; \
+	if (STATUS_INSUFFICIENT_BUFFER == res) \
+		return IFD_ERROR_INSUFFICIENT_BUFFER; \
 	if (STATUS_SUCCESS != res) \
 		return IFD_COMMUNICATION_ERROR;
 
