@@ -1313,11 +1313,15 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 status_t ReadUSB(unsigned int reader_index, unsigned int * length,
 	unsigned char *buffer)
 {
+	status_t status = STATUS_UNSUCCESSFUL;
 	int rv;
 	int actual_length;
 	char debug_header[] = "<- 121234 ";
 	_ccid_descriptor *ccid_descriptor = get_ccid_descriptor(reader_index);
 	int duplicate_frame = 0;
+	int packet_size = usbDevice[reader_index].bulk_in_max_packet_size;
+	unsigned char *tmp_buffer = NULL;
+	unsigned int tmp_buffer_length = 0;
 
 	(void)snprintf(debug_header, sizeof(debug_header), "<- %06X ",
 		(int)reader_index);
@@ -1385,56 +1389,93 @@ status_t ReadUSB(unsigned int reader_index, unsigned int * length,
 		// Insufficient buffer
 		if (readLen > bufferLen)
 		{
+			*length = 0;
 			DEBUG_CRITICAL("Insufficient buffer");
-			return STATUS_UNSUCCESSFUL;
+			return STATUS_INSUFFICIENT_BUFFER;
 		}
 
 		return STATUS_SUCCESS;
 	}
 
+	/* Calculate the temporary buffer length. */
+	tmp_buffer_length = (*length + packet_size - 1) / packet_size * packet_size;
+
+	/* Allocate the temporary buffer. */
+	tmp_buffer = (unsigned char *) malloc(tmp_buffer_length);
+	if (tmp_buffer == NULL)
+		goto cleanup;
+
 read_again:
 	rv = libusb_bulk_transfer(usbDevice[reader_index].dev_handle,
-		usbDevice[reader_index].bulk_in, buffer, *length,
+		usbDevice[reader_index].bulk_in, tmp_buffer, tmp_buffer_length,
 		&actual_length, usbDevice[reader_index].ccid.readTimeout);
 
 	if (rv < 0)
 	{
-		*length = 0;
 		DEBUG_CRITICAL5("read failed (%d/%d): %d %s",
 			usbDevice[reader_index].bus_number,
 			usbDevice[reader_index].device_address, rv, libusb_error_name(rv));
 
 		if (LIBUSB_ERROR_NO_DEVICE == rv)
-			return STATUS_NO_SUCH_DEVICE;
+			status = STATUS_NO_SUCH_DEVICE;
 
-		return STATUS_UNSUCCESSFUL;
+		goto cleanup;
 	}
 
-	*length = actual_length;
-
-	DEBUG_XXD(debug_header, buffer, *length);
+	DEBUG_XXD(debug_header, tmp_buffer, actual_length);
 
 #define BSEQ_OFFSET 6
-	if ((*length >= BSEQ_OFFSET +1)
-		&& (buffer[BSEQ_OFFSET] < *ccid_descriptor->pbSeq -1))
+	if ((tmp_buffer_length >= BSEQ_OFFSET +1)
+		&& (tmp_buffer[BSEQ_OFFSET] < *ccid_descriptor->pbSeq -1))
 	{
 		// Workaround for ACR122U reader
 		if ((ccid_descriptor->readerID == ACS_ACR122U) &&
 			(usbDevice[reader_index].last_write_size > 64) &&
-			(buffer[BSEQ_OFFSET] == *ccid_descriptor->pbSeq -2))
-			return STATUS_SUCCESS;
+			(tmp_buffer[BSEQ_OFFSET] == *ccid_descriptor->pbSeq -2))
+		{
+			status = STATUS_SUCCESS;
+			goto cleanup;
+		}
 
 		duplicate_frame++;
 		if (duplicate_frame > 10)
 		{
 			DEBUG_CRITICAL("Too many duplicate frame detected");
-			return STATUS_UNSUCCESSFUL;
+			goto cleanup;
 		}
 		DEBUG_INFO1("Duplicate frame detected");
 		goto read_again;
 	}
 
-	return STATUS_SUCCESS;
+	status = STATUS_SUCCESS;
+
+cleanup:
+	if (status != STATUS_SUCCESS)
+		*length = 0;
+	else
+	{
+		if (*length < actual_length)
+		{
+			*length = 0;
+			DEBUG_CRITICAL("Insufficient buffer");
+			status = STATUS_INSUFFICIENT_BUFFER;
+		}
+		else
+		{
+			/* Return the buffer. */
+			*length = actual_length;
+			memcpy(buffer, tmp_buffer, *length);
+		}
+	}
+
+	/* Free the temporary buffer. */
+	if (tmp_buffer != NULL)
+	{
+		free(tmp_buffer);
+		tmp_buffer = NULL;
+	}
+
+	return status;
 } /* ReadUSB */
 
 
