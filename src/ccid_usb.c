@@ -124,6 +124,9 @@ typedef struct
 	pthread_mutex_t *pTransferLock;
 #endif
 
+	// Max packet size of bulk in endpoint
+	int bulk_in_max_packet_size;
+
 	// Max packet size of bulk out endpoint
 	int bulkOutMaxPacketSize;
 
@@ -1616,6 +1619,7 @@ static int get_end_points(struct libusb_config_descriptor *desc,
 	usbdevice->bulk_out = 0;
 	usbdevice->interrupt = 0;
 	usbdevice->has_interrupt = FALSE;
+	usbdevice->bulk_in_max_packet_size = 0;
 	usbdevice->bulkOutMaxPacketSize = 0;
 
 	/*
@@ -1642,7 +1646,11 @@ static int get_end_points(struct libusb_config_descriptor *desc,
 
 		if ((bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK)
 			== LIBUSB_ENDPOINT_IN)
+		{
 			usbdevice->bulk_in = bEndpointAddress;
+			usbdevice->bulk_in_max_packet_size =
+				usb_interface->altsetting->endpoint[i].wMaxPacketSize;
+		}
 
 		if ((bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK)
 			== LIBUSB_ENDPOINT_OUT)
