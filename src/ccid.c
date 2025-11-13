@@ -961,6 +961,11 @@ int ccid_open_hack_post(unsigned int reader_index)
 			ccid_descriptor->isSamNotified = 1;
 			break;
 
+		case ACS_ACR39_FW_UPGRADE:
+			ccid_descriptor->isSamSlot = 1;
+			ccid_descriptor->dwSlotStatus = IFD_ICC_NOT_PRESENT;
+			break;
+
 		default:
 			break;
 	}
