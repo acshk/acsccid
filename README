@@ -115,6 +115,7 @@ VID  PID  Reader              Reader Name
 072F 226B ACR1252U-MW/MV      ACS WalletMate 1S CL Reader
 072F 226A ACR1252U-MW/MV BL   ACS WalletMate USB FW_Upgrade
 072F 223F ACR1255U-J1         ACS ACR1255U-J1 PICC Reader
+072F 2250 ACR1255U-J1 BL      ACS ACR1255U-J1 BL
 072F 2239 ACR1256U            ACS ACR1256U PICC Reader
 072F 2211 ACR1261U-C1         ACS ACR1261 1S Dual Reader
 072F 2252 ACR1261U-A          ACS ACR1261 CL Reader
@@ -176,6 +177,24 @@ VID  PID  Reader              Reader Name
 
 History
 -------
+
+v1.1.13 (13/11/2025)
+- Add the following readers support:
+  ACR1255U-J1 BL
+- Fix a status change issue for the first SAM slot on ACR1281U-C6.
+- Fix the incorrect bMaxSlotIndex value for ACR1255U-J1 BL.
+- Simplify comments related to the fix for incorrect bMaxSlotIndex value.
+- Merge with ccid 1.5.3.
+  - Disable USB-persist for CCID devices.
+- Merge with ccid 1.7.0.
+  - Give pcscd group permission to CCID devices in udev rule.
+- Add STATUS_INSUFFICIENT_BUFFER to status_t in defs.h.
+- Return IFD_ERROR_INSUFFICIENT_BUFFER from CHECK_STATUS().
+- Save Bulk IN endpoint's wMaxPacketSize in get_end_points().
+- Avoid USB overflow by using a multiple of the packet size in ReadUSB().
+- Allow IFD_ERROR_INSUFFICIENT_BUFFER in CreateChannelByNameOrChannel().
+- Enable SAM slot with ICC absent for ACR39 FW_Upgrade.
+- Rename _usbDevice.bulkOutMaxPacketSize to bulk_out_max_packet_size.
 
 v1.1.12 (17/4/2025)
 - Add the following readers support:
