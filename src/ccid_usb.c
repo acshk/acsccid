@@ -128,7 +128,7 @@ typedef struct
 	int bulk_in_max_packet_size;
 
 	// Max packet size of bulk out endpoint
-	int bulkOutMaxPacketSize;
+	int bulk_out_max_packet_size;
 
 	// For a workaround for ACR122U
 	int last_write_size;
@@ -1240,8 +1240,8 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 		pos = 0;
 		while (length > 0)
 		{
-			if (length > usbDevice[reader_index].bulkOutMaxPacketSize)
-				len = usbDevice[reader_index].bulkOutMaxPacketSize;
+			if (length > usbDevice[reader_index].bulk_out_max_packet_size)
+				len = usbDevice[reader_index].bulk_out_max_packet_size;
 			else
 				len = length;
 
@@ -1271,7 +1271,7 @@ status_t WriteUSB(unsigned int reader_index, unsigned int length,
 
 			/* Delay the write operation. */
 			if ((usbDevice[reader_index].ccid.writeDelay > 0)
-				&& (length > usbDevice[reader_index].bulkOutMaxPacketSize))
+				&& (length > usbDevice[reader_index].bulk_out_max_packet_size))
 			{
 				usleep(usbDevice[reader_index].ccid.writeDelay * 1000);
 			}
@@ -1661,7 +1661,7 @@ static int get_end_points(struct libusb_config_descriptor *desc,
 	usbdevice->interrupt = 0;
 	usbdevice->has_interrupt = FALSE;
 	usbdevice->bulk_in_max_packet_size = 0;
-	usbdevice->bulkOutMaxPacketSize = 0;
+	usbdevice->bulk_out_max_packet_size = 0;
 
 	/*
 	 * 3 Endpoints maximum: Interrupt In, Bulk In, Bulk Out
@@ -1697,7 +1697,8 @@ static int get_end_points(struct libusb_config_descriptor *desc,
 			== LIBUSB_ENDPOINT_OUT)
 		{
 			usbdevice->bulk_out = bEndpointAddress;
-			usbdevice->bulkOutMaxPacketSize = usb_interface->altsetting->endpoint[i].wMaxPacketSize;
+			usbdevice->bulk_out_max_packet_size =
+				usb_interface->altsetting->endpoint[i].wMaxPacketSize;
 		}
 	}
 
