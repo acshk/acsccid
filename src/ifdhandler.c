@@ -275,7 +275,8 @@ static RESPONSECODE CreateChannelByNameOrChannel(DWORD Lun,
 		/* Avoid libusb timeout on Mac OS X. */
 		ccid_descriptor->readTimeout = 1000;
 
-		if (IFD_SUCCESS == cmd_ret)
+		if ((IFD_SUCCESS == cmd_ret)
+			|| (IFD_ERROR_INSUFFICIENT_BUFFER == cmd_ret))
 		{
 			readerOk = TRUE;
 		}
@@ -288,7 +289,8 @@ static RESPONSECODE CreateChannelByNameOrChannel(DWORD Lun,
 			{
 				cmd_ret = CcidSlots[reader_index].pGetSlotStatus(reader_index,
 					pcbuffer);
-				if (IFD_SUCCESS == cmd_ret)
+				if ((IFD_SUCCESS == cmd_ret)
+					|| (IFD_ERROR_INSUFFICIENT_BUFFER == cmd_ret))
 				{
 					readerOk = TRUE;
 					break;
