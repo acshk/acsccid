@@ -184,6 +184,12 @@ if test "${usbdropdir}" = "" ; then
 	AC_MSG_ERROR([use --enable-usbdropdir=DIR])
 fi
 
+# check udev rules directory
+PKG_CHECK_VAR([udevdir], [udev], [udevdir],
+	[udev_rules_dir="${udevdir}/rules.d"],
+	[udev_rules_dir="not found"])
+AM_CONDITIONAL(UDEV_INSTALL, test -n "$udevdir")
+
 # --disable-pcsclite
 AC_ARG_ENABLE(pcsclite,
 	AS_HELP_STRING([--disable-pcsclite],[do not use pcsc-lite debug support]),
@@ -273,6 +279,7 @@ composite as multislot:  ${use_composite_as_multislot}
 multi threading:         ${multithread}
 bundle directory name:   ${bundle}
 USB drop directory:      ${usbdropdir}
+udev rules directory:    ${udev_rules_dir}
 compiled for pcsc-lite:  ${pcsclite}
 syslog debug:            ${use_syslog}
 os_log debug:            ${use_oslog}
